@@ -18,6 +18,7 @@
 | UI フレームワーク | SwiftUI |
 | データ永続化 | SwiftData |
 | 音声録音 | AVFoundation (AVAudioRecorder) |
+| 音声合成（TTS） | AVSpeechSynthesizer（共有時の日付メタ音声生成） |
 | 音声文字起こし | SpeechAnalyzer / SpeechTranscriber（iOS 26 新API） |
 | 波形表示 | OSS ライブラリを使用（後述） |
 | 最小対応 OS | iOS 26.0（SpeechAnalyzer + SwiftData） |
@@ -587,8 +588,45 @@ NotebookLM が受け取れる形式でデータをエクスポートする。
 ### 音声ファイル結合の仕様
 
 共有ボタンで音声ファイルを選択した際、その日の全録音ファイルを連番順に結合して1つのファイルを生成する。
+**結合音声の冒頭には、AIが日付を識別できるよう音声合成（TTS）による日付メタ情報を挿入する。**
 
-**結合処理:**
+**冒頭メタ音声の仕様:**
+
+読み上げテキスト例:
+```
+これは2025年2月7日分の録音です。
+```
+
+- `AVSpeechSynthesizer` を使用してオンデバイスで音声合成
+- 言語: `ja_JP`
+- 合成した音声を一時ファイル（`.m4a`）に書き出し、結合時の先頭トラックとして挿入
+- メタ音声と本編録音の間に 0.5秒 の無音を挿入し、区切りを明確にする
+
+```swift
+import AVFoundation
+
+/// 日付メタ音声を生成
+func generateDateAnnouncement(for date: Date) async throws -> URL {
+    let formatter = DateFormatter()
+    formatter.locale = Locale(identifier: "ja_JP")
+    formatter.dateFormat = "yyyy年M月d日"
+    let dateString = formatter.string(from: date)
+    let text = "これは\(dateString)分の録音です。"
+
+    let synthesizer = AVSpeechSynthesizer()
+    let utterance = AVSpeechUtterance(string: text)
+    utterance.voice = AVSpeechSynthesisVoice(language: "ja-JP")
+    utterance.rate = AVSpeechUtteranceDefaultSpeechRate
+
+    // バッファに書き出し → 一時 .m4a ファイルとして保存
+    let tempURL = FileManager.default.temporaryDirectory
+        .appendingPathComponent("date_announcement.m4a")
+    return try await synthesizer.write(utterance, toBufferCallback: { /* ... */ })
+    // → tempURL を返す
+}
+```
+
+**結合処理（メタ音声 → 無音 → 録音本編）:**
 
 ```swift
 // AVFoundation を使用した無劣化結合
@@ -598,9 +636,29 @@ let compositionTrack = composition.addMutableTrack(
     preferredTrackID: kCMPersistentTrackID_Invalid
 )
 
-// 連番順にソートされた録音ファイルを順次結合
-let sortedRecordings = entry.recordings.sorted { $0.sequenceNumber < $1.sequenceNumber }
 var currentTime = CMTime.zero
+
+// 1. 冒頭: 日付メタ音声を挿入
+let announcementURL = try await generateDateAnnouncement(for: entry.date)
+let announcementAsset = AVURLAsset(url: announcementURL)
+let announcementTrack = try await announcementAsset.loadTracks(withMediaType: .audio).first!
+let announcementDuration = try await announcementAsset.load(.duration)
+try compositionTrack?.insertTimeRange(
+    CMTimeRange(start: .zero, duration: announcementDuration),
+    of: announcementTrack,
+    at: currentTime
+)
+currentTime = CMTimeAdd(currentTime, announcementDuration)
+
+// 2. 無音を 0.5秒 挿入（区切り）
+let silenceDuration = CMTime(seconds: 0.5, preferredTimescale: 44100)
+compositionTrack?.insertEmptyTimeRange(
+    CMTimeRange(start: currentTime, duration: silenceDuration)
+)
+currentTime = CMTimeAdd(currentTime, silenceDuration)
+
+// 3. 録音ファイルを連番順に結合
+let sortedRecordings = entry.recordings.sorted { $0.sequenceNumber < $1.sequenceNumber }
 
 for recording in sortedRecordings {
     let asset = AVURLAsset(url: recording.fileURL)
@@ -619,10 +677,11 @@ await exportSession.export()
 
 **結合の動作仕様:**
 
-- 録音が1つだけの場合は結合処理をスキップし、元ファイルをそのまま共有
+- **録音が1つだけの場合でも、日付メタ音声を冒頭に付与して結合ファイルを生成する**（AIが日付を識別できるようにするため）
 - 結合済みファイルは `Documents/Merged/` に一時保存
 - 結合ファイルのクリーンアップ: アプリ起動時に作成から24時間以上経過した `Merged/` 内のファイルを自動削除
 - 結合中はプログレスインジケータを表示（大量の録音がある場合に備えて）
+- 日付メタ音声の一時ファイルは結合完了後に削除する
 
 ### 共有ボタンの配置
 
@@ -639,8 +698,10 @@ await exportSession.export()
   □ 音声ファイル（結合済み）
   ↓
 選択に応じてエクスポートデータを生成
-  ├── 音声選択時: 複数録音を連番順に結合 → 結合済み .m4a を生成
-  │   （結合中はプログレスインジケータ表示）
+  ├── 音声選択時:
+  │   1. 日付メタ音声を TTS で生成（「これは○年○月○日分の録音です。」）
+  │   2. メタ音声 → 0.5秒無音 → 録音ファイルを連番順に結合
+  │   3. 結合済み .m4a を生成（結合中はプログレスインジケータ表示）
   └── テキスト選択時: そのまま or DB から生成
   ↓
 iOS Share Sheet を表示
