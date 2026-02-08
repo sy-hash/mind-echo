@@ -62,14 +62,20 @@ erDiagram
 
     AudioFile {
         String fileName "例: 20250207_a1b2c3d4.m4a"
-        String directory "Documents/Recordings/"
+        String directory "Application Support/Recordings/"
         String format "AAC (.m4a)"
     }
 
     TextFile {
         String fileName "例: 20250207_journal.txt"
-        String directory "Documents/Journals/"
+        String directory "Application Support/Journals/"
         String format "UTF-8 (.txt)"
+    }
+
+    ExportedFile {
+        String fileName "例: 20250207_merged.m4a or 20250207_journal.txt"
+        String directory "Documents/Exports/"
+        String format "AAC (.m4a) または UTF-8 (.txt)"
     }
 ```
 
@@ -304,24 +310,33 @@ TabView {
 
 ### 保存先
 
-`Documents/` ディレクトリ以下にすべてのファイルを保存する。
-音声・テキストのすべてがファイルアプリから閲覧可能。
+アプリ内部で管理するファイルは `Application Support/` ディレクトリに保存し、ファイルアプリから不可視にする。
+エクスポート（AI に共有）したファイルのみを `Documents/Exports/` に保存し、ファイルアプリから閲覧可能にする。
 **1日につき音声ファイル1つ、テキストファイル1つのみ生成する。**
 
 ```
-Documents/
-├── Recordings/          # 音声ファイル（1日1ファイル）
+Application Support/
+├── Recordings/          # 音声ファイル（1日1ファイル、ファイルアプリから不可視）
 │   ├── 20250207_a1b2c3d4.m4a
 │   └── 20250208_e5f6g7h8.m4a
-└── Journals/            # テキスト日記（1日1ファイル）
+├── Merged/              # 共有用の結合済み音声ファイル（一時生成、ファイルアプリから不可視）
+│   └── 20250207_merged.m4a
+└── Journals/            # テキスト日記（1日1ファイル、ファイルアプリから不可視）
     ├── 20250207_journal.txt
     └── 20250208_journal.txt
+
+Documents/
+└── Exports/             # エクスポート済みファイル（ファイルアプリに公開）
+    ├── 20250207_merged.m4a
+    ├── 20250207_journal.txt
+    └── ...
 ```
 
 ### ファイルアプリからのアクセス
 
 iOS のファイルアプリ（「このiPhone内」→「（アプリ名）」）から
-すべてのファイルを直接閲覧・共有できるようにする。
+**エクスポート済みファイル（AI に共有したファイル）だけ** を閲覧・共有できるようにする。
+アプリ内部で管理する録音ファイル・テキストファイルは `Application Support/` に保存され、ファイルアプリからは不可視となる。
 
 **Info.plist に以下を追加:**
 
@@ -337,8 +352,10 @@ iOS のファイルアプリ（「このiPhone内」→「（アプリ名）」�
 | `UIFileSharingEnabled` | Application supports iTunes file sharing | YES |
 | `LSSupportsOpeningDocumentsInPlace` | Supports opening documents in place | YES |
 
-※ SwiftData のストアファイルは `Application Support` に保存されるため、
-`Documents` を公開してもデータベースファイルは露出しない。
+これにより、`Documents/` ディレクトリのみがファイルアプリに公開される。
+`Application Support/` のファイルは公開されないため、ユーザーが誤って削除することを防げる。
+
+※ SwiftData のストアファイルは `Application Support` に保存されるため、データベースファイルは露出しない。
 
 ### ファイル命名規則
 
@@ -357,7 +374,7 @@ Recordings/{date}_{short-id}.m4a
 | `{date}` | 録音日（`YYYYMMDD`） | `20250207` |
 | `{short-id}` | UUID の先頭8文字（衝突回避用） | `a1b2c3d4` |
 
-例: `20250207_a1b2c3d4.m4a`
+例: `20250207_a1b2c3d4.m4a`（`Application Support/Recordings/` に保存）
 
 - その日の初回録音時にファイルを生成
 - 中断→再開のたびに同一ファイルに追記される
@@ -369,7 +386,7 @@ Recordings/{date}_{short-id}.m4a
 Journals/{date}_journal.txt
 ```
 
-例: `20250207_journal.txt`
+例: `20250207_journal.txt`（`Application Support/Journals/` に保存）
 
 - エントリ保存時に自動で生成・上書き更新される
 - アプリ内でテキストを編集するたびにファイルも同期更新
@@ -378,12 +395,16 @@ Journals/{date}_journal.txt
 
 | イベント | 更新されるファイル |
 |---------|-----------------|
-| テキスト入力を保存 | `Journals/{date}_journal.txt` を生成 or 上書き |
-| 初回録音開始 | `Recordings/{date}_{id}.m4a` を生成 |
+| テキスト入力を保存 | `Application Support/Journals/{date}_journal.txt` を生成 or 上書き |
+| 初回録音開始 | `Application Support/Recordings/{date}_{id}.m4a` を生成 |
 | 録音の中断・再開 | 同一の `.m4a` ファイルに追記 |
 | 録音完了 | `.m4a` ファイルを確定 |
 | 文字起こし完了 | SwiftData（`JournalEntry.transcription`）に保存 |
-| エントリ削除 | 対応する `.m4a` と `_journal.txt` を削除 |
+| 音声共有時 | `Application Support/Merged/` に結合ファイル生成 + `Documents/Exports/` にコピー |
+| テキスト共有時 | `Documents/Exports/` にテキストファイルをコピー |
+| エントリ削除 | 対応する `Application Support/` 内の `.m4a` と `_journal.txt` を削除 |
+| アプリ起動時（一時ファイル） | `Application Support/Merged/` 内の24時間経過ファイルを削除 |
+| アプリ起動時（エクスポート） | `Documents/Exports/` 内の7日以上経過ファイルを削除 |
 
 ### フォーマット
 
@@ -495,6 +516,8 @@ NotebookLM が受け取れる形式でデータをエクスポートする。
   ↓
 選択に応じてエクスポートデータを生成
   ↓
+生成したファイルを Documents/Exports/ にコピー（ファイルアプリから後からアクセス可能にする）
+  ↓
 iOS Share Sheet を表示
   ↓
 ユーザーが共有先を選択:
@@ -502,6 +525,11 @@ iOS Share Sheet を表示
   - AirDrop → Mac/iPad → NotebookLM Web で直接アップロード
   - その他の共有先（メール、メッセージ等）
 ```
+
+**エクスポート処理の詳細:**
+- 音声ファイル結合後 → `Application Support/Merged/` に一時生成 → `Documents/Exports/` にコピー
+- テキストファイル生成後 → `Documents/Exports/` にコピー
+- これにより、エクスポートしたファイルはファイルアプリからも後からアクセス可能
 
 ### エクスポートフォーマット例（テキスト）
 
@@ -529,7 +557,8 @@ iOS Share Sheet を表示
 ## 実装時の注意事項
 
 - **SpeechAnalyzer の言語モデル**: 初回起動時に日本語モデルがまだダウンロードされていない可能性がある。初回起動時にモデルの準備状況をチェックし、未ダウンロードならプログレス表示付きでダウンロードを促すオンボーディングを入れる
-- **ファイルアプリとの整合性**: ユーザーがファイルアプリから音声ファイルを直接削除した場合、SwiftData 上のレコードと不整合が起きる。アプリ起動時やエントリ表示時にファイルの存在チェックを行い、不整合があれば UI で通知する
+- **Exports ディレクトリのクリーンアップ**: アプリ起動時に `Documents/Exports/` 内の作成から7日以上経過したファイルを自動削除する。エクスポート済みファイルはユーザーが削除しても問題ないが、定期的なクリーンアップで容量を節約する
+- **Merged ディレクトリのクリーンアップ**: `Application Support/Merged/` 内の作成から24時間以上経過したファイルを自動削除する（共有用の一時ファイルのため）
 - **NotebookLM の制約**: ソース1つあたり 500,000語 / 200MB の上限がある。共有時にファイルサイズを表示してユーザーに判断材料を提供する
 
 ## 考慮事項・将来の拡張
