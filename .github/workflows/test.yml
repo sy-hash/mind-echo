@@ -8,7 +8,7 @@ permissions:
 
 jobs:
   test:
-    runs-on: macos-latest
+    runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
       - name: Run Tests
@@ -16,4 +16,4 @@ jobs:
           xcodebuild test \
             -workspace MindEcho.xcworkspace \
             -scheme MindEcho \
-            -destination 'platform=iOS Simulator,name=iPhone 16'
+            -destination 'platform=iOS Simulator,name=iPhone 17'
