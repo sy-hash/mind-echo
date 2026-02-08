@@ -73,9 +73,9 @@ erDiagram
     }
 
     ExportedFile {
-        String fileName "エクスポートされたファイル"
+        String fileName "例: 20250207_merged.m4a or 20250207_journal.txt"
         String directory "Documents/Exports/"
-        String format "任意（m4a, txt等）"
+        String format "AAC (.m4a) または UTF-8 (.txt)"
     }
 ```
 
@@ -403,7 +403,8 @@ Journals/{date}_journal.txt
 | 音声共有時 | `Application Support/Merged/` に結合ファイル生成 + `Documents/Exports/` にコピー |
 | テキスト共有時 | `Documents/Exports/` にテキストファイルをコピー |
 | エントリ削除 | 対応する `Application Support/` 内の `.m4a` と `_journal.txt` を削除 |
-| アプリ起動時 | `Application Support/Merged/` 内の24時間経過ファイルを削除、`Documents/Exports/` 内の7日以上経過ファイルを削除 |
+| アプリ起動時（一時ファイル） | `Application Support/Merged/` 内の24時間経過ファイルを削除 |
+| アプリ起動時（エクスポート） | `Documents/Exports/` 内の7日以上経過ファイルを削除 |
 
 ### フォーマット
 
