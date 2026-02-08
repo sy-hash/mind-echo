@@ -45,6 +45,11 @@
 			path = MindEchoUITests;
 			sourceTree = "<group>";
 		};
+		0BD6D8432F3869B900D7656F /* docs */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = docs;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -75,6 +80,7 @@
 		0BD6D7F12F3856DE00D7656F = {
 			isa = PBXGroup;
 			children = (
+				0BD6D8432F3869B900D7656F /* docs */,
 				0BD6D7FC2F3856DE00D7656F /* MindEcho */,
 				0BD6D80C2F3856E000D7656F /* MindEchoTests */,
 				0BD6D8162F3856E000D7656F /* MindEchoUITests */,
@@ -109,6 +115,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				0BD6D7FC2F3856DE00D7656F /* MindEcho */,
+				0BD6D8432F3869B900D7656F /* docs */,
 			);
 			name = MindEcho;
 			packageProductDependencies = (

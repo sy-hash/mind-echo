@@ -2,6 +2,8 @@
 
 ## アプリ概要
 
+**コードネーム: MindEcho**
+
 毎日の記録をテキストと音声で残せるジャーナリングアプリ。
 音声入力は録音保存に加えて文字起こしも行い、手軽に振り返りができる。
 
@@ -50,18 +52,30 @@ erDiagram
         Date date UK "論理日付（日単位で一意、午前3時区切り）"
         Date createdAt
         Date updatedAt
-        String textContent "テキスト入力の内容（nullable）"
-        String audioFileName "音声ファイル名（nullable）"
-        TimeInterval audioDuration "録音の合計時間（秒）"
-        String transcription "文字起こし結果（nullable）"
-        Bool isTranscribing "文字起こし処理中フラグ"
     }
 
-    JournalEntry ||--o| AudioFile : "1日1ファイル"
-    JournalEntry ||--o| TextFile : "1日1ファイル"
+    Recording {
+        UUID id PK
+        Int sequenceNumber "その日の中での連番（1, 2, 3...）"
+        String audioFileName "音声ファイル名"
+        TimeInterval duration "録音時間（秒）"
+        Date recordedAt "録音開始日時"
+        String transcription "文字起こし結果（nullable）"
+    }
+
+    TextEntry {
+        UUID id PK
+        Int sequenceNumber "その日の中での連番（初期は常に1）"
+        String content "テキスト内容"
+        Date createdAt
+        Date updatedAt
+    }
+
+    JournalEntry ||--o{ Recording : "1日に複数録音"
+    JournalEntry ||--o{ TextEntry : "1日に複数テキスト（初期は1件運用）"
 
     AudioFile {
-        String fileName "例: 20250207_a1b2c3d4.m4a"
+        String fileName "例: 20250207_01_a1b2c3d4.m4a"
         String directory "Application Support/Recordings/"
         String format "AAC (.m4a)"
     }
@@ -79,20 +93,23 @@ erDiagram
     }
 ```
 
-- `JournalEntry` は SwiftData で管理されるエンティティ
+- `JournalEntry` は SwiftData で管理される日単位のエンティティ
+- `Recording` は SwiftData で管理される録音単位のエンティティ（`JournalEntry` に紐づく）
+- `TextEntry` は SwiftData で管理されるテキスト単位のエンティティ（`JournalEntry` に紐づく）
 - `AudioFile` / `TextFile` は物理ファイル（DB 外）を表す概念エンティティ
-- `JournalEntry.audioFileName` と `AudioFile.fileName` が対応する
-- `JournalEntry.textContent` の内容が `TextFile` に同期書き出しされる
-- 1日1エントリに対して、音声ファイル・テキストファイルはそれぞれ最大1つ（0 or 1）
+- `Recording.audioFileName` と `AudioFile.fileName` が対応する
+- `TextEntry.content` の内容が `TextFile` に同期書き出しされる
+- 1日1エントリに対して、録音は複数（0〜N）、テキストも複数（0〜N、**初期は0〜1件で運用**）
 
 ### JournalEntry（日記エントリ）
 
-1日1エントリ。録音ファイルもテキストファイルも1日1ファイルのみ。
-録音は何度でも中断・再開でき、すべて同一ファイルに追記される。
+1日1エントリ。
+録音は1日に何度でも行え、それぞれ個別のファイル・個別の `Recording` として管理される。
+テキストも `TextEntry` として独立管理する。**初期バージョンでは1日1テキストの運用だが、将来的に複数テキスト対応を可能にするため、最初から1対多のリレーションで設計する。**
 
 **日付変更のしきい値は午前3:00。**
 0:00〜2:59 の操作は前日のエントリに記録される。
-例: 2月8日 午前1:30 の録音 → 2月7日のエントリに追記。
+例: 2月8日 午前1:30 の録音 → 2月7日のエントリに追加。
 
 ```swift
 @Model
@@ -101,11 +118,40 @@ class JournalEntry {
     var date: Date                    // エントリの日付（日単位で一意）
     var createdAt: Date
     var updatedAt: Date
-    var textContent: String?          // テキスト入力の内容
-    var audioFileName: String?        // 音声ファイル名（nil = 録音なし）
-    var audioDuration: TimeInterval   // 録音の合計時間（秒）
-    var transcription: String?        // 文字起こし結果
-    var isTranscribing: Bool          // 文字起こし処理中フラグ
+    @Relationship(deleteRule: .cascade)
+    var recordings: [Recording]       // その日の録音リスト（連番順）
+    @Relationship(deleteRule: .cascade)
+    var textEntries: [TextEntry]      // その日のテキストリスト（連番順、初期は0〜1件）
+
+    /// その日の合計録音時間（秒）
+    var totalDuration: TimeInterval {
+        recordings.reduce(0) { $0 + $1.duration }
+    }
+}
+
+@Model
+class Recording {
+    var id: UUID
+    var sequenceNumber: Int           // その日の中での連番（1, 2, 3...）
+    var audioFileName: String         // 音声ファイル名
+    var duration: TimeInterval        // 録音時間（秒）
+    var recordedAt: Date              // 録音開始日時
+    var transcription: String?        // 文字起こし結果（リアルタイム文字起こしの確定テキスト）
+
+    @Relationship(inverse: \JournalEntry.recordings)
+    var entry: JournalEntry?
+}
+
+@Model
+class TextEntry {
+    var id: UUID
+    var sequenceNumber: Int           // その日の中での連番（初期は常に1）
+    var content: String               // テキスト内容
+    var createdAt: Date
+    var updatedAt: Date
+
+    @Relationship(inverse: \JournalEntry.textEntries)
+    var entry: JournalEntry?
 }
 ```
 
@@ -117,25 +163,43 @@ import SwiftData
 
 @Observable
 class HomeViewModel {
+    // 録音状態
     var isRecording = false
     var isPaused = false              // 録音一時停止中
     var recordingDuration: TimeInterval = 0
+    
+    // リアルタイム文字起こし
+    var liveTranscription = ""        // 録音中のリアルタイム文字起こしテキスト（暫定）
+    var isTranscribing = false        // 文字起こし処理中
+    
+    // 再生（録音直後の再生用）
+    var playingRecordingId: UUID?     // 現在再生中の Recording の ID（nil = 再生なし）
+    var isPlaying = false
+    var playbackProgress: Double = 0  // 0.0〜1.0
+
     var todayEntry: JournalEntry?
     var errorMessage: String?
 
     private let modelContext: ModelContext
     private let audioRecorder: AudioRecorderService
+    private let audioPlayer: AudioPlayerService
     private let transcriptionService: TranscriptionService
 
     init(modelContext: ModelContext) {
         self.modelContext = modelContext
         self.audioRecorder = AudioRecorderService()
+        self.audioPlayer = AudioPlayerService()
         self.transcriptionService = TranscriptionService()
     }
 
-    func startOrResumeRecording() { /* ... */ }
-    func pauseRecording() { /* ... */ }
-    func finishRecording() async { /* ... */ }
+    func startRecording() { /* 新しい録音セッションを開始。リアルタイム文字起こしも同時開始 */ }
+    func pauseRecording() { /* 録音を一時停止 */ }
+    func resumeRecording() { /* 一時停止中の録音を再開 */ }
+    func stopRecording() async { /* 録音を停止・確定。確定テキストを Recording に保存 */ }
+    func playRecording(_ recording: Recording) { /* 個別の録音を再生 */ }
+    func pausePlayback() { /* 再生を一時停止 */ }
+    func stopPlayback() { /* 再生を停止 */ }
+    func saveText(_ text: String) { /* TextEntry を作成 or 更新。初期は1件のみ */ }
     func fetchTodayEntry() { /* ... */ }
 }
 
@@ -145,7 +209,7 @@ class HistoryViewModel {
     var searchText = ""
     var filteredEntries: [JournalEntry] {
         guard !searchText.isEmpty else { return entries }
-        return entries.filter { /* テキスト・文字起こし内容をフィルタ */ }
+        return entries.filter { /* TextEntry.content・Recording.transcription をフィルタ */ }
     }
 
     private let modelContext: ModelContext
@@ -162,7 +226,11 @@ class HistoryViewModel {
 class EntryDetailViewModel {
     var entry: JournalEntry
     var isEditing = false
+    
+    // 再生状態
+    var playingRecordingId: UUID?     // 現在再生中の Recording の ID
     var isPlaying = false
+    var playbackProgress: Double = 0
 
     private let modelContext: ModelContext
     private let audioPlayer: AudioPlayerService
@@ -175,8 +243,15 @@ class EntryDetailViewModel {
         self.shareService = ShareService()
     }
 
-    func togglePlayback() { /* ... */ }
-    func exportForSharing(options: ShareOptions) -> [any Transferable] { /* ... */ }
+    func playRecording(_ recording: Recording) { /* 個別の録音を再生 */ }
+    func pausePlayback() { /* 再生を一時停止 */ }
+    func stopPlayback() { /* 再生を停止 */ }
+    func deleteRecording(_ recording: Recording) { /* 個別の録音を削除（ファイルも削除） */ }
+    func exportForSharing(options: ShareOptions) async -> [any Transferable] {
+        /* 音声選択時: 全録音を連番順に結合した1つの .m4a を生成
+           文字起こし選択時: 全録音の文字起こしを結合した .txt を生成
+           テキスト選択時: 全 TextEntry を連番順に結合した .txt を生成 */
+    }
 }
 ```
 
@@ -226,31 +301,37 @@ struct HomeView: View {
 **レイアウト要素:**
 
 - **日付表示（上部）** — 論理日付を「2025年2月7日（金）」のようなフォーマットで表示。午前3時より前は前日の日付を表示する
-- **録音ボタン（中央・目立つ配置）** — 3つの状態を持つ:
-  - 停止中 → タップで録音開始（or 既存録音への追記再開）
-  - 録音中 → タップで一時停止。録音中はリアルタイム波形を表示（DSWaveformImage の `WaveformLiveView` 等を使用）
-  - 一時停止中 → タップで録音再開
-- **録音完了ボタン** — 録音中 or 一時停止中に表示。タップで録音を確定し、文字起こしを開始
+- **録音コントロール（中央・目立つ配置）** — 以下の操作ボタンを持つ:
+  - **録音開始ボタン** — タップで新しい録音セッションを開始。リアルタイム文字起こしも同時に開始
+  - **一時停止 / 再開ボタン** — 録音中に表示。タップで一時停止 ↔ 再開を切り替え（同一ファイル内）
+  - **停止ボタン** — 録音中 or 一時停止中に表示。タップで録音を確定し、新しい `Recording` として保存
+- **リアルタイム文字起こし表示（録音中）** — 録音中に画面下部などにリアルタイムで文字起こしテキストを表示。暫定テキスト（volatile）と確定テキスト（finalized）を視覚的に区別する
+- **録音中の波形表示** — リアルタイム波形を表示（DSWaveformImage の `WaveformLiveView` 等を使用）
 - **テキスト入力ボタン（録音ボタンの近く）** — タップでテキスト入力モードに遷移 or シートを表示。既にテキストがある場合は編集モードで開く
-- **今日のエントリプレビュー（下部、任意）** — 今日既に記録がある場合、録音時間やテキストの先頭部分を簡易表示
+- **今日の録音リスト（下部）** — 今日既に録音がある場合、各録音を連番で一覧表示:
+  - 連番（#1, #2, ...）
+  - 録音時間
+  - 再生 / 一時停止ボタン（個別再生）
+  - 文字起こしテキストの先頭部分（プレビュー）
 
 **動作フロー（録音）:**
 
-1. 録音ボタンをタップ → AVAudioRecorder で録音開始
-2. 一時停止ボタンをタップ → 録音を一時停止（`AVAudioRecorder.pause()`）
-3. 再度録音ボタンをタップ → 録音を再開（同一ファイルに追記）
-4. 手順 2〜3 を何度でも繰り返し可能
-5. 録音完了ボタンをタップ → 録音を確定し、ファイルを保存
-6. バックグラウンドで SpeechAnalyzer による文字起こしを実行
-7. 文字起こし完了後、JournalEntry の transcription を更新
-8. 同日中に再度録音ボタンを押した場合 → 既存ファイルは保持し、新しいセッション分を追記
+1. 録音開始ボタンをタップ → AVAudioRecorder で録音開始 + SpeechTranscriber でリアルタイム文字起こし開始
+2. リアルタイム文字起こしテキストが逐次表示される
+3. 一時停止ボタンをタップ → 録音を一時停止（`AVAudioRecorder.pause()`）
+4. 再開ボタンをタップ → 録音を再開（同一ファイルに追記）
+5. 手順 3〜4 を何度でも繰り返し可能
+6. 停止ボタンをタップ → 録音を確定し、ファイルを保存
+7. 文字起こしの確定テキストを `Recording.transcription` に保存
+8. 新しい `Recording` が今日の録音リストに追加される
+9. 再度録音開始ボタンを押すと → 新しいファイル・新しい `Recording` として別セッションで録音開始
 
-※ 30分の上限は累計録音時間に対して適用。上限に達したら自動で録音を完了する。
 
 **動作フロー（テキスト）:**
 
 1. テキスト入力ボタンをタップ → テキストエディタを表示
-2. 保存 → JournalEntry の textContent を更新し、`Journals/{date}_journal.txt` も同期更新
+2. 保存 → `TextEntry` を作成 or 更新し、`Journals/{date}_journal.txt` も同期更新
+3. 初期バージョンでは1日1件の `TextEntry` のみ。既にテキストがある場合は既存の `TextEntry` を編集する
 
 ### 画面 2: 履歴一覧画面
 
@@ -261,7 +342,7 @@ struct HomeView: View {
 - **日付ごとのリスト** — 新しい日付が上に来る降順表示。各セルに以下を表示:
   - 日付（例: 2月6日 木）
   - テキストの先頭数行（プレビュー）
-  - 録音時間の表示（例: 🎤 12m30s）、録音なしの場合は非表示
+  - 録音件数と合計時間の表示（例: 🎤 3件 / 12m30s）、録音なしの場合は非表示
 - **検索バー（上部）** — テキスト内容・文字起こし内容をフルテキスト検索
 
 **タップ時の遷移:**
@@ -276,11 +357,13 @@ struct HomeView: View {
 
 - 日付ヘッダー
 - テキスト内容（編集可能）
-- 録音セクション（録音がある場合）:
-  - 再生ボタン / 一時停止
-  - 合計録音時間の表示
+- 録音セクション（録音がある場合）— 各 Recording を連番順にリスト表示:
+  - 連番と録音時刻（例: #1 14:30）
+  - 再生ボタン / 一時停止ボタン（個別再生）
+  - 録音時間の表示
+  - 波形表示（DSWaveformImage の `WaveformView` でファイル波形を表示）
   - 文字起こしテキスト（展開/折りたたみ可能）
-  - 録音削除ボタン
+  - 個別の録音削除ボタン（スワイプ or ボタン）
 
 ## ナビゲーション構成
 
@@ -312,13 +395,15 @@ TabView {
 
 アプリ内部で管理するファイルは `Application Support/` ディレクトリに保存し、ファイルアプリから不可視にする。
 エクスポート（AI に共有）したファイルのみを `Documents/Exports/` に保存し、ファイルアプリから閲覧可能にする。
-**1日につき音声ファイル1つ、テキストファイル1つのみ生成する。**
+**1日につき録音ファイルは複数（セッションごと）、テキストファイルは1つのみ生成する。**
 
 ```
 Application Support/
-├── Recordings/          # 音声ファイル（1日1ファイル、ファイルアプリから不可視）
-│   ├── 20250207_a1b2c3d4.m4a
-│   └── 20250208_e5f6g7h8.m4a
+├── Recordings/          # 音声ファイル（1日に複数ファイル可、ファイルアプリから不可視）
+│   ├── 20250207_01_a1b2c3d4.m4a
+│   ├── 20250207_02_e5f6g7h8.m4a
+│   ├── 20250207_03_i9j0k1l2.m4a
+│   └── 20250208_01_m3n4o5p6.m4a
 ├── Merged/              # 共有用の結合済み音声ファイル（一時生成、ファイルアプリから不可視）
 │   └── 20250207_merged.m4a
 └── Journals/            # テキスト日記（1日1ファイル、ファイルアプリから不可視）
@@ -363,22 +448,23 @@ iOS のファイルアプリ（「このiPhone内」→「（アプリ名）」�
 日本語を含めると NotebookLM へのインポート時に文字化けが発生するため禁止。
 **すべてのファイルは日付（`YYYYMMDD`）をプリフィックスとし、ファイルアプリでの日付順ソートを保証する。**
 
-**音声ファイル（1日1ファイル）:**
+**音声ファイル（1日に複数ファイル）:**
 
 ```
-Recordings/{date}_{short-id}.m4a
+Recordings/{date}_{seq}_{short-id}.m4a
 ```
 
 | 要素 | 内容 | 例 |
 |------|------|-----|
 | `{date}` | 録音日（`YYYYMMDD`） | `20250207` |
+| `{seq}` | その日の連番（ゼロ埋め2桁） | `01`, `02`, `03` |
 | `{short-id}` | UUID の先頭8文字（衝突回避用） | `a1b2c3d4` |
 
-例: `20250207_a1b2c3d4.m4a`（`Application Support/Recordings/` に保存）
+例: `20250207_01_a1b2c3d4.m4a`, `20250207_02_e5f6g7h8.m4a`（`Application Support/Recordings/` に保存）
 
-- その日の初回録音時にファイルを生成
-- 中断→再開のたびに同一ファイルに追記される
-- 1日の中で何度中断・再開しても、生成されるファイルは1つだけ
+- 録音を開始するたびに新しいファイルを生成（連番をインクリメント）
+- 一時停止→再開は同一ファイル内で追記
+- 停止すると録音が確定し、次の録音は新しい連番のファイルになる
 
 **テキスト日記ファイル:**
 
@@ -395,21 +481,22 @@ Journals/{date}_journal.txt
 
 | イベント | 更新されるファイル |
 |---------|-----------------|
-| テキスト入力を保存 | `Application Support/Journals/{date}_journal.txt` を生成 or 上書き |
-| 初回録音開始 | `Application Support/Recordings/{date}_{id}.m4a` を生成 |
-| 録音の中断・再開 | 同一の `.m4a` ファイルに追記 |
-| 録音完了 | `.m4a` ファイルを確定 |
-| 文字起こし完了 | SwiftData（`JournalEntry.transcription`）に保存 |
-| 音声共有時 | `Application Support/Merged/` に結合ファイル生成 + `Documents/Exports/` にコピー |
+| テキスト入力を保存 | `TextEntry` を作成 or 更新 + `Application Support/Journals/{date}_journal.txt` を生成 or 上書き |
+| 録音開始 | `Application Support/Recordings/{date}_{seq}_{id}.m4a` を新規生成 |
+| 録音の一時停止・再開 | 同一の `.m4a` ファイルに追記 |
+| 録音停止 | `.m4a` ファイルを確定。リアルタイム文字起こしの確定テキストを `Recording.transcription` に保存 |
+| 音声共有時 | その日の全 Recording を連番順に結合 → `Application Support/Merged/` に一時生成 → `Documents/Exports/` にコピー |
 | テキスト共有時 | `Documents/Exports/` にテキストファイルをコピー |
-| エントリ削除 | 対応する `Application Support/` 内の `.m4a` と `_journal.txt` を削除 |
+| 文字起こし共有時 | 全 Recording の `transcription` を結合して `.txt` を生成 → `Documents/Exports/` にコピー |
+| 録音削除（個別） | 対応する `Application Support/Recordings/` 内の `.m4a` を削除 + `Recording` エンティティを削除 |
+| エントリ削除 | 対応する全 `.m4a` ファイルと `_journal.txt` を削除（cascade で `Recording` / `TextEntry` も削除） |
 | アプリ起動時（一時ファイル） | `Application Support/Merged/` 内の24時間経過ファイルを削除 |
 | アプリ起動時（エクスポート） | `Documents/Exports/` 内の7日以上経過ファイルを削除 |
 
 ### フォーマット
 
 - 音声: AAC（`.m4a`）
-- 録音の最大時間: 30分（1日の累計。上限に達したら自動停止し、ユーザーに通知）
+- 録音の最大時間: 制限なし
 - テキスト: UTF-8（`.txt`）
 - 容量表示機能は将来的に追加を検討
 
@@ -418,28 +505,31 @@ Journals/{date}_journal.txt
 iOS 26 で導入された `SpeechAnalyzer` + `SpeechTranscriber` を使用する。
 従来の `SFSpeechRecognizer` に比べ、長時間音声への対応、高速処理、完全オフライン動作が大幅に改善されている。
 
-### 基本実装パターン
+**本アプリではリアルタイム文字起こしを採用する。** 録音中にマイク入力をストリーミングで `SpeechTranscriber` に渡し、逐次テキストを画面に表示する。録音停止時に確定テキストを `Recording.transcription` に保存する。
+
+### 基本実装パターン（リアルタイム文字起こし）
 
 ```swift
 import Speech
 import AVFoundation
 
 let locale = Locale(identifier: "ja_JP")
-let transcriber = SpeechTranscriber(locale: locale, preset: .offlineTranscription)
+let transcriber = SpeechTranscriber(locale: locale, preset: .transcription)
 let analyzer = SpeechAnalyzer(modules: [transcriber])
 
-// 録音済みファイルから文字起こし
-let audioFile = try AVAudioFile(forReading: fileURL)
-if let lastSample = try await analyzer.analyzeSequence(from: audioFile) {
-    try await analyzer.finalizeAndFinish(through: lastSample)
-}
+// マイク入力からリアルタイムで文字起こし
+// AVAudioEngine のタップからオーディオバッファを取得し、
+// analyzer.analyze(buffer:) でストリーミング処理
 
 // 結果の取得（AsyncSequence）
-for await result in transcriber.results {
-    let text = result.text  // AttributedString
-    let isFinal = result.isFinal
-    if isFinal {
-        // 確定テキストを保存
+Task {
+    for await result in transcriber.results {
+        let text = result.text  // AttributedString
+        if result.isFinal {
+            // 確定テキスト → Recording.transcription に保存
+        } else {
+            // 暫定テキスト → UI にリアルタイム表示（随時更新される）
+        }
     }
 }
 ```
@@ -454,8 +544,8 @@ for await result in transcriber.results {
 
 ### プリセット
 
-- `.offlineTranscription` — オフライン専用。録音済みファイルの一括処理に最適
-- `.transcription` — 汎用的な文字起こし
+- `.transcription` — リアルタイム文字起こしに使用。本アプリのメインプリセット
+- `.offlineTranscription` — オフライン専用。録音済みファイルの一括処理（将来のリトライ処理等で使用可能）
 
 ### 仕様詳細
 
@@ -464,8 +554,7 @@ for await result in transcriber.results {
 - `ja_JP` はサポート対象ロケールに含まれる
 - 結果は `AttributedString` で返却され、タイミングデータも含まれる
 - volatile（暫定）と finalized（確定）の2段階で結果がストリーム配信される
-- 録音停止後にバックグラウンドで非同期実行
-- 処理中は `isTranscribing = true` でインジケータ表示
+- **録音中にリアルタイムで実行** — 暫定テキストを画面に逐次表示し、確定テキストを `Recording.transcription` に保存
 - 文字起こし失敗時はエラーメッセージを表示し、リトライボタンを提供
 
 ### デバイスサポートのフォールバック
@@ -491,11 +580,11 @@ NotebookLM が受け取れる形式でデータをエクスポートする。
 
 ### 共有対象データと形式
 
-| 共有タイプ | 形式 | NotebookLM での扱い |
-|-----------|------|-------------------|
-| テキスト日記 | `.txt` ファイル（Documents に常時保存） | テキストソースとして読み込み |
-| 文字起こしテキスト | 共有時にDBから取得し `.txt` として一時生成 | テキストソースとして読み込み |
-| 音声ファイル | `.m4a`（Documents に常時保存） | 音声ソースとして読み込み（自動文字起こし） |
+| 共有タイプ | 形式 | 生成方法 | NotebookLM での扱い |
+|-----------|------|---------|-------------------|
+| テキスト日記 | `.txt` ファイル | 全 TextEntry の `content` を連番順に結合して生成 | テキストソースとして読み込み |
+| 文字起こしテキスト | `.txt` ファイル | 全 Recording の `transcription` を連番順に結合して生成 | テキストソースとして読み込み |
+| 音声ファイル | `.m4a` | その日の全 Recording を連番順に結合して1つのファイルに生成 | 音声ソースとして読み込み（自動文字起こし） |
 
 ※ NotebookLM は m4a, mp3, wav, aac 等の音声ファイルを直接ソースとしてインポート可能。
 音声をアップロードすると NotebookLM 側でも自動で文字起こしが行われる。
@@ -510,11 +599,14 @@ NotebookLM が受け取れる形式でデータをエクスポートする。
 共有ボタンタップ
   ↓
 共有内容の選択シート表示:
-  □ テキスト日記
+  □ テキスト日記（全 TextEntry を結合）
   □ 文字起こしテキスト
-  □ 音声ファイル（元データ）
+  □ 音声ファイル（全録音を結合）
   ↓
-選択に応じてエクスポートデータを生成
+選択に応じてエクスポートデータを生成:
+  - 音声: 日付アナウンスを TTS で生成し、冒頭に挿入 + 全 Recording を連番順に結合 → 1つの .m4a
+  - 文字起こし: 全 Recording の transcription を連番順に結合 → 1つの .txt
+  - テキスト日記: 全 TextEntry の content を連番順に結合 → 1つの .txt
   ↓
 生成したファイルを Documents/Exports/ にコピー（ファイルアプリから後からアクセス可能にする）
   ↓
@@ -527,9 +619,47 @@ iOS Share Sheet を表示
 ```
 
 **エクスポート処理の詳細:**
-- 音声ファイル結合後 → `Application Support/Merged/` に一時生成 → `Documents/Exports/` にコピー
-- テキストファイル生成後 → `Documents/Exports/` にコピー
+- 音声ファイル:
+  1. `AVSpeechSynthesizer` で日付アナウンス音声を生成（後述）
+  2. 日付アナウンス + 全 Recording を `sequenceNumber` 順に結合 → `Application Support/Merged/` に一時生成
+  3. `Documents/Exports/` にコピー
+- 文字起こしテキスト: 全 Recording の `transcription` を連番順に結合して `.txt` を生成 → `Documents/Exports/` にコピー
+- テキスト日記: 全 TextEntry の `content` を連番順に結合して `.txt` を生成 → `Documents/Exports/` にコピー
 - これにより、エクスポートしたファイルはファイルアプリからも後からアクセス可能
+
+### 日付アナウンス音声（音声共有時の冒頭挿入）
+
+NotebookLM 等の AI アプリはファイル名から日付を認識できないため、
+共有する結合音声の冒頭に TTS で生成した日付アナウンスを挿入し、AI が日付を識別できるようにする。
+
+**アナウンス内容（日本語）:**
+
+```
+これは{YYYY}年{M}月{D}日の録音です。
+```
+
+例: 「これは2025年2月7日の録音です。」
+
+**生成方法:**
+
+```swift
+import AVFoundation
+
+let synthesizer = AVSpeechSynthesizer()
+let utterance = AVSpeechUtterance(string: "これは2025年2月7日の録音です。")
+utterance.voice = AVSpeechSynthesisVoice(language: "ja-JP")
+utterance.rate = AVSpeechUtteranceDefaultSpeechRate
+
+// AVSpeechSynthesizer.write(_:toBufferCallback:) で音声データをファイルに書き出し
+// 書き出した音声ファイルを結合音声の冒頭に挿入
+```
+
+**仕様:**
+- `AVSpeechSynthesizer` を使用（オンデバイス処理、追加依存なし）
+- 言語: 日本語（`ja-JP`）のみ
+- 生成タイミング: 音声共有時（結合処理の一環として）
+- 挿入位置: 結合音声の最初（日付アナウンス → Recording #1 → Recording #2 → ...）
+- 日付アナウンスと最初の録音の間に短い無音（0.5〜1秒程度）を挿入して聞き取りやすくする
 
 ### エクスポートフォーマット例（テキスト）
 
