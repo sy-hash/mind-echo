@@ -1,0 +1,19 @@
+name: Test
+
+on:
+  push:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Tests
+        run: |
+          xcodebuild test \
+            -workspace MindEcho.xcworkspace \
+            -scheme MindEcho \
+            -destination 'platform=iOS Simulator,name=iPhone 16'
