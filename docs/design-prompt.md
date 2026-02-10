@@ -154,17 +154,29 @@ erDiagram
 例: 2月8日 午前2:50 に開始し 3:10 に終了した録音 → 2月7日のエントリに追加（開始時刻が 3:00 より前のため）。
 `DateHelper` は `TimeZone.current` を使用する。海外渡航等でタイムゾーンが変わった場合、その時点のローカルタイムで判定される。
 
+**論理日付の正規化:** `JournalEntry.date` に格納する `Date` 値は、`DateHelper.logicalDate()` により論理日付の**正午 12:00（ローカルタイムゾーン）** に正規化する。正午を使用することで、タイムゾーン変更時の日付ズレ（深夜 0:00 基準だと UTC 変換で前後の日に跨ぐ問題）を回避する。クエリ時は正規化済みの `Date` 同士を直接比較する。
+
 ```swift
 @Model
 class JournalEntry {
     var id: UUID
-    var date: Date                    // エントリの日付（日単位で一意）
+    var date: Date                    // エントリの論理日付（DateHelper.logicalDate() で正規化済み、日単位で一意）
     var createdAt: Date
     var updatedAt: Date
     @Relationship(deleteRule: .cascade)
-    var recordings: [Recording]       // その日の録音リスト（連番順）
+    var recordings: [Recording]       // その日の録音リスト（※ SwiftData は順序非保証。sortedRecordings を使用すること）
     @Relationship(deleteRule: .cascade)
-    var textEntries: [TextEntry]      // その日のテキストリスト（連番順、初期は0〜1件）
+    var textEntries: [TextEntry]      // その日のテキストリスト（※ SwiftData は順序非保証。sortedTextEntries を使用すること）
+
+    /// 録音を sequenceNumber 昇順でソートして返す（SwiftData の @Relationship は順序を保証しないため）
+    var sortedRecordings: [Recording] {
+        recordings.sorted { $0.sequenceNumber < $1.sequenceNumber }
+    }
+
+    /// テキストを sequenceNumber 昇順でソートして返す
+    var sortedTextEntries: [TextEntry] {
+        textEntries.sorted { $0.sequenceNumber < $1.sequenceNumber }
+    }
 
     /// その日の合計録音時間（秒）
     var totalDuration: TimeInterval {
@@ -272,6 +284,7 @@ class HistoryViewModel {
 }
 
 /// 共有タイプの排他選択（1つのみ選択可能）
+/// ExportService モジュールで定義し、App Target から参照する
 enum ShareType {
     case textJournal        // テキスト日記（全 TextEntry を結合した .txt）
     case transcription      // 文字起こしテキスト（全 Recording の transcription を結合した .txt）
@@ -290,14 +303,15 @@ class EntryDetailViewModel {
 
     private let modelContext: ModelContext
     private let audioPlayer: any AudioPlaying
-    private let exportService: ExportService
+    private let exportService: any Exporting
 
     init(entry: JournalEntry, modelContext: ModelContext,
-         audioPlayer: any AudioPlaying = AudioPlayerService()) {
+         audioPlayer: any AudioPlaying = AudioPlayerService(),
+         exportService: any Exporting = ExportService()) {
         self.entry = entry
         self.modelContext = modelContext
         self.audioPlayer = audioPlayer
-        self.exportService = ExportService()
+        self.exportService = exportService
     }
 
     func playRecording(_ recording: Recording) { /* 個別の録音を再生 */ }
@@ -545,7 +559,7 @@ Journals/{date}_journal.txt
 | 音声共有時 | その日の全 Recording を連番順に結合 → `Application Support/Merged/` に一時生成 → `Documents/Exports/` にコピー |
 | テキスト共有時 | `Documents/Exports/` にテキストファイルをコピー |
 | 文字起こし共有時 | 全 Recording の `transcription` を結合して `.txt` を生成 → `Documents/Exports/` にコピー |
-| 録音削除（個別） | 対応する `Application Support/Recordings/` 内の `.m4a` を削除 + `Recording` エンティティを削除。**残りの Recording の `sequenceNumber` はリナンバーしない（欠番を許容）。** ファイルリネームの複雑さを避ける。エクスポート時は実在する Recording を `sequenceNumber` 昇順で処理する |
+| 録音削除（個別） | 対応する `Application Support/Recordings/` 内の `.m4a` を削除 + `Recording` エンティティを削除。**残りの Recording の `sequenceNumber` はリナンバーしない（欠番を許容）。** ファイルリネームの複雑さを避ける。エクスポート時は実在する Recording を `sequenceNumber` 昇順で処理する。**次の録音の `sequenceNumber` は既存の最大値 + 1 で採番する**（例: #1, #3 が残っている場合、次は #4） |
 | エントリ削除 | 対応する全 `.m4a` ファイルと `_journal.txt` を削除（cascade で `Recording` / `TextEntry` も削除） |
 | アプリ起動時（一時ファイル） | `Application Support/Merged/` 内の24時間経過ファイルを削除 |
 
@@ -878,6 +892,7 @@ AudioMerger は複数の音声ソース（TTS 出力、録音ファイル、無�
 
 ## 実装時の注意事項
 
+- **音声スレッドの並行アクセス**: `AVAudioEngine` の tap コールバックはリアルタイム音声スレッドで実行される。`isPaused` フラグや `onBuffer` クロージャはメインスレッドから設定されるため、`AudioRecorderService` 内部で適切な同期が必要（`os_unfair_lock` や `Mutex` 等の軽量ロック推奨。音声スレッドでは `DispatchQueue` やアクターは使用不可）
 - **SpeechAnalyzer の言語モデル**: 初回起動時に日本語モデルがまだダウンロードされていない可能性がある。初回起動時にモデルの準備状況をチェックし、未ダウンロードならプログレス表示付きでダウンロードを促すオンボーディングを入れる
 - **Merged ディレクトリのクリーンアップ**: `Application Support/Merged/` 内の作成から24時間以上経過したファイルを自動削除する（共有用の一時ファイルのため）
 - **NotebookLM の制約**: ソース1つあたり 500,000語 / 200MB の上限がある。共有時にファイルサイズを表示してユーザーに判断材料を提供する
@@ -906,9 +921,16 @@ protocol AudioRecording {
 
 protocol AudioPlaying {
     var playbackProgress: Double { get }
+    var onPlaybackFinished: (() -> Void)? { get set }  // 再生が自然終了した際のコールバック
     func play(url: URL) throws
     func pause()
     func stop()
+}
+
+// Transcription モジュールが公開する型
+struct TranscriptionResult: Sendable {
+    let text: AttributedString   // 文字起こしテキスト（タイミング情報付き）
+    let isFinal: Bool            // true: 確定テキスト, false: 暫定テキスト
 }
 
 // Transcription モジュールが公開する protocol
@@ -925,7 +947,7 @@ class HomeViewModel {
     init(modelContext: ModelContext,
          audioRecorder: any AudioRecording = AudioRecorderService(),
          audioPlayer: any AudioPlaying = AudioPlayerService(),
-         transcription: any Transcribing = TranscriptionService()) { ... }
+         transcriptionService: any Transcribing = TranscriptionService()) { ... }
 }
 ```
 
@@ -933,7 +955,17 @@ class HomeViewModel {
 - **AudioService**: `AudioRecording` / `AudioPlaying` protocol を公開。テスト時はモック実装を使用
 - **Transcription**: `Transcribing` protocol を公開。テスト時はモック実装を使用
 - **AudioMerger**: ファイル入出力のみ。テスト用の音声ファイルを fixture として用意してテスト可能
-- **ExportService**: MindEchoCore のモデルとファイル操作。テスト用の一時ディレクトリでテスト可能
+- **ExportService**: `Exporting` protocol を公開。テスト用の一時ディレクトリでテスト可能
+
+```swift
+// ExportService モジュールが公開する protocol
+protocol Exporting {
+    func exportTextJournal(entry: JournalEntry, to directory: URL) async throws -> URL
+    func exportTranscription(entry: JournalEntry, to directory: URL) async throws -> URL
+    func exportMergedAudio(entry: JournalEntry, to directory: URL) async throws -> URL
+    func cleanupMergedFiles(olderThan: TimeInterval) throws
+}
+```
 
 ## 考慮事項・将来の拡張
 
