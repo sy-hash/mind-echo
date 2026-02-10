@@ -37,6 +37,10 @@
 
 **推奨: DSWaveformImage** — 録音中のリアルタイム波形（`WaveformLiveView`）と再生時のファイル波形（`WaveformView`）の両方をカバーでき、依存ライブラリもゼロ、SwiftUI にネイティブ対応している。
 
+**波形データの供給方法:**
+- **録音中（リアルタイム波形）**: `AudioRecorderService` が tap コールバック内で `AVAudioPCMBuffer` から RMS 振幅レベル（`Float`）を計算し、`currentAmplitude` プロパティとして公開する。View 層がタイマーまたは `@Observable` 経由で振幅値を取得し、`WaveformLiveView` にサンプルとして追加する
+- **再生時（ファイル波形）**: `WaveformView` に音声ファイルの URL を渡すだけで、ライブラリが自動的にファイルから波形を生成する
+
 ## モジュール構成
 
 マルチモジュール構成（Swift Package）で開発する。5つのライブラリモジュール + 1つのアプリターゲットに分割する。
@@ -59,7 +63,7 @@ MindEchoApp (App Target)
 | モジュール | 責務 | 主な型 | 依存先 |
 |-----------|------|--------|--------|
 | **MindEchoCore** | ドメインモデル, 日付ロジック（午前3時境界）, ファイルパス/命名規則, ディレクトリ管理 | `JournalEntry`, `Recording`, `TextEntry`, `DateHelper`, `FilePathManager` | Foundation, SwiftData |
-| **AudioService** | 録音（一時停止/再開含む）, 再生（プログレス追跡含む）, AVAudioSession 管理, 録音中の音声バッファ提供（文字起こし連携用） | `AudioRecorderService`, `AudioPlayerService` | AVFoundation |
+| **AudioService** | 録音（一時停止/再開含む）, 再生（プログレス追跡含む）, AVAudioSession 管理, 録音中の音声バッファ提供（文字起こし連携用）, 録音中の振幅レベル提供（波形表示用） | `AudioRecorderService`, `AudioPlayerService` | AVFoundation |
 | **AudioMerger** | 複数音声ファイルの結合, TTS 日付アナウンス生成, 無音挿入 | `AudioMerger`, `TTSGenerator` | AVFoundation |
 | **Transcription** | SpeechAnalyzer/SpeechTranscriber ラッパー, リアルタイム文字起こしストリーム | `TranscriptionService` | Speech |
 | **ExportService** | エクスポート生成（テキスト/文字起こし/音声）, Documents/Exports/ へのコピー, Merged クリーンアップ（24時間） | `ExportService`, `FileCleanupManager` | MindEchoCore, AudioMerger |
@@ -68,6 +72,7 @@ MindEchoApp (App Target)
 ### 設計方針
 
 - **AudioService** は録音と再生をまとめる。どちらも AVAudioSession の管理が必要でセッション設定を共有でき、単体では1〜2ファイル程度のためモジュールとしては薄すぎる。録音は `AVAudioEngine` の input node tap を唯一の音声ソースとし、tap コールバック内で `AVAudioFile` への書き出し（録音）と外部へのバッファ提供（文字起こし連携）を同時に行う。これにより `AVAudioRecorder` との二重キャプチャを回避する
+- **録音中の再生は不可。** 録音中は再生ボタンを無効化（disable）する。録音と再生で異なる AVAudioSession 設定が必要になる複雑さを避け、シンプルな実装を優先する
 - **AudioMerger** は独立モジュールとする。録音・再生（リアルタイム操作）とマージ（バッチ処理）は性質が異なり、入出力が `[URL] → URL` と明確で他モジュールへの依存がない
 - **AudioService, AudioMerger, Transcription** は MindEchoCore に依存しない。ファイルパス（URL）や文字列など基本型のみで動作し、ドメインモデルとの紐付けは ViewModel 層（App Target）が担う
 - **ExportService** は MindEchoCore に依存する。テキストエクスポートのフォーマット生成にドメイン構造の知識が必要なため
@@ -100,14 +105,14 @@ erDiagram
 
     TextEntry {
         UUID id PK
-        Int sequenceNumber "その日の中での連番（初期は常に1）"
+        Int sequenceNumber "その日の中での連番（初期は0〜1件運用のため、存在する場合は常に1）"
         String content "テキスト内容"
         Date createdAt
         Date updatedAt
     }
 
     JournalEntry ||--o{ Recording : "1日に複数録音"
-    JournalEntry ||--o{ TextEntry : "1日に複数テキスト（初期は1件運用）"
+    JournalEntry ||--o{ TextEntry : "1日に複数テキスト（初期は0〜1件運用）"
 
     AudioFile {
         String fileName "例: 20250207_01_a1b2c3d4.m4a"
@@ -142,11 +147,12 @@ erDiagram
 録音は1日に何度でも行え、それぞれ個別のファイル・個別の `Recording` として管理される。
 テキストも `TextEntry` として独立管理する。**初期バージョンでは1日1テキストの運用だが、将来的に複数テキスト対応を可能にするため、最初から1対多のリレーションで設計する。**
 
-**日付変更のしきい値は午前3:00。**
+**日付変更のしきい値は午前3:00（デバイスのローカルタイムゾーン基準）。**
 0:00〜2:59 の操作は前日のエントリに記録される。
 録音が日付境界を跨ぐ場合（例: 2:50〜3:10）、所属日は**録音開始時刻**で決定する。
 例: 2月8日 午前1:30 の録音 → 2月7日のエントリに追加。
 例: 2月8日 午前2:50 に開始し 3:10 に終了した録音 → 2月7日のエントリに追加（開始時刻が 3:00 より前のため）。
+`DateHelper` は `TimeZone.current` を使用する。海外渡航等でタイムゾーンが変わった場合、その時点のローカルタイムで判定される。
 
 ```swift
 @Model
@@ -182,7 +188,7 @@ class Recording {
 @Model
 class TextEntry {
     var id: UUID
-    var sequenceNumber: Int           // その日の中での連番（初期は常に1）
+    var sequenceNumber: Int           // その日の中での連番（初期は0〜1件運用のため、存在する場合は常に1）
     var content: String               // テキスト内容
     var createdAt: Date
     var updatedAt: Date
@@ -203,37 +209,43 @@ class HomeViewModel {
     // 録音状態
     var isRecording = false
     var isPaused = false              // 録音一時停止中
-    var recordingDuration: TimeInterval = 0
-    
+    var recordingDuration: TimeInterval = 0  // 一時停止中を除いた実録音時間。isPaused 切り替え時に積算方式で更新する
+    var currentAmplitude: Float = 0   // 録音中の振幅レベル（波形表示用）
+
     // リアルタイム文字起こし
     var liveTranscription = ""        // 録音中のリアルタイム文字起こしテキスト（暫定）
     var isTranscribing = false        // 文字起こし処理中
-    
-    // 再生（録音直後の再生用）
+
+    // 再生（録音直後の再生用）— 録音中は再生不可（ボタンを disable にする）
     var playingRecordingId: UUID?     // 現在再生中の Recording の ID（nil = 再生なし）
     var isPlaying = false
     var playbackProgress: Double = 0  // 0.0〜1.0
+    /// 再生ボタンの有効/無効判定
+    var canPlayback: Bool { !isRecording }
 
     var todayEntry: JournalEntry?
     var errorMessage: String?
 
     private let modelContext: ModelContext
-    private let audioRecorder: AudioRecorderService
-    private let audioPlayer: AudioPlayerService
-    private let transcriptionService: TranscriptionService
+    private let audioRecorder: any AudioRecording
+    private let audioPlayer: any AudioPlaying
+    private let transcriptionService: any Transcribing
 
-    init(modelContext: ModelContext) {
+    init(modelContext: ModelContext,
+         audioRecorder: any AudioRecording = AudioRecorderService(),
+         audioPlayer: any AudioPlaying = AudioPlayerService(),
+         transcriptionService: any Transcribing = TranscriptionService()) {
         self.modelContext = modelContext
-        self.audioRecorder = AudioRecorderService()
-        self.audioPlayer = AudioPlayerService()
-        self.transcriptionService = TranscriptionService()
+        self.audioRecorder = audioRecorder
+        self.audioPlayer = audioPlayer
+        self.transcriptionService = transcriptionService
     }
 
     func startRecording() { /* 新しい録音セッションを開始。リアルタイム文字起こしも同時開始 */ }
-    func pauseRecording() { /* 録音を一時停止 */ }
+    func pauseRecording() { /* 録音を一時停止（isPaused フラグ制御） */ }
     func resumeRecording() { /* 一時停止中の録音を再開 */ }
     func stopRecording() async { /* 録音を停止・確定。確定テキストを Recording に保存 */ }
-    func playRecording(_ recording: Recording) { /* 個別の録音を再生 */ }
+    func playRecording(_ recording: Recording) { /* 個別の録音を再生（isRecording 中は呼び出し不可） */ }
     func pausePlayback() { /* 再生を一時停止 */ }
     func stopPlayback() { /* 再生を停止 */ }
     func saveText(_ text: String) { /* TextEntry を作成 or 更新。初期は1件のみ */ }
@@ -259,24 +271,32 @@ class HistoryViewModel {
     func deleteEntry(_ entry: JournalEntry) { /* ... */ }
 }
 
+/// 共有タイプの排他選択（1つのみ選択可能）
+enum ShareType {
+    case textJournal        // テキスト日記（全 TextEntry を結合した .txt）
+    case transcription      // 文字起こしテキスト（全 Recording の transcription を結合した .txt）
+    case audio              // 音声ファイル（全録音を結合した .m4a）
+}
+
 @Observable
 class EntryDetailViewModel {
     var entry: JournalEntry
     var isEditing = false
-    
+
     // 再生状態
     var playingRecordingId: UUID?     // 現在再生中の Recording の ID
     var isPlaying = false
     var playbackProgress: Double = 0
 
     private let modelContext: ModelContext
-    private let audioPlayer: AudioPlayerService
+    private let audioPlayer: any AudioPlaying
     private let exportService: ExportService
 
-    init(entry: JournalEntry, modelContext: ModelContext) {
+    init(entry: JournalEntry, modelContext: ModelContext,
+         audioPlayer: any AudioPlaying = AudioPlayerService()) {
         self.entry = entry
         self.modelContext = modelContext
-        self.audioPlayer = AudioPlayerService()
+        self.audioPlayer = audioPlayer
         self.exportService = ExportService()
     }
 
@@ -284,10 +304,11 @@ class EntryDetailViewModel {
     func pausePlayback() { /* 再生を一時停止 */ }
     func stopPlayback() { /* 再生を停止 */ }
     func deleteRecording(_ recording: Recording) { /* 個別の録音を削除（ファイルも削除） */ }
-    func exportForSharing(options: ShareOptions) async -> [any Transferable] {
-        /* 音声選択時: 全録音を連番順に結合した1つの .m4a を生成
-           文字起こし選択時: 全録音の文字起こしを結合した .txt を生成
-           テキスト選択時: 全 TextEntry を連番順に結合した .txt を生成 */
+    func exportForSharing(type: ShareType) async -> URL {
+        /* 排他選択（1つのみ）で生成したファイルの URL を返す:
+           .audio: 全録音を連番順に結合した1つの .m4a を生成
+           .transcription: 全録音の文字起こしを結合した .txt を生成
+           .textJournal: 全 TextEntry を連番順に結合した .txt を生成 */
     }
 }
 ```
@@ -311,18 +332,16 @@ struct HomeView: View {
 
 ### SwiftData クエリとの使い分け
 
-- **単純な一覧取得**: View 内で `@Query` マクロを直接使用
+- **単純な一覧取得**: View 内で `@Query` マクロを直接使用（将来のシンプルな一覧画面で活用可能）
 - **複雑なロジックを伴う操作**: `@Observable` な ViewModel 経由で `ModelContext` を操作
 
-```swift
-// @Query を直接使うパターン（シンプルな一覧）
-struct HistoryListView: View {
-    @Query(sort: \JournalEntry.date, order: .reverse)
-    private var entries: [JournalEntry]
-    // ...
-}
+本アプリでは以下の割り当てとする:
+- **HomeView** → `HomeViewModel`（録音/再生/文字起こしの複雑な状態管理）
+- **HistoryListView** → `HistoryViewModel`（検索・フィルタロジックを含むため ViewModel を使用）
+- **EntryDetailView** → `EntryDetailViewModel`（再生/編集/エクスポートの操作を含むため）
 
-// ViewModel を使うパターン（複雑な操作）
+```swift
+// ViewModel を使うパターン（本アプリの全画面で採用）
 struct HomeView: View {
     @State private var viewModel: HomeViewModel
     // ...
@@ -348,15 +367,15 @@ struct HomeView: View {
 - **今日の録音リスト（下部）** — 今日既に録音がある場合、各録音を連番で一覧表示:
   - 連番（#1, #2, ...）
   - 録音時間
-  - 再生 / 一時停止ボタン（個別再生）
+  - 再生 / 一時停止ボタン（個別再生）— **録音中は無効化（disable）**
   - 文字起こしテキストの先頭部分（プレビュー）
 
 **動作フロー（録音）:**
 
 1. 録音開始ボタンをタップ → `AVAudioEngine` を起動し、input node tap から音声バッファを取得開始。バッファは `AVAudioFile` への書き出し（録音）と `SpeechAnalyzer.analyze(buffer:)` への供給（文字起こし）の両方に使用される
 2. リアルタイム文字起こしテキストが逐次表示される
-3. 一時停止ボタンをタップ → input node tap の一時停止（`AVAudioFile` への書き込みを中断、`SpeechAnalyzer` へのバッファ供給も中断）
-4. 再開ボタンをタップ → tap を再開し、同一の `AVAudioFile` に追記を再開
+3. 一時停止ボタンをタップ → 一時停止フラグ（`isPaused`）を `true` に設定。tap コールバック内でフラグをチェックし、`AVAudioFile` への書き込みと `SpeechAnalyzer` へのバッファ供給をスキップする。`AVAudioEngine` 自体は稼働し続ける（tap の remove/reinstall は不要）。一時停止中はバッファが破棄されるため、再開後の音声はシームレスに繋がる（無音区間は挿入されない）
+4. 再開ボタンをタップ → `isPaused` を `false` に戻し、同一の `AVAudioFile` への追記を再開。`SpeechAnalyzer` は中断前のコンテキストを保持しており、バッファ供給再開後もそのまま文字起こしを継続する
 5. 手順 3〜4 を何度でも繰り返し可能
 6. 停止ボタンをタップ → `AVAudioEngine` を停止し、`AVAudioFile` をクローズして録音を確定
 7. 文字起こしの確定テキストを `Recording.transcription` に保存
@@ -451,6 +470,7 @@ Documents/
 └── Exports/             # エクスポート済みファイル（ファイルアプリに公開）
     ├── 20250207_merged.m4a
     ├── 20250207_journal.txt
+    ├── 20250207_transcription.txt
     └── ...
 ```
 
@@ -500,7 +520,7 @@ Recordings/{date}_{seq}_{short-id}.m4a
 例: `20250207_01_a1b2c3d4.m4a`, `20250207_02_e5f6g7h8.m4a`（`Application Support/Recordings/` に保存）
 
 - 録音を開始するたびに新しいファイルを生成（連番をインクリメント）
-- 一時停止→再開は同一 `AVAudioFile` への書き込み中断・再開で実現（同一ファイル内に追記）
+- 一時停止→再開は tap コールバック内の `isPaused` フラグで制御。`true` の間はバッファの書き込みをスキップし、`false` に戻すと同一 `AVAudioFile` への追記を再開する（`AVAudioEngine` は停止しない）
 - 停止すると `AVAudioEngine` を停止し、`AVAudioFile` をクローズして録音が確定。次の録音は新しい連番のファイルになる
 
 **テキスト日記ファイル:**
@@ -520,12 +540,12 @@ Journals/{date}_journal.txt
 |---------|-----------------|
 | テキスト入力を保存 | `TextEntry` を作成 or 更新 + `Application Support/Journals/{date}_journal.txt` を生成 or 上書き |
 | 録音開始 | `Application Support/Recordings/{date}_{seq}_{id}.m4a` を新規生成 |
-| 録音の一時停止・再開 | `AVAudioFile` への書き込みを中断・再開（同一 `.m4a` ファイル内） |
+| 録音の一時停止・再開 | `isPaused` フラグで tap コールバック内の書き込みをスキップ/再開（同一 `.m4a` ファイル内、`AVAudioEngine` は停止しない） |
 | 録音停止 | `.m4a` ファイルを確定。リアルタイム文字起こしの確定テキストを `Recording.transcription` に保存 |
 | 音声共有時 | その日の全 Recording を連番順に結合 → `Application Support/Merged/` に一時生成 → `Documents/Exports/` にコピー |
 | テキスト共有時 | `Documents/Exports/` にテキストファイルをコピー |
 | 文字起こし共有時 | 全 Recording の `transcription` を結合して `.txt` を生成 → `Documents/Exports/` にコピー |
-| 録音削除（個別） | 対応する `Application Support/Recordings/` 内の `.m4a` を削除 + `Recording` エンティティを削除 |
+| 録音削除（個別） | 対応する `Application Support/Recordings/` 内の `.m4a` を削除 + `Recording` エンティティを削除。**残りの Recording の `sequenceNumber` はリナンバーしない（欠番を許容）。** ファイルリネームの複雑さを避ける。エクスポート時は実在する Recording を `sequenceNumber` 昇順で処理する |
 | エントリ削除 | 対応する全 `.m4a` ファイルと `_journal.txt` を削除（cascade で `Recording` / `TextEntry` も削除） |
 | アプリ起動時（一時ファイル） | `Application Support/Merged/` 内の24時間経過ファイルを削除 |
 
@@ -535,6 +555,38 @@ Journals/{date}_journal.txt
 - 録音の最大時間: 制限なし
 - テキスト: UTF-8（`.txt`）
 - 容量表示機能は将来的に追加を検討
+
+### AVAudioSession 管理方針
+
+AudioService が `AVAudioSession` のカテゴリ・モード設定を一元管理する。
+
+| 状態 | カテゴリ | モード | オプション |
+|------|---------|--------|-----------|
+| 録音中 | `.record` | `.default` | — |
+| 再生中 | `.playback` | `.default` | — |
+| アイドル時 | セッションを非アクティブ化 | — | — |
+
+- 録音開始時にセッションを `.record` で activate し、停止時に deactivate する
+- 再生開始時にセッションを `.playback` で activate し、停止/完了時に deactivate する
+- **録音中は再生不可**（セッションカテゴリの切り替えを避けるため）。録音中は再生ボタンを disable にする
+
+### バックグラウンド録音
+
+録音中にアプリがバックグラウンドに移行した場合、**録音を継続する**。
+
+- Xcode の Capabilities で **Background Modes → Audio** を有効にする
+- `AVAudioSession` のカテゴリ設定により、バックグラウンドでも `AVAudioEngine` が稼働し続ける
+- バックグラウンドでも録音（`AVAudioFile` への書き出し）、`SpeechAnalyzer` へのバッファ供給、文字起こし結果の蓄積はすべて継続する。UI 更新（波形表示・文字起こしテキスト表示）のみがバックグラウンドでは反映されない
+- フォアグラウンド復帰時に蓄積済みの `finalizedText` と `liveTranscription` を UI に即座に反映する
+
+**Info.plist に追加:**
+
+```xml
+<key>UIBackgroundModes</key>
+<array>
+    <string>audio</string>
+</array>
+```
 
 ## 文字起こしの仕様（SpeechAnalyzer — iOS 26 新API）
 
@@ -549,12 +601,18 @@ iOS 26 で導入された `SpeechAnalyzer` + `SpeechTranscriber` を使用する
 `AVAudioRecorder` は使用しない（二重キャプチャの回避）。
 
 ```
-AVAudioEngine (input node tap)
-  ├── AVAudioFile に書き出し → .m4a ファイル（録音）
-  └── SpeechAnalyzer.analyze(buffer:) → SpeechTranscriber（文字起こし）
+AVAudioEngine (input node tap) — PCM バッファ
+  ├── AVAudioFile に書き出し → .m4a ファイル（録音、AAC エンコード）
+  ├── SpeechAnalyzer.analyze(buffer:) → SpeechTranscriber（文字起こし）
+  └── 振幅レベル計算 → WaveformLiveView（リアルタイム波形表示）
 ```
 
-- **AudioService** が `AVAudioEngine` を所有し、tap コールバック内で `AVAudioFile` への書き出しと、外部から注入されたクロージャへのバッファ転送を行う
+**フォーマット変換:**
+- `AVAudioEngine` の input node tap は **PCM（Linear PCM）バッファ** を提供する（デバイスネイティブフォーマット、通常 48kHz Float32）
+- `AVAudioFile` は初期化時に **出力フォーマット（AAC）** と **処理フォーマット（PCM）** を分けて指定できる。tap から受け取った PCM バッファを `write(from:)` すると、内部で自動的に AAC エンコードされて `.m4a` ファイルに書き出される
+- `SpeechAnalyzer` には tap から受け取った PCM バッファをそのまま渡す。`SpeechAnalyzer` が期待するフォーマットと tap のフォーマットが異なる場合は `AVAudioConverter` で変換する（実装時に要確認）
+
+- **AudioService** が `AVAudioEngine` を所有し、tap コールバック内で `AVAudioFile` への書き出しと、外部から注入されたクロージャへのバッファ転送を行う。加えて、バッファから振幅レベル（RMS/ピーク値）を計算し、波形表示用に公開する
 - **ViewModel 層（App Target）** が AudioService のバッファコールバックを TranscriptionService に接続する。これにより AudioService と Transcription の直接依存を避ける
 
 ### 基本実装パターン（録音 + リアルタイム文字起こし）
@@ -565,19 +623,36 @@ import AVFoundation
 
 // --- AudioService 側（録音） ---
 // AVAudioEngine の input node tap でバッファを取得し、
-// 1. AVAudioFile に書き出し（録音）
+// 1. AVAudioFile に書き出し（録音・AAC エンコード）
 // 2. onBuffer コールバックで外部にバッファを提供（文字起こし連携）
+// 3. 振幅レベル計算（波形表示用）
 
 let engine = AVAudioEngine()
 let inputNode = engine.inputNode
-let recordingFormat = inputNode.outputFormat(forBus: 0)
+let recordingFormat = inputNode.outputFormat(forBus: 0)  // PCM（デバイスネイティブ）
+
+// AAC (.m4a) 出力用の設定
+let outputSettings: [String: Any] = [
+    AVFormatIDKey: kAudioFormatMPEG4AAC,
+    AVSampleRateKey: recordingFormat.sampleRate,
+    AVNumberOfChannelsKey: recordingFormat.channelCount,
+    AVEncoderBitRateKey: 128_000
+]
+
+// commonFormat で入力の PCM フォーマットを指定し、settings で出力の AAC フォーマットを指定
+// AVAudioFile が内部で PCM → AAC の変換を自動的に行う
 let audioFile = try AVAudioFile(
     forWriting: fileURL,
-    settings: recordingFormat.settings
+    settings: outputSettings,
+    commonFormat: .pcmFormatFloat32,
+    interleaved: false
 )
 
+var isPaused = false  // 一時停止フラグ（後述）
+
 inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { buffer, time in
-    // 録音: ファイルに書き出し
+    guard !isPaused else { return }  // 一時停止中はスキップ
+    // 録音: ファイルに書き出し（PCM → AAC 自動変換）
     try? audioFile.write(from: buffer)
     // 文字起こし連携: 外部コールバックにバッファを転送
     onBuffer?(buffer)
@@ -597,15 +672,23 @@ audioRecorderService.onBuffer = { buffer in
 }
 
 // 結果の取得（AsyncSequence）
+// SpeechTranscriber は文の区切りごとに isFinal な結果を返すため、
+// 録音セッション中に複数の確定結果が得られる。これらを連結して最終的な transcription を構築する。
+var finalizedText = ""  // 確定済みテキストの蓄積
+
 Task {
     for await result in transcriber.results {
-        let text = result.text  // AttributedString
+        // AttributedString → String 変換（タイミングデータ等は不要なためプレーンテキストのみ保持）
+        let text = String(result.text.characters)
         if result.isFinal {
-            // 確定テキスト → Recording.transcription に保存
+            // 確定テキストを蓄積（区切りごとに追記）
+            finalizedText += text
         } else {
-            // 暫定テキスト → UI にリアルタイム表示（随時更新される）
+            // 暫定テキスト → UI にリアルタイム表示（確定済み + 暫定を結合して表示）
+            liveTranscription = finalizedText + text
         }
     }
+    // 録音停止後、蓄積した finalizedText を Recording.transcription に保存
 }
 ```
 
@@ -627,20 +710,24 @@ Task {
 - 完全オンデバイス処理（ネットワーク不要、プライバシー確保）
 - 言語モデルの自動ダウンロード・管理（ユーザーが設定で言語追加する必要なし）
 - `ja_JP` はサポート対象ロケールに含まれる
-- 結果は `AttributedString` で返却され、タイミングデータも含まれる
+- 結果は `AttributedString` で返却され、タイミングデータも含まれる。保存時は `String(result.text.characters)` でプレーンテキストに変換して `Recording.transcription` に格納する
 - volatile（暫定）と finalized（確定）の2段階で結果がストリーム配信される
 - **録音中にリアルタイムで実行** — 暫定テキストを画面に逐次表示し、確定テキストを `Recording.transcription` に保存
-- 文字起こし失敗時はエラーメッセージを表示し、リトライボタンを提供
+- **一時停止中の挙動**: 録音が一時停止されると `SpeechAnalyzer` へのバッファ供給が中断される。`SpeechAnalyzer` は内部コンテキストを保持しているため、再開後にバッファ供給が再開されればそのまま文字起こしを継続する。一時停止中にそれまでの暫定テキストが確定テキストに遷移する可能性がある
+- 文字起こし失敗時はエラーメッセージを表示し、リトライボタンを提供。リトライは保存済み音声ファイルに対して `.offlineTranscription` プリセットで再処理を行う
 
-### デバイスサポートのフォールバック
+### デバイスサポートの確認
+
+本アプリの最小対応 OS は iOS 26.0 であり、iOS 26 対応デバイスはすべて Neural Engine（A12 Bionic 以降）を搭載しているため、`SpeechTranscriber` は全対象デバイスで利用可能である。
+そのため `DictationTranscriber` 等へのフォールバックは設けず、`supportsDevice()` は防御的チェックとしてのみ使用し、万一 `false` を返した場合はユーザーにエラーメッセージを表示する。
 
 ```swift
-if SpeechTranscriber.supportsDevice() {
-    // SpeechTranscriber を使用
-} else {
-    // DictationTranscriber にフォールバック（旧 SFSpeechRecognizer の改良版）
-    let dictationTranscriber = DictationTranscriber(locale: locale)
+guard SpeechTranscriber.supportsDevice() else {
+    // 到達しない想定だが、防御的にエラーを表示
+    throw TranscriptionError.deviceNotSupported
 }
+// SpeechTranscriber を使用
+let transcriber = SpeechTranscriber(locale: locale, preset: .transcription)
 ```
 
 ## 共有機能（NotebookLM 連携）
@@ -650,7 +737,7 @@ if SpeechTranscriber.supportsDevice() {
 ### 共有方式
 
 NotebookLM には直接的な iOS URL Scheme やモバイル API は提供されていないため、
-iOS 標準の共有機能（`ShareLink` / `UIActivityViewController`）を活用し、
+SwiftUI の `ShareLink` を使用し、
 NotebookLM が受け取れる形式でデータをエクスポートする。
 
 ### 共有対象データと形式
@@ -673,10 +760,10 @@ NotebookLM が受け取れる形式でデータをエクスポートする。
 ```
 共有ボタンタップ
   ↓
-共有内容の選択シート表示:
-  □ テキスト日記（全 TextEntry を結合）
-  □ 文字起こしテキスト
-  □ 音声ファイル（全録音を結合）
+共有内容の選択シート表示（排他選択 — 1つのみ選択可能）:
+  ○ テキスト日記（全 TextEntry を結合）
+  ○ 文字起こしテキスト
+  ○ 音声ファイル（全録音を結合）
   ↓
 選択に応じてエクスポートデータを生成:
   - 音声: 日付アナウンスを TTS で生成し、冒頭に挿入 + 全 Recording を連番順に結合 → 1つの .m4a
@@ -737,6 +824,26 @@ utterance.rate = AVSpeechUtteranceDefaultSpeechRate
 - 挿入位置: 結合音声の最初（日付アナウンス → Recording #1 → Recording #2 → ...）
 - 日付アナウンスと最初の録音の間に短い無音（0.5〜1秒程度）を挿入して聞き取りやすくする
 
+### AudioMerger の内部パイプライン
+
+AudioMerger は複数の音声ソース（TTS 出力、録音ファイル、無音）を1つの AAC (.m4a) ファイルに結合する。
+入力ソースのフォーマットが異なるため、すべてを一度 PCM にデコードしてから結合・AAC エンコードする方式を採用する。
+
+```
+入力:
+  1. TTS 音声 — AVSpeechSynthesizer.write() → PCM バッファ
+  2. 無音区間 — ゼロ埋め PCM バッファを生成（0.5〜1秒）
+  3. 録音ファイル (.m4a) — AVAudioFile で読み込み → PCM バッファ
+
+処理:
+  全ソースを共通 PCM フォーマット（録音ファイルのサンプルレートに合わせる、mono, Float32）に統一
+  → 順番に結合
+  → AVAudioFile (commonFormat: PCM, settings: AAC) で .m4a に書き出し
+```
+
+- TTS 出力のサンプルレートが録音と異なる場合は `AVAudioConverter` で変換する
+- 録音ファイルの読み込みは `AVAudioFile(forReading:)` で PCM バッファとして取得（内部で自動デコード）
+
 ### エクスポートフォーマット例
 
 各共有タイプは独立したファイルとして生成される。1つのファイルにテキストと文字起こしを混在させない。
@@ -767,6 +874,7 @@ utterance.rate = AVSpeechUtteranceDefaultSpeechRate
 - 日付アナウンス → 無音（0.5〜1秒）→ Recording #1 → Recording #2 → ... の順で結合
 
 ※ ファイル名とヘッダーラベルは半角英数字のみ。本文は日本語を含んでよい。
+※ ヘッダー内の曜日（`Fri` 等）は `Locale(identifier: "en_US_POSIX")` で固定生成する（デバイスロケールに依存しない）。
 
 ## 実装時の注意事項
 
@@ -780,6 +888,52 @@ utterance.rate = AVSpeechUtteranceDefaultSpeechRate
 - **UIテスト**: 基本的に行わない
 
 各モジュール（MindEchoCore, AudioService, AudioMerger, Transcription, ExportService）に対して、公開インターフェースのロジックを検証する非UIテストを作成する。
+
+### テスト可能性のための設計（DI 方針）
+
+ハードウェア依存のモジュール（AudioService, Transcription）をテスト可能にするため、各サービスは protocol を公開する。ViewModel は protocol 型でサービスを受け取り、テスト時にはモック実装を注入する。
+
+```swift
+// AudioService モジュールが公開する protocol
+protocol AudioRecording {
+    var onBuffer: ((AVAudioPCMBuffer) -> Void)? { get set }
+    var currentAmplitude: Float { get }
+    func startRecording(to url: URL) throws
+    func pauseRecording()
+    func resumeRecording()
+    func stopRecording()
+}
+
+protocol AudioPlaying {
+    var playbackProgress: Double { get }
+    func play(url: URL) throws
+    func pause()
+    func stop()
+}
+
+// Transcription モジュールが公開する protocol
+protocol Transcribing {
+    func startTranscription(locale: Locale) async throws
+    func supplyBuffer(_ buffer: AVAudioPCMBuffer)
+    func stopTranscription() async -> String  // 蓄積した確定テキストを返す
+    var results: AsyncStream<TranscriptionResult> { get }
+}
+
+// ViewModel は protocol 型で受け取る
+@Observable
+class HomeViewModel {
+    init(modelContext: ModelContext,
+         audioRecorder: any AudioRecording = AudioRecorderService(),
+         audioPlayer: any AudioPlaying = AudioPlayerService(),
+         transcription: any Transcribing = TranscriptionService()) { ... }
+}
+```
+
+- **MindEchoCore**: ハードウェア非依存。`DateHelper`, `FilePathManager` 等を直接テスト可能
+- **AudioService**: `AudioRecording` / `AudioPlaying` protocol を公開。テスト時はモック実装を使用
+- **Transcription**: `Transcribing` protocol を公開。テスト時はモック実装を使用
+- **AudioMerger**: ファイル入出力のみ。テスト用の音声ファイルを fixture として用意してテスト可能
+- **ExportService**: MindEchoCore のモデルとファイル操作。テスト用の一時ディレクトリでテスト可能
 
 ## 考慮事項・将来の拡張
 
