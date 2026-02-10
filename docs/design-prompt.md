@@ -244,7 +244,7 @@ class HomeViewModel {
     private let transcriptionService: any Transcribing
 
     init(modelContext: ModelContext,
-         audioRecorder: any AudioRecording = AudioRecorderService(),
+         audioRecorder: any AudioRecording,              // App 層から共有インスタンスを注入
          audioPlayer: any AudioPlaying = AudioPlayerService(),
          transcriptionService: any Transcribing = TranscriptionService()) {
         self.modelContext = modelContext
@@ -338,8 +338,11 @@ class EntryDetailViewModel {
 struct HomeView: View {
     @State private var viewModel: HomeViewModel
 
-    init(modelContext: ModelContext) {
-        _viewModel = State(initialValue: HomeViewModel(modelContext: modelContext))
+    init(modelContext: ModelContext, audioRecorder: any AudioRecording) {
+        _viewModel = State(initialValue: HomeViewModel(
+            modelContext: modelContext,
+            audioRecorder: audioRecorder
+        ))
     }
 
     var body: some View {
@@ -1005,7 +1008,7 @@ protocol Transcribing {
 @Observable
 class HomeViewModel {
     init(modelContext: ModelContext,
-         audioRecorder: any AudioRecording = AudioRecorderService(),
+         audioRecorder: any AudioRecording,              // App 層から共有インスタンスを注入
          audioPlayer: any AudioPlaying = AudioPlayerService(),
          transcriptionService: any Transcribing = TranscriptionService()) { ... }
 }
