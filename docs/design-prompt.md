@@ -118,7 +118,7 @@ erDiagram
     JournalEntry ||--o{ TextEntry : "1日に複数テキスト（初期は0〜1件運用）"
 
     AudioFile {
-        String fileName "例: 20250207_01_a1b2c3d4.m4a"
+        String fileName "例: 20250207_143000.m4a"
         String directory "Application Support/Recordings/"
         String format "AAC (.m4a)"
     }
