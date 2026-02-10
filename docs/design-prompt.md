@@ -19,7 +19,7 @@
 |------|------|
 | UI フレームワーク | SwiftUI |
 | データ永続化 | SwiftData |
-| 音声録音 | AVFoundation (AVAudioRecorder) |
+| 音声録音 | AVFoundation (AVAudioEngine + AVAudioFile) |
 | 音声文字起こし | SpeechAnalyzer / SpeechTranscriber（iOS 26 新API） |
 | 波形表示 | OSS ライブラリを使用（後述） |
 | 最小対応 OS | iOS 26.0（SpeechAnalyzer + SwiftData） |
@@ -59,15 +59,15 @@ MindEchoApp (App Target)
 | モジュール | 責務 | 主な型 | 依存先 |
 |-----------|------|--------|--------|
 | **MindEchoCore** | ドメインモデル, 日付ロジック（午前3時境界）, ファイルパス/命名規則, ディレクトリ管理 | `JournalEntry`, `Recording`, `TextEntry`, `DateHelper`, `FilePathManager` | Foundation, SwiftData |
-| **AudioService** | 録音（一時停止/再開含む）, 再生（プログレス追跡含む）, AVAudioSession 管理 | `AudioRecorderService`, `AudioPlayerService` | AVFoundation |
+| **AudioService** | 録音（一時停止/再開含む）, 再生（プログレス追跡含む）, AVAudioSession 管理, 録音中の音声バッファ提供（文字起こし連携用） | `AudioRecorderService`, `AudioPlayerService` | AVFoundation |
 | **AudioMerger** | 複数音声ファイルの結合, TTS 日付アナウンス生成, 無音挿入 | `AudioMerger`, `TTSGenerator` | AVFoundation |
 | **Transcription** | SpeechAnalyzer/SpeechTranscriber ラッパー, リアルタイム文字起こしストリーム | `TranscriptionService` | Speech |
-| **ExportService** | エクスポート生成（テキスト/文字起こし/音声）, Documents/Exports/ へのコピー, クリーンアップ（7日/24時間） | `ExportService`, `FileCleanupManager` | MindEchoCore, AudioMerger |
+| **ExportService** | エクスポート生成（テキスト/文字起こし/音声）, Documents/Exports/ へのコピー, Merged クリーンアップ（24時間） | `ExportService`, `FileCleanupManager` | MindEchoCore, AudioMerger |
 | **MindEchoApp** | Views, ViewModels, App lifecycle | `HomeView`, `HomeViewModel` 等 | 全モジュール |
 
 ### 設計方針
 
-- **AudioService** は録音と再生をまとめる。どちらも AVAudioSession の管理が必要でセッション設定を共有でき、単体では1〜2ファイル程度のためモジュールとしては薄すぎる
+- **AudioService** は録音と再生をまとめる。どちらも AVAudioSession の管理が必要でセッション設定を共有でき、単体では1〜2ファイル程度のためモジュールとしては薄すぎる。録音は `AVAudioEngine` の input node tap を唯一の音声ソースとし、tap コールバック内で `AVAudioFile` への書き出し（録音）と外部へのバッファ提供（文字起こし連携）を同時に行う。これにより `AVAudioRecorder` との二重キャプチャを回避する
 - **AudioMerger** は独立モジュールとする。録音・再生（リアルタイム操作）とマージ（バッチ処理）は性質が異なり、入出力が `[URL] → URL` と明確で他モジュールへの依存がない
 - **AudioService, AudioMerger, Transcription** は MindEchoCore に依存しない。ファイルパス（URL）や文字列など基本型のみで動作し、ドメインモデルとの紐付けは ViewModel 層（App Target）が担う
 - **ExportService** は MindEchoCore に依存する。テキストエクスポートのフォーマット生成にドメイン構造の知識が必要なため
@@ -144,7 +144,9 @@ erDiagram
 
 **日付変更のしきい値は午前3:00。**
 0:00〜2:59 の操作は前日のエントリに記録される。
+録音が日付境界を跨ぐ場合（例: 2:50〜3:10）、所属日は**録音開始時刻**で決定する。
 例: 2月8日 午前1:30 の録音 → 2月7日のエントリに追加。
+例: 2月8日 午前2:50 に開始し 3:10 に終了した録音 → 2月7日のエントリに追加（開始時刻が 3:00 より前のため）。
 
 ```swift
 @Model
@@ -269,13 +271,13 @@ class EntryDetailViewModel {
 
     private let modelContext: ModelContext
     private let audioPlayer: AudioPlayerService
-    private let shareService: ShareService
+    private let exportService: ExportService
 
     init(entry: JournalEntry, modelContext: ModelContext) {
         self.entry = entry
         self.modelContext = modelContext
         self.audioPlayer = AudioPlayerService()
-        self.shareService = ShareService()
+        self.exportService = ExportService()
     }
 
     func playRecording(_ recording: Recording) { /* 個別の録音を再生 */ }
@@ -351,12 +353,12 @@ struct HomeView: View {
 
 **動作フロー（録音）:**
 
-1. 録音開始ボタンをタップ → AVAudioRecorder で録音開始 + SpeechTranscriber でリアルタイム文字起こし開始
+1. 録音開始ボタンをタップ → `AVAudioEngine` を起動し、input node tap から音声バッファを取得開始。バッファは `AVAudioFile` への書き出し（録音）と `SpeechAnalyzer.analyze(buffer:)` への供給（文字起こし）の両方に使用される
 2. リアルタイム文字起こしテキストが逐次表示される
-3. 一時停止ボタンをタップ → 録音を一時停止（`AVAudioRecorder.pause()`）
-4. 再開ボタンをタップ → 録音を再開（同一ファイルに追記）
+3. 一時停止ボタンをタップ → input node tap の一時停止（`AVAudioFile` への書き込みを中断、`SpeechAnalyzer` へのバッファ供給も中断）
+4. 再開ボタンをタップ → tap を再開し、同一の `AVAudioFile` に追記を再開
 5. 手順 3〜4 を何度でも繰り返し可能
-6. 停止ボタンをタップ → 録音を確定し、ファイルを保存
+6. 停止ボタンをタップ → `AVAudioEngine` を停止し、`AVAudioFile` をクローズして録音を確定
 7. 文字起こしの確定テキストを `Recording.transcription` に保存
 8. 新しい `Recording` が今日の録音リストに追加される
 9. 再度録音開始ボタンを押すと → 新しいファイル・新しい `Recording` として別セッションで録音開始
@@ -498,8 +500,8 @@ Recordings/{date}_{seq}_{short-id}.m4a
 例: `20250207_01_a1b2c3d4.m4a`, `20250207_02_e5f6g7h8.m4a`（`Application Support/Recordings/` に保存）
 
 - 録音を開始するたびに新しいファイルを生成（連番をインクリメント）
-- 一時停止→再開は同一ファイル内で追記
-- 停止すると録音が確定し、次の録音は新しい連番のファイルになる
+- 一時停止→再開は同一 `AVAudioFile` への書き込み中断・再開で実現（同一ファイル内に追記）
+- 停止すると `AVAudioEngine` を停止し、`AVAudioFile` をクローズして録音が確定。次の録音は新しい連番のファイルになる
 
 **テキスト日記ファイル:**
 
@@ -518,7 +520,7 @@ Journals/{date}_journal.txt
 |---------|-----------------|
 | テキスト入力を保存 | `TextEntry` を作成 or 更新 + `Application Support/Journals/{date}_journal.txt` を生成 or 上書き |
 | 録音開始 | `Application Support/Recordings/{date}_{seq}_{id}.m4a` を新規生成 |
-| 録音の一時停止・再開 | 同一の `.m4a` ファイルに追記 |
+| 録音の一時停止・再開 | `AVAudioFile` への書き込みを中断・再開（同一 `.m4a` ファイル内） |
 | 録音停止 | `.m4a` ファイルを確定。リアルタイム文字起こしの確定テキストを `Recording.transcription` に保存 |
 | 音声共有時 | その日の全 Recording を連番順に結合 → `Application Support/Merged/` に一時生成 → `Documents/Exports/` にコピー |
 | テキスト共有時 | `Documents/Exports/` にテキストファイルをコピー |
@@ -526,7 +528,6 @@ Journals/{date}_journal.txt
 | 録音削除（個別） | 対応する `Application Support/Recordings/` 内の `.m4a` を削除 + `Recording` エンティティを削除 |
 | エントリ削除 | 対応する全 `.m4a` ファイルと `_journal.txt` を削除（cascade で `Recording` / `TextEntry` も削除） |
 | アプリ起動時（一時ファイル） | `Application Support/Merged/` 内の24時間経過ファイルを削除 |
-| アプリ起動時（エクスポート） | `Documents/Exports/` 内の7日以上経過ファイルを削除 |
 
 ### フォーマット
 
@@ -542,19 +543,58 @@ iOS 26 で導入された `SpeechAnalyzer` + `SpeechTranscriber` を使用する
 
 **本アプリではリアルタイム文字起こしを採用する。** 録音中にマイク入力をストリーミングで `SpeechTranscriber` に渡し、逐次テキストを画面に表示する。録音停止時に確定テキストを `Recording.transcription` に保存する。
 
-### 基本実装パターン（リアルタイム文字起こし）
+### 音声パイプライン構成
+
+録音と文字起こしは `AVAudioEngine` の input node tap を唯一の音声ソースとして共有する。
+`AVAudioRecorder` は使用しない（二重キャプチャの回避）。
+
+```
+AVAudioEngine (input node tap)
+  ├── AVAudioFile に書き出し → .m4a ファイル（録音）
+  └── SpeechAnalyzer.analyze(buffer:) → SpeechTranscriber（文字起こし）
+```
+
+- **AudioService** が `AVAudioEngine` を所有し、tap コールバック内で `AVAudioFile` への書き出しと、外部から注入されたクロージャへのバッファ転送を行う
+- **ViewModel 層（App Target）** が AudioService のバッファコールバックを TranscriptionService に接続する。これにより AudioService と Transcription の直接依存を避ける
+
+### 基本実装パターン（録音 + リアルタイム文字起こし）
 
 ```swift
 import Speech
 import AVFoundation
 
+// --- AudioService 側（録音） ---
+// AVAudioEngine の input node tap でバッファを取得し、
+// 1. AVAudioFile に書き出し（録音）
+// 2. onBuffer コールバックで外部にバッファを提供（文字起こし連携）
+
+let engine = AVAudioEngine()
+let inputNode = engine.inputNode
+let recordingFormat = inputNode.outputFormat(forBus: 0)
+let audioFile = try AVAudioFile(
+    forWriting: fileURL,
+    settings: recordingFormat.settings
+)
+
+inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { buffer, time in
+    // 録音: ファイルに書き出し
+    try? audioFile.write(from: buffer)
+    // 文字起こし連携: 外部コールバックにバッファを転送
+    onBuffer?(buffer)
+}
+engine.prepare()
+try engine.start()
+
+// --- Transcription 側（文字起こし） ---
 let locale = Locale(identifier: "ja_JP")
 let transcriber = SpeechTranscriber(locale: locale, preset: .transcription)
 let analyzer = SpeechAnalyzer(modules: [transcriber])
 
-// マイク入力からリアルタイムで文字起こし
-// AVAudioEngine のタップからオーディオバッファを取得し、
-// analyzer.analyze(buffer:) でストリーミング処理
+// AudioService の onBuffer コールバック経由でバッファを受け取り、
+// SpeechAnalyzer に渡す
+audioRecorderService.onBuffer = { buffer in
+    analyzer.analyze(buffer)
+}
 
 // 結果の取得（AsyncSequence）
 Task {
@@ -660,6 +700,7 @@ iOS Share Sheet を表示
   3. `Documents/Exports/` にコピー
 - 文字起こしテキスト: 全 Recording の `transcription` を連番順に結合して `.txt` を生成 → `Documents/Exports/` にコピー
 - テキスト日記: 全 TextEntry の `content` を連番順に結合して `.txt` を生成 → `Documents/Exports/` にコピー
+- 同じ日のエクスポートを複数回行った場合、`Documents/Exports/` 内の既存ファイルを上書きする（ファイル名が日付ベースのため同名になる）
 - これにより、エクスポートしたファイルはファイルアプリからも後からアクセス可能
 
 ### 日付アナウンス音声（音声共有時の冒頭挿入）
@@ -696,35 +737,49 @@ utterance.rate = AVSpeechUtteranceDefaultSpeechRate
 - 挿入位置: 結合音声の最初（日付アナウンス → Recording #1 → Recording #2 → ...）
 - 日付アナウンスと最初の録音の間に短い無音（0.5〜1秒程度）を挿入して聞き取りやすくする
 
-### エクスポートフォーマット例（テキスト）
+### エクスポートフォーマット例
 
-ファイル名: `20250207_journal.txt`
+各共有タイプは独立したファイルとして生成される。1つのファイルにテキストと文字起こしを混在させない。
+
+**テキスト日記** — ファイル名: `20250207_journal.txt`
 
 ```
 # Journal: 2025-02-07 (Fri)
 
-## Text Entry
 今日は朝からプロジェクトの打ち合わせがあった。
 新機能の方向性について議論し、良い結論が出た。
+```
+
+**文字起こしテキスト** — ファイル名: `20250207_transcription.txt`
+
+```
+# Transcription: 2025-02-07 (Fri)
 
 ## Recording 01 (14:30 / 3m24s)
-### Transcription
 打ち合わせ後に思ったことをメモ。
 来週までにプロトタイプを作成する必要がある...
 
 ## Recording 02 (21:15 / 1m52s)
-### Transcription
 今日の振り返り。全体的に生産的な一日だった...
 ```
+
+**音声ファイル** — ファイル名: `20250207_merged.m4a`
+- 日付アナウンス → 無音（0.5〜1秒）→ Recording #1 → Recording #2 → ... の順で結合
 
 ※ ファイル名とヘッダーラベルは半角英数字のみ。本文は日本語を含んでよい。
 
 ## 実装時の注意事項
 
 - **SpeechAnalyzer の言語モデル**: 初回起動時に日本語モデルがまだダウンロードされていない可能性がある。初回起動時にモデルの準備状況をチェックし、未ダウンロードならプログレス表示付きでダウンロードを促すオンボーディングを入れる
-- **Exports ディレクトリのクリーンアップ**: アプリ起動時に `Documents/Exports/` 内の作成から7日以上経過したファイルを自動削除する。エクスポート済みファイルはユーザーが削除しても問題ないが、定期的なクリーンアップで容量を節約する
 - **Merged ディレクトリのクリーンアップ**: `Application Support/Merged/` 内の作成から24時間以上経過したファイルを自動削除する（共有用の一時ファイルのため）
 - **NotebookLM の制約**: ソース1つあたり 500,000語 / 200MB の上限がある。共有時にファイルサイズを表示してユーザーに判断材料を提供する
+
+## テスト方針
+
+- **非UIテスト**: Swift Testing フレームワークを使用してユニットテスト・ロジックテストを記述する
+- **UIテスト**: 基本的に行わない
+
+各モジュール（MindEchoCore, AudioService, AudioMerger, Transcription, ExportService）に対して、公開インターフェースのロジックを検証する非UIテストを作成する。
 
 ## 考慮事項・将来の拡張
 
