@@ -83,6 +83,9 @@ SwiftData の `@Model` マクロはすでに Observable に準拠しているた
 モデル層はそのまま SwiftUI のリアクティブ更新に対応する。
 ViewModel 層では `@Observable` マクロ（Observation フレームワーク）を使用する。
 
+**Observation チェーンと protocol の制約:**
+`AudioRecorderService` は `@Observable` マクロを付与する。SwiftUI は `@Observable` な ViewModel のプロパティアクセスを追跡し、ViewModel が保持する `@Observable` オブジェクトのプロパティ（例: `audioRecorder.isRecording`）まで自動的に変更検知できる。これにより、HomeViewModel や EntryDetailViewModel が `audioRecorder.isRecording` を参照すると、値の変化で View が自動再描画される。ただし Swift の `protocol` には `@Observable` マクロを付与できないため、`AudioRecording` プロトコル自体は Observation に準拠しない。具体型 `AudioRecorderService` が `@Observable` であることで追跡が成立する。テスト用モッククラスにも `@Observable` を付与し、同じ変更追跡の挙動を再現すること。
+
 ### ER図
 
 ```mermaid
@@ -218,11 +221,8 @@ import SwiftData
 
 @Observable
 class HomeViewModel {
-    // 録音状態
-    var isRecording = false
-    var isPaused = false              // 録音一時停止中
+    // 録音状態 — isRecording / isPaused / currentAmplitude は audioRecorder から直接参照する（単一情報源）
     var recordingDuration: TimeInterval = 0  // 一時停止中を除いた実録音時間。isPaused 切り替え時に積算方式で更新する
-    var currentAmplitude: Float = 0   // 録音中の振幅レベル（波形表示用）
 
     // リアルタイム文字起こし
     var liveTranscription = ""        // 録音中のリアルタイム文字起こしテキスト（暫定）
@@ -232,8 +232,8 @@ class HomeViewModel {
     var playingRecordingId: UUID?     // 現在再生中の Recording の ID（nil = 再生なし）
     var isPlaying = false
     var playbackProgress: Double = 0  // 0.0〜1.0
-    /// 再生ボタンの有効/無効判定
-    var canPlayback: Bool { !isRecording }
+    /// 再生ボタンの有効/無効判定（audioRecorder の状態を直接参照）
+    var canPlayback: Bool { !audioRecorder.isRecording }
 
     var todayEntry: JournalEntry?
     var errorMessage: String?
@@ -634,8 +634,8 @@ AVAudioEngine (input node tap) — PCM バッファ
 - `AVAudioFile` は初期化時に **出力フォーマット（AAC）** と **処理フォーマット（PCM）** を分けて指定できる。tap から受け取った PCM バッファを `write(from:)` すると、内部で自動的に AAC エンコードされて `.m4a` ファイルに書き出される
 - `SpeechAnalyzer` には tap から受け取った PCM バッファをそのまま渡す。`SpeechAnalyzer` が期待するフォーマットと tap のフォーマットが異なる場合は `AVAudioConverter` で変換する（実装時に要確認）
 
-- **AudioService** が `AVAudioEngine` を所有し、tap コールバック内で `AVAudioFile` への書き出しと、外部から注入されたクロージャへのバッファ転送を行う。**tap コールバック内で渡される `AVAudioPCMBuffer` はオーディオエンジンが内部的に再利用するため、コールバック終了後にデータが上書きされる可能性がある。** そのため、外部にバッファを転送する際は必ず `AVAudioPCMBuffer` のコピーを作成してから渡す。加えて、バッファから振幅レベル（RMS/ピーク値）を計算し、波形表示用に公開する
-- **リアルタイムスレッド安全性**: tap コールバックはリアルタイムオーディオスレッドで実行されるため、コールバック内ではメモリ確保・ロック取得・Objective-C メッセージングなどのブロッキング操作を最小限に抑える。バッファコピー後の外部コールバック呼び出しは **専用のシリアルキュー**（`DispatchQueue(label: "audio.processing")`）にディスパッチする。メインキューには直接ディスパッチしない（48kHz / 1024フレーム ≈ 毎秒47回の頻度になり UI スレッドを圧迫するため）。振幅レベルの UI 更新のみ、間引き（10〜15Hz 程度）した上でメインキューに転送する
+- **AudioService** が `AVAudioEngine` を所有し、tap コールバック内で `AVAudioFile` への書き出しと、外部から注入されたクロージャへのバッファ転送を行う。**tap コールバック内で渡される `AVAudioPCMBuffer` はオーディオエンジンが内部的に再利用するため、コールバック終了後にデータが上書きされる可能性がある。** そのため、外部にバッファを転送する際は **事前確保済みバッファプール** からバッファを取得し、サンプルデータをコピーしてから渡す（tap コールバック内での `AVAudioPCMBuffer` の新規生成（`malloc`）を回避する）。加えて、バッファから振幅レベル（RMS/ピーク値）を計算し、波形表示用に公開する
+- **リアルタイムスレッド安全性**: tap コールバックはリアルタイムオーディオスレッドで実行されるため、コールバック内ではメモリ確保・ロック取得・Objective-C メッセージングなどのブロッキング操作を行わない。バッファのコピーには **エンジン起動前に事前確保したバッファプール**（固定数の `AVAudioPCMBuffer`、例: 8個）を使用し、アトミックインデックスでロックフリーに取得する（`memcpy` 相当のコピーのみで `malloc` は発生しない）。コピー後の外部コールバック呼び出しは **専用のシリアルキュー**（`DispatchQueue(label: "audio.processing")`）にディスパッチする。処理キューでの消費完了後にバッファをプールに返却する。メインキューには直接ディスパッチしない（48kHz / 1024フレーム ≈ 毎秒47回の頻度になり UI スレッドを圧迫するため）。振幅レベルの UI 更新のみ、間引き（10〜15Hz 程度）した上でメインキューに転送する
 - **ViewModel 層（App Target）** が AudioService のバッファコールバックを TranscriptionService に接続する。これにより AudioService と Transcription の直接依存を避ける
 
 ### 基本実装パターン（録音 + リアルタイム文字起こし）
@@ -673,15 +673,40 @@ let audioFile = try AVAudioFile(
 
 var isPaused = false  // 一時停止フラグ（後述）
 
+// --- 事前確保バッファプール ---
+// エンジン起動前に固定数の AVAudioPCMBuffer を確保しておき、
+// tap コールバック内での malloc を回避する（リアルタイムスレッド安全性）
+let poolSize = 8
+let bufferPool: [AVAudioPCMBuffer] = (0..<poolSize).compactMap { _ in
+    guard let buf = AVAudioPCMBuffer(
+        pcmFormat: recordingFormat,
+        frameCapacity: 1024
+    ) else { return nil }
+    return buf
+}
+// アトミックインデックスでロックフリーに取得（OS のロックを使わない）
+let poolIndex = OSAtomicInt64(0)
+
 inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { buffer, time in
     guard !isPaused else { return }  // 一時停止中はスキップ
     // 録音: ファイルに書き出し（PCM → AAC 自動変換）
     try? audioFile.write(from: buffer)
 
-    // バッファコピーを作成（tap コールバックで渡される AVAudioPCMBuffer は
-    // コールバック終了後にオーディオエンジンが再利用するため、そのまま外部に渡すと
-    // 非同期処理中にデータが破損する危険がある）
-    guard let bufferCopy = Self.copyBuffer(buffer) else { return }
+    // 事前確保済みプールからバッファを取得し、サンプルデータをコピーする
+    // （tap コールバックで渡される AVAudioPCMBuffer はコールバック終了後に
+    //   オーディオエンジンが再利用するため、そのまま外部に渡すとデータが破損する。
+    //   プールから取得することで malloc を回避し、memcpy 相当のコピーのみ行う）
+    let idx = Int(OSAtomicIncrement64(&poolIndex) % Int64(poolSize))
+    let pooledBuffer = bufferPool[idx]
+    pooledBuffer.frameLength = buffer.frameLength
+    if let src = buffer.floatChannelData,
+       let dst = pooledBuffer.floatChannelData {
+        let chCount = Int(buffer.format.channelCount)
+        let frames = Int(buffer.frameLength)
+        for ch in 0..<chCount {
+            dst[ch].update(from: src[ch], count: frames)
+        }
+    }
 
     // 専用シリアルキューにディスパッチしてから外部コールバックを呼ぶ
     // （リアルタイムオーディオスレッドで任意のクロージャを実行すると、
@@ -689,7 +714,9 @@ inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { buff
     // ⚠️ メインキューではなく専用キューを使用する。48kHz / 1024フレーム ≈ 毎秒47回の
     //   ディスパッチが発生するため、メインキューに直接流すと UI スレッドを圧迫する。
     processingQueue.async {
-        onBuffer?(bufferCopy)
+        onBuffer?(pooledBuffer)
+        // pooledBuffer は processingQueue での消費完了後、プールに自動的に返却される
+        // （次の tap コールバックで同じインデックスが巡ってくるまで再利用されない）
     }
 
     // 振幅レベルの UI 更新は間引いてメインキューに転送（10〜15Hz 程度）
@@ -710,25 +737,6 @@ private let processingQueue = DispatchQueue(label: "com.mindecho.audio.processin
 private var lastAmplitudeUpdate: Double = 0
 private let amplitudeUpdateInterval: Double = 1.0 / 15  // ~15Hz
 
-// AVAudioPCMBuffer のディープコピーを作成するヘルパー
-private static func copyBuffer(_ source: AVAudioPCMBuffer) -> AVAudioPCMBuffer? {
-    guard let copy = AVAudioPCMBuffer(
-        pcmFormat: source.format,
-        frameCapacity: source.frameLength
-    ) else { return nil }
-    copy.frameLength = source.frameLength
-
-    // チャンネルごとにサンプルデータをコピー
-    if let srcFloatData = source.floatChannelData,
-       let dstFloatData = copy.floatChannelData {
-        let channelCount = Int(source.format.channelCount)
-        let frameLength = Int(source.frameLength)
-        for ch in 0..<channelCount {
-            dstFloatData[ch].update(from: srcFloatData[ch], count: frameLength)
-        }
-    }
-    return copy
-}
 engine.prepare()
 try engine.start()
 
@@ -952,8 +960,8 @@ AudioMerger は複数の音声ソース（TTS 出力、録音ファイル、無�
 ## 実装時の注意事項
 
 - **音声スレッドの並行アクセス**: `AVAudioEngine` の tap コールバックはリアルタイム音声スレッドで実行される。`isPaused` フラグや `onBuffer` クロージャはメインスレッドから設定されるため、`AudioRecorderService` 内部で適切な同期が必要（`os_unfair_lock` や `Mutex` 等の軽量ロック推奨。音声スレッドでは `DispatchQueue` やアクターは使用不可）
-- **AVAudioPCMBuffer の寿命管理**: tap コールバックで渡される `AVAudioPCMBuffer` はオーディオエンジンが内部バッファプールから貸し出したものであり、コールバック終了後に再利用される可能性がある。外部に渡す場合は必ず tap コールバック内でディープコピーを作成すること。コピーせずに非同期処理で消費すると、データ破損や無音・ノイズの混入が発生する。コード例の `copyBuffer()` ヘルパーを参照のこと
-- **リアルタイムスレッドからのディスパッチ**: tap コールバック内で直接 `onBuffer` クロージャを呼ぶと、呼び出し先でメモリ確保（`malloc`）、Objective-C のメッセージ送信、ロック取得などのブロッキング操作が発生し、オーディオグリッチ（音飛び・ノイズ）の原因になる。バッファコピー後は **専用のシリアルキュー**（`processingQueue`）にディスパッチしてから外部コールバックを呼ぶこと。メインキューには直接ディスパッチしない — 48kHz / 1024フレーム ≈ 毎秒47回の頻度になり UI スレッドを圧迫する。振幅レベルの UI 更新のみ、`CACurrentMediaTime()` で間引き（10〜15Hz）した上でメインキューに転送する。`AVAudioFile.write(from:)` はリアルタイムスレッドでの呼び出しが許容されている API である
+- **AVAudioPCMBuffer の寿命管理と事前確保バッファプール**: tap コールバックで渡される `AVAudioPCMBuffer` はオーディオエンジンが内部バッファプールから貸し出したものであり、コールバック終了後に再利用される可能性がある。外部に渡す場合は必ず tap コールバック内でサンプルデータをコピーすること。コピーせずに非同期処理で消費すると、データ破損や無音・ノイズの混入が発生する。**コピー先のバッファはエンジン起動前に固定数（例: 8個）を事前確保（バッファプール）し、tap コールバック内では `AVAudioPCMBuffer` の新規生成（`malloc`）を行わない。** アトミックインデックスでロックフリーにプールから取得し、`update(from:count:)` でサンプルデータのみコピーする。処理キューでの消費完了後、バッファはプールのローテーションにより自動的に再利用される。コード例のバッファプール実装を参照のこと
+- **リアルタイムスレッドからのディスパッチ**: tap コールバック内で直接 `onBuffer` クロージャを呼ぶと、呼び出し先でメモリ確保（`malloc`）、Objective-C のメッセージ送信、ロック取得などのブロッキング操作が発生し、オーディオグリッチ（音飛び・ノイズ）の原因になる。バッファプールからのコピー後は **専用のシリアルキュー**（`processingQueue`）にディスパッチしてから外部コールバックを呼ぶこと。メインキューには直接ディスパッチしない — 48kHz / 1024フレーム ≈ 毎秒47回の頻度になり UI スレッドを圧迫する。振幅レベルの UI 更新のみ、`CACurrentMediaTime()` で間引き（10〜15Hz）した上でメインキューに転送する。`AVAudioFile.write(from:)` はリアルタイムスレッドでの呼び出しが許容されている API である
 - **SpeechAnalyzer の言語モデル**: 初回起動時に日本語モデルがまだダウンロードされていない可能性がある。初回起動時にモデルの準備状況をチェックし、未ダウンロードならプログレス表示付きでダウンロードを促すオンボーディングを入れる
 - **Merged ディレクトリのクリーンアップ**: `Application Support/Merged/` 内の作成から24時間以上経過したファイルを自動削除する（共有用の一時ファイルのため）
 - **NotebookLM の制約**: ソース1つあたり 500,000語 / 200MB の上限がある。共有時にファイルサイズを表示してユーザーに判断材料を提供する
@@ -973,6 +981,7 @@ AudioMerger は複数の音声ソース（TTS 出力、録音ファイル、無�
 // AudioService モジュールが公開する protocol
 protocol AudioRecording {
     var isRecording: Bool { get }             // 録音中かどうか（全画面での再生ガードに使用）
+    var isPaused: Bool { get }                // 録音一時停止中かどうか
     var onBuffer: ((AVAudioPCMBuffer) -> Void)? { get set }
     var currentAmplitude: Float { get }
     func startRecording(to url: URL) throws
