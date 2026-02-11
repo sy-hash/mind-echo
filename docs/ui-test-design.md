@@ -70,7 +70,7 @@ UIテストは **UI状態遷移**（ボタンの表示/非表示、有効/無効
 - `detail.shareTextOption`
 - `detail.shareAudioOption`
 
-## テストケース（5カテゴリ・23テスト）
+## テストケース（5カテゴリ・24テスト）
 
 ### 1. NavigationUITests（3テスト）
 
@@ -108,12 +108,13 @@ UIテストは **UI状態遷移**（ボタンの表示/非表示、有効/無効
 | `testEntryRow_showsDatePreviewAndRecordingInfo` | セルに日付・プレビュー・録音情報 |
 | `testTapEntry_navigatesToDetail` | セルタップで詳細画面へ遷移 |
 
-### 5. EntryDetailUITests（4テスト）
+### 5. EntryDetailUITests（5テスト）
 
 | テスト | 検証内容 |
 |-------|---------|
 | `testDetailView_showsDateAndTextContent` | 日付とテキスト内容の表示 |
 | `testDetailView_showsRecordingsList` | 録音リストの表示 |
+| `testPlayButton_togglesPlaybackState` | 再生ボタンタップで再生状態に遷移し、再度タップで停止 |
 | `testShareButton_opensShareTypeSelection` | 共有ボタンで選択シート表示 |
 | `testEditText_updatesContent` | テキスト編集が反映される |
 
