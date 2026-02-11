@@ -6,7 +6,7 @@ MindEcho アプリにおけるディレクトリ構成、ファイル命名規�
 
 アプリ内部で管理するファイルは `Application Support/` ディレクトリに保存し、ファイルアプリから不可視にする。
 エクスポート（AI に共有）したファイルのみを `Documents/Exports/` に保存し、ファイルアプリから閲覧可能にする。
-**1日につき録音ファイルは複数（セッションごと）、テキストファイルは1つのみ生成する。**
+**1日につき録音ファイルは複数（セッションごと）生成する。テキストは SwiftData で管理し、物理ファイルはエクスポート時にオンデマンド生成する。**
 
 ```
 Application Support/
@@ -15,11 +15,8 @@ Application Support/
 │   ├── 20250207_211500.m4a
 │   ├── 20250207_233045.m4a
 │   └── 20250208_013000.m4a
-├── Merged/              # 共有用の結合済み音声ファイル（一時生成、ファイルアプリから不可視）
-│   └── 20250207_merged.m4a
-└── Journals/            # テキスト日記（1日1ファイル、ファイルアプリから不可視）
-    ├── 20250207_journal.txt
-    └── 20250208_journal.txt
+└── Merged/              # 共有用の結合済み音声ファイル（一時生成、ファイルアプリから不可視）
+    └── 20250207_merged.m4a
 
 Documents/
 └── Exports/             # エクスポート済みファイル（ファイルアプリに公開）
@@ -78,31 +75,19 @@ Recordings/{datetime}.m4a
 - 一時停止→再開は tap コールバック内の `isPaused` フラグで制御。`true` の間はバッファの書き込みをスキップし、`false` に戻すと同一 `AVAudioFile` への追記を再開する（`AVAudioEngine` は停止しない）
 - 停止すると `AVAudioEngine` を停止し、`AVAudioFile` をクローズして録音が確定。次の録音は新しいファイルになる
 
-**テキスト日記ファイル:**
-
-```
-Journals/{date}_journal.txt
-```
-
-例: `20250207_journal.txt`（`Application Support/Journals/` に保存）
-
-- エントリ保存時に自動で生成・上書き更新される
-- アプリ内でテキストを編集するたびにファイルも同期更新
-
 ## イベントごとのファイル操作
 
 | イベント | 更新されるファイル |
 |---------|-----------------|
-| テキスト入力を保存 | `TextEntry` を作成 or 更新 + `Application Support/Journals/{date}_journal.txt` を生成 or 上書き |
+| テキスト入力を保存 | `TextEntry` を作成 or 更新（SwiftData のみ） |
 | 録音開始 | `Application Support/Recordings/{datetime}.m4a` を新規生成 |
 | 録音の一時停止・再開 | `isPaused` フラグで tap コールバック内の書き込みをスキップ/再開（同一 `.m4a` ファイル内、`AVAudioEngine` は停止しない） |
 | 録音停止 | `.m4a` ファイルを確定。リアルタイム文字起こしの確定テキストを `Recording.transcription` に保存 |
 | 音声共有時 | その日の全 Recording を連番順に結合 → `Application Support/Merged/` に一時生成 → `Documents/Exports/` にコピー |
-| テキスト共有時 | `Documents/Exports/` にテキストファイルをコピー |
+| テキスト共有時 | SwiftData の TextEntry からテキストを結合して `.txt` を生成 → `Documents/Exports/` に保存 |
 | 文字起こし共有時 | 全 Recording の `transcription` を結合して `.txt` を生成 → `Documents/Exports/` にコピー |
 | 録音削除（個別） | 対応する `Application Support/Recordings/` 内の `.m4a` を削除 + `Recording` エンティティを削除。**残りの Recording の `sequenceNumber` はリナンバーしない（欠番を許容）。** エクスポート時は実在する Recording を `sequenceNumber` 昇順で処理する。**次の録音の `sequenceNumber` は既存の最大値 + 1 で採番する**（例: #1, #3 が残っている場合、次は #4） |
-| エントリ削除 | 対応する全 `.m4a` ファイルと `_journal.txt` を削除（cascade で `Recording` / `TextEntry` も削除） |
-| アプリ起動時（一時ファイル） | `Application Support/Merged/` 内の24時間経過ファイルを削除 |
+| エントリ削除 | 対応する全 `.m4a` ファイルを削除（cascade で `Recording` / `TextEntry` も削除） |
 
 ## フォーマット
 

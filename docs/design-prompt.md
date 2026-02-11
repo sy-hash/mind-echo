@@ -20,25 +20,8 @@
 | UI フレームワーク | SwiftUI |
 | データ永続化 | SwiftData |
 | 音声録音 | AVFoundation (AVAudioEngine + AVAudioFile) |
-| 波形表示 | OSS ライブラリを使用（後述） |
 | 最小対応 OS | iOS 26.0 |
 | データ保存先 | ローカルのみ |
-
-### 波形表示ライブラリ候補
-
-必要に応じて以下のオープンソースライブラリから選定する。すべて SPM 対応・MIT ライセンス。
-
-| ライブラリ | 用途 | 特徴 |
-|-----------|------|------|
-| [DSWaveformImage](https://github.com/dmrschmidt/DSWaveformImage) | 録音中のリアルタイム波形 + ファイル波形表示 | SwiftUI ネイティブ対応、ライブ録音用 `WaveformLiveView` とファイル用 `WaveformView` の両方あり。依存ゼロ、Stars 1,200+、活発にメンテナンス中 |
-| [AudioKit/Waveform](https://github.com/AudioKit/Waveform) | ファイル波形表示 | GPU アクセラレーション（Metal）、SwiftUI 対応。AudioKit エコシステム |
-| [FDWaveformView](https://github.com/fulldecent/FDWaveformView) | ファイル波形表示 + スクラブ | ズーム・スクロール・スクラブ操作対応。UIKit ベース |
-
-**推奨: DSWaveformImage** — 録音中のリアルタイム波形（`WaveformLiveView`）と再生時のファイル波形（`WaveformView`）の両方をカバーでき、依存ライブラリもゼロ、SwiftUI にネイティブ対応している。
-
-**波形データの供給方法:**
-- **録音中（リアルタイム波形）**: `AudioRecorderService` が tap コールバック内で `AVAudioPCMBuffer` から RMS 振幅レベル（`Float`）を計算し、`currentAmplitude` プロパティとして公開する。View 層がタイマーまたは `@Observable` 経由で振幅値を取得し、`WaveformLiveView` にサンプルとして追加する
-- **再生時（ファイル波形）**: `WaveformView` に音声ファイルの URL を渡すだけで、ライブラリが自動的にファイルから波形を生成する
 
 ## モジュール構成
 
@@ -61,15 +44,14 @@ MindEchoApp (App Target)
 | モジュール | 責務 | 主な型 | 依存先 |
 |-----------|------|--------|--------|
 | **MindEchoCore** | ドメインモデル, 日付ロジック（午前3時境界）, ファイルパス/命名規則, ディレクトリ管理 | `JournalEntry`, `Recording`, `TextEntry`, `DateHelper`, `FilePathManager` | Foundation, SwiftData |
-| **AudioService** | 録音（一時停止/再開含む）, 再生（プログレス追跡含む）, AVAudioSession 管理, 録音中の振幅レベル提供（波形表示用） | `AudioRecorderService`, `AudioPlayerService` | AVFoundation |
+| **AudioService** | 録音（一時停止/再開含む）, 再生（プログレス追跡含む）, AVAudioSession 管理 | `AudioRecorderService`, `AudioPlayerService` | AVFoundation |
 | **AudioMerger** | 複数音声ファイルの結合, TTS 日付アナウンス生成, 無音挿入 | `AudioMerger`, `TTSGenerator` | AVFoundation |
-| **ExportService** | エクスポート生成（テキスト/音声）, Documents/Exports/ へのコピー, Merged クリーンアップ（24時間） | `ExportService`, `FileCleanupManager` | MindEchoCore, AudioMerger |
+| **ExportService** | エクスポート生成（テキスト/音声）, Documents/Exports/ へのコピー | `ExportService` | MindEchoCore, AudioMerger |
 | **MindEchoApp** | Views, ViewModels, App lifecycle | `HomeView`, `HomeViewModel` 等 | 全モジュール |
 
 ### 設計方針
 
 - **AudioService** は録音と再生をまとめる。どちらも AVAudioSession の管理が必要でセッション設定を共有でき、単体では1〜2ファイル程度のためモジュールとしては薄すぎる。録音は `AVAudioEngine` の input node tap を使用し、tap コールバック内で `AVAudioFile` への書き出し（録音）を行う
-- **録音中の再生は不可（全画面共通）。** 録音中はホーム画面・エントリ詳細画面を問わず、すべての再生ボタンを無効化（disable）する。録音と再生で異なる AVAudioSession 設定が必要になる複雑さを避け、シンプルな実装を優先する。これを担保するため、`AudioRecorderService` は App 層で単一インスタンスとして生成し、録音状態を参照する全 ViewModel に共有注入する
 - **AudioMerger** は独立モジュールとする。録音・再生（リアルタイム操作）とマージ（バッチ処理）は性質が異なり、入出力が `[URL] → URL` と明確で他モジュールへの依存がない
 - **AudioService, AudioMerger** は MindEchoCore に依存しない。ファイルパス（URL）や文字列など基本型のみで動作し、ドメインモデルとの紐付けは ViewModel 層（App Target）が担う
 - **ExportService** は MindEchoCore に依存する。テキストエクスポートのフォーマット生成にドメイン構造の知識が必要なため
@@ -81,7 +63,7 @@ SwiftData の `@Model` マクロはすでに Observable に準拠しているた
 ViewModel 層では `@Observable` マクロ（Observation フレームワーク）を使用する。
 
 **Observation チェーンと protocol の制約:**
-`AudioRecorderService` は `@Observable` マクロを付与する。SwiftUI は `@Observable` な ViewModel のプロパティアクセスを追跡し、ViewModel が保持する `@Observable` オブジェクトのプロパティ（例: `audioRecorder.isRecording`）まで自動的に変更検知できる。これにより、HomeViewModel や EntryDetailViewModel が `audioRecorder.isRecording` を参照すると、値の変化で View が自動再描画される。ただし Swift の `protocol` には `@Observable` マクロを付与できないため、`AudioRecording` プロトコル自体は Observation に準拠しない。具体型 `AudioRecorderService` が `@Observable` であることで追跡が成立する。テスト用モッククラスにも `@Observable` を付与し、同じ変更追跡の挙動を再現すること。
+`AudioRecorderService` は `@Observable` マクロを付与する。SwiftUI は `@Observable` な ViewModel のプロパティアクセスを追跡し、ViewModel が保持する `@Observable` オブジェクトのプロパティ（例: `audioRecorder.isRecording`）まで自動的に変更検知できる。これにより、HomeViewModel が `audioRecorder.isRecording` を参照すると、値の変化で View が自動再描画される。ただし Swift の `protocol` には `@Observable` マクロを付与できないため、`AudioRecording` プロトコル自体は Observation に準拠しない。具体型 `AudioRecorderService` が `@Observable` であることで追跡が成立する。テスト用モッククラスにも `@Observable` を付与し、同じ変更追跡の挙動を再現すること。
 
 ### ER図
 
@@ -119,12 +101,6 @@ erDiagram
         String format "AAC (.m4a)"
     }
 
-    TextFile {
-        String fileName "例: 20250207_journal.txt"
-        String directory "Application Support/Journals/"
-        String format "UTF-8 (.txt)"
-    }
-
     ExportedFile {
         String fileName "例: 20250207_merged.m4a or 20250207_journal.txt"
         String directory "Documents/Exports/"
@@ -137,7 +113,6 @@ erDiagram
 - `TextEntry` は SwiftData で管理されるテキスト単位のエンティティ（`JournalEntry` に紐づく）
 - `AudioFile` / `TextFile` は物理ファイル（DB 外）を表す概念エンティティ
 - `Recording.audioFileName` と `AudioFile.fileName` が対応する
-- `TextEntry.content` の内容が `TextFile` に同期書き出しされる
 - 1日1エントリに対して、録音は複数（0〜N）、テキストも複数（0〜N、**初期は0〜1件で運用**）
 
 ### JournalEntry（日記エントリ）
@@ -216,15 +191,13 @@ import SwiftData
 
 @Observable
 class HomeViewModel {
-    // 録音状態 — isRecording / isPaused / currentAmplitude は audioRecorder から直接参照する（単一情報源）
+    // 録音状態 — isRecording / isPaused は audioRecorder から直接参照する（単一情報源）
     var recordingDuration: TimeInterval = 0  // 一時停止中を除いた実録音時間。isPaused 切り替え時に積算方式で更新する
 
-    // 再生（録音直後の再生用）— 録音中は再生不可（ボタンを disable にする）
+    // 再生（録音直後の再生用）
     var playingRecordingId: UUID?     // 現在再生中の Recording の ID（nil = 再生なし）
     var isPlaying = false
     var playbackProgress: Double = 0  // 0.0〜1.0
-    /// 再生ボタンの有効/無効判定（audioRecorder の状態を直接参照）
-    var canPlayback: Bool { !audioRecorder.isRecording }
 
     var todayEntry: JournalEntry?
     var errorMessage: String?
@@ -234,7 +207,7 @@ class HomeViewModel {
     private let audioPlayer: any AudioPlaying
 
     init(modelContext: ModelContext,
-         audioRecorder: any AudioRecording,              // App 層から共有インスタンスを注入
+         audioRecorder: any AudioRecording,
          audioPlayer: any AudioPlaying = AudioPlayerService()) {
         self.modelContext = modelContext
         self.audioRecorder = audioRecorder
@@ -245,7 +218,7 @@ class HomeViewModel {
     func pauseRecording() { /* 録音を一時停止（isPaused フラグ制御） */ }
     func resumeRecording() { /* 一時停止中の録音を再開 */ }
     func stopRecording() async { /* 録音を停止・確定 */ }
-    func playRecording(_ recording: Recording) { /* 個別の録音を再生（isRecording 中は呼び出し不可） */ }
+    func playRecording(_ recording: Recording) { /* 個別の録音を再生 */ }
     func pausePlayback() { /* 再生を一時停止 */ }
     func stopPlayback() { /* 再生を停止 */ }
     func saveText(_ text: String) { /* TextEntry を作成 or 更新。初期は1件のみ */ }
@@ -255,12 +228,6 @@ class HomeViewModel {
 @Observable
 class HistoryViewModel {
     var entries: [JournalEntry] = []
-    var searchText = ""
-    var filteredEntries: [JournalEntry] {
-        guard !searchText.isEmpty else { return entries }
-        return entries.filter { /* TextEntry.content をフィルタ */ }
-    }
-
     private let modelContext: ModelContext
 
     init(modelContext: ModelContext) {
@@ -287,26 +254,20 @@ class EntryDetailViewModel {
     var playingRecordingId: UUID?     // 現在再生中の Recording の ID
     var isPlaying = false
     var playbackProgress: Double = 0
-    /// 再生ボタンの有効/無効判定（録音中は全画面で再生不可）
-    var canPlayback: Bool { !audioRecorder.isRecording }
-
     private let modelContext: ModelContext
-    private let audioRecorder: any AudioRecording  // 録音状態の参照用（App 層から共有インスタンスを注入）
     private let audioPlayer: any AudioPlaying
     private let exportService: any Exporting
 
     init(entry: JournalEntry, modelContext: ModelContext,
-         audioRecorder: any AudioRecording,
          audioPlayer: any AudioPlaying = AudioPlayerService(),
          exportService: any Exporting = ExportService()) {
         self.entry = entry
         self.modelContext = modelContext
-        self.audioRecorder = audioRecorder
         self.audioPlayer = audioPlayer
         self.exportService = exportService
     }
 
-    func playRecording(_ recording: Recording) { /* 個別の録音を再生（audioRecorder.isRecording 中は呼び出し不可） */ }
+    func playRecording(_ recording: Recording) { /* 個別の録音を再生 */ }
     func pausePlayback() { /* 再生を一時停止 */ }
     func stopPlayback() { /* 再生を停止 */ }
     func deleteRecording(_ recording: Recording) { /* 個別の録音を削除（ファイルも削除） */ }
@@ -369,12 +330,11 @@ struct HomeView: View {
   - **録音開始ボタン** — タップで新しい録音セッションを開始
   - **一時停止 / 再開ボタン** — 録音中に表示。タップで一時停止 ↔ 再開を切り替え（同一ファイル内）
   - **停止ボタン** — 録音中 or 一時停止中に表示。タップで録音を確定し、新しい `Recording` として保存
-- **録音中の波形表示** — リアルタイム波形を表示（DSWaveformImage の `WaveformLiveView` 等を使用）
 - **テキスト入力ボタン（録音ボタンの近く）** — タップでテキスト入力モードに遷移 or シートを表示。既にテキストがある場合は編集モードで開く
 - **今日の録音リスト（下部）** — 今日既に録音がある場合、各録音を連番で一覧表示:
   - 連番（#1, #2, ...）
   - 録音時間
-  - 再生 / 一時停止ボタン（個別再生）— **録音中は無効化（disable）**
+  - 再生 / 一時停止ボタン（個別再生）
 
 **動作フロー（録音）:**
 
@@ -390,7 +350,7 @@ struct HomeView: View {
 **動作フロー（テキスト）:**
 
 1. テキスト入力ボタンをタップ → テキストエディタを表示
-2. 保存 → `TextEntry` を作成 or 更新し、`Journals/{date}_journal.txt` も同期更新
+2. 保存 → `TextEntry` を作成 or 更新
 3. 初期バージョンでは1日1件の `TextEntry` のみ。既にテキストがある場合は既存の `TextEntry` を編集する
 
 ### 画面 2: 履歴一覧画面
@@ -403,8 +363,6 @@ struct HomeView: View {
   - 日付（例: 2月6日 木）
   - テキストの先頭数行（プレビュー）
   - 録音件数と合計時間の表示（例: 🎤 3件 / 12m30s）、録音なしの場合は非表示
-- **検索バー（上部）** — テキスト内容をフルテキスト検索
-
 **タップ時の遷移:**
 
 - セルをタップ → エントリ詳細画面へ遷移
@@ -419,9 +377,8 @@ struct HomeView: View {
 - テキスト内容（編集可能）
 - 録音セクション（録音がある場合）— 各 Recording を連番順にリスト表示:
   - 連番と録音時刻（例: #1 14:30）
-  - 再生ボタン / 一時停止ボタン（個別再生）— **録音中は無効化（disable）**（HomeView と同様、共有 `AudioRecorderService` の `isRecording` を参照）
+  - 再生ボタン / 一時停止ボタン（個別再生）
   - 録音時間の表示
-  - 波形表示（DSWaveformImage の `WaveformView` でファイル波形を表示）
   - 個別の録音削除ボタン（スワイプ or ボタン）
 
 ## ナビゲーション構成
@@ -461,7 +418,6 @@ AudioService が `AVAudioSession` のカテゴリ・モード設定を一元管�
 
 - 録音開始時にセッションを `.record` で activate し、停止時に deactivate する
 - 再生開始時にセッションを `.playback` で activate し、停止/完了時に deactivate する
-- **録音中は再生不可**（セッションカテゴリの切り替えを避けるため）。録音中は再生ボタンを disable にする
 
 ### バックグラウンド録音
 
@@ -469,7 +425,7 @@ AudioService が `AVAudioSession` のカテゴリ・モード設定を一元管�
 
 - Xcode の Capabilities で **Background Modes → Audio** を有効にする
 - `AVAudioSession` のカテゴリ設定により、バックグラウンドでも `AVAudioEngine` が稼働し続ける
-- バックグラウンドでも録音（`AVAudioFile` への書き出し）は継続する。UI 更新（波形表示）のみがバックグラウンドでは反映されない
+- バックグラウンドでも録音（`AVAudioFile` への書き出し）は継続する。UI 更新のみがバックグラウンドでは反映されない
 - フォアグラウンド復帰時に最新の状態を UI に即座に反映する
 
 **Info.plist に追加:**
@@ -612,14 +568,13 @@ AudioMerger は複数の音声ソース（TTS 出力、録音ファイル、無�
 
 ## 実装時の注意事項
 
-- **音声スレッドの並行アクセス**: `AVAudioEngine` の tap コールバックはリアルタイム音声スレッドで実行される。`isPaused` フラグはメインスレッドから設定されるため、`AudioRecorderService` 内部で適切な同期が必要（`os_unfair_lock` や `Mutex` 等の軽量ロック推奨。音声スレッドでは `DispatchQueue` やアクターは使用不可）。`AVAudioFile.write(from:)` はリアルタイムスレッドでの呼び出しが許容されている API である。振幅レベルの UI 更新のみ、`CACurrentMediaTime()` で間引き（10〜15Hz）した上でメインキューに転送する
-- **Merged ディレクトリのクリーンアップ**: `Application Support/Merged/` 内の作成から24時間以上経過したファイルを自動削除する（共有用の一時ファイルのため）
-- **NotebookLM の制約**: ソース1つあたり 500,000語 / 200MB の上限がある。共有時にファイルサイズを表示してユーザーに判断材料を提供する
+- **音声スレッドの並行アクセス**: `AVAudioEngine` の tap コールバックはリアルタイム音声スレッドで実行される。`isPaused` フラグはメインスレッドから設定されるため、`AudioRecorderService` 内部で適切な同期が必要（`os_unfair_lock` や `Mutex` 等の軽量ロック推奨。音声スレッドでは `DispatchQueue` やアクターは使用不可）。`AVAudioFile.write(from:)` はリアルタイムスレッドでの呼び出しが許容されている API である
+- **NotebookLM の制約**: ソース1つあたり 500,000語 / 200MB の上限がある
 
 ## テスト方針
 
 - **非UIテスト**: Swift Testing フレームワークを使用してユニットテスト・ロジックテストを記述する
-- **UIテスト**: メインシナリオを選定し XCTest で記述する（24テストケース）。詳細は [ui-test-design.md](./ui-test-design.md) を参照
+- **UIテスト**: メインシナリオを選定し XCTest で記述する（21テストケース）。詳細は [ui-test-design.md](./ui-test-design.md) を参照
 
 各モジュール（MindEchoCore, AudioService, AudioMerger, ExportService）に対して、公開インターフェースのロジックを検証する非UIテストを作成する。
 UIテストはユーザーの主要な操作フローに焦点を当て、5カテゴリでテストする。
@@ -631,9 +586,8 @@ UIテストはユーザーの主要な操作フローに焦点を当て、5カ�
 ```swift
 // AudioService モジュールが公開する protocol
 protocol AudioRecording {
-    var isRecording: Bool { get }             // 録音中かどうか（全画面での再生ガードに使用）
+    var isRecording: Bool { get }             // 録音中かどうか
     var isPaused: Bool { get }                // 録音一時停止中かどうか
-    var currentAmplitude: Float { get }
     func startRecording(to url: URL) throws
     func pauseRecording()
     func resumeRecording()
@@ -649,18 +603,16 @@ protocol AudioPlaying {
 }
 
 // ViewModel は protocol 型で受け取る
-// AudioRecorderService は App 層で単一インスタンスとして生成し、録音状態を参照する全 ViewModel に共有注入する
 @Observable
 class HomeViewModel {
     init(modelContext: ModelContext,
-         audioRecorder: any AudioRecording,              // App 層から共有インスタンスを注入
+         audioRecorder: any AudioRecording,
          audioPlayer: any AudioPlaying = AudioPlayerService()) { ... }
 }
 
 @Observable
 class EntryDetailViewModel {
     init(entry: JournalEntry, modelContext: ModelContext,
-         audioRecorder: any AudioRecording,      // 共有インスタンスを注入（録音中の再生ガード用）
          audioPlayer: any AudioPlaying = AudioPlayerService(),
          exportService: any Exporting = ExportService()) { ... }
 }
@@ -676,7 +628,6 @@ class EntryDetailViewModel {
 protocol Exporting {
     func exportTextJournal(entry: JournalEntry, to directory: URL) async throws -> URL
     func exportMergedAudio(entry: JournalEntry, to directory: URL) async throws -> URL
-    func cleanupMergedFiles(olderThan: TimeInterval) throws
 }
 ```
 

@@ -1,6 +1,6 @@
 # UIテスト設計
 
-メインシナリオを選定し XCTest で UIテストを記述する（5カテゴリ・24テストケース）。
+メインシナリオを選定し XCTest で UIテストを記述する（5カテゴリ・21テストケース）。
 
 ## テストデータセットアップ（Launch Arguments）
 
@@ -70,7 +70,7 @@ UIテストは **UI状態遷移**（ボタンの表示/非表示、有効/無効
 - `detail.shareTextOption`
 - `detail.shareAudioOption`
 
-## テストケース（5カテゴリ・24テスト）
+## テストケース（5カテゴリ・23テスト）
 
 ### 1. NavigationUITests（3テスト）
 
@@ -80,7 +80,7 @@ UIテストは **UI状態遷移**（ボタンの表示/非表示、有効/無効
 | `testTabSwitching_navigatesBetweenTodayAndHistory` | タブ切り替えで画面が遷移する |
 | `testHistoryToDetail_pushesAndPops` | 履歴→詳細への push/pop ナビゲーション |
 
-### 2. HomeRecordingUITests（6テスト）
+### 2. HomeRecordingUITests（5テスト）
 
 | テスト | 検証内容 |
 |-------|---------|
@@ -88,7 +88,6 @@ UIテストは **UI状態遷移**（ボタンの表示/非表示、有効/無効
 | `testStartRecording_showsPauseAndStopButtons` | 録音開始で一時停止・停止ボタン表示 |
 | `testPauseRecording_showsResumeButton` | 一時停止で再開ボタン表示 |
 | `testStopRecording_addsRecordingToList` | 停止で録音リストにエントリ追加 |
-| `testRecordingActive_disablesPlaybackButtons` | 録音中は再生ボタン無効化 |
 | `testMultipleRecordings_appearInOrder` | 複数録音が連番順に表示 |
 
 ### 3. HomeTextInputUITests（4テスト）
@@ -100,17 +99,16 @@ UIテストは **UI状態遷移**（ボタンの表示/非表示、有効/無効
 | `testCancelText_dismissesWithoutSaving` | キャンセルで保存せずシート閉じる |
 | `testEditExistingText_opensWithPreviousContent` | 既存テキストがエディタに表示 |
 
-### 4. HistoryListUITests（5テスト）
+### 4. HistoryListUITests（4テスト）
 
 | テスト | 検証内容 |
 |-------|---------|
 | `testEmptyHistory_showsEmptyState` | データなしで空状態表示 |
 | `testSeededHistory_displaysEntries` | シードデータがリスト表示される |
 | `testEntryRow_showsDatePreviewAndRecordingInfo` | セルに日付・プレビュー・録音情報 |
-| `testSearchBar_filtersEntries` | 検索でリストがフィルタされる |
 | `testTapEntry_navigatesToDetail` | セルタップで詳細画面へ遷移 |
 
-### 5. EntryDetailUITests（5テスト）
+### 5. EntryDetailUITests（4テスト）
 
 | テスト | 検証内容 |
 |-------|---------|
@@ -118,12 +116,10 @@ UIテストは **UI状態遷移**（ボタンの表示/非表示、有効/無効
 | `testDetailView_showsRecordingsList` | 録音リストの表示 |
 | `testShareButton_opensShareTypeSelection` | 共有ボタンで選択シート表示 |
 | `testEditText_updatesContent` | テキスト編集が反映される |
-| `testRecordingActive_disablesDetailPlayback` | Home で録音中→詳細画面の再生ボタン無効（クロス画面ガード） |
 
 ## テスト対象外（明示的に除外）
 
 - 実音声の録音・再生品質 → ユニットテスト + 実機テスト
-- 波形描画の正確性 → DSWaveformImage ライブラリの責務
 - ファイルシステム操作 → ExportService ユニットテスト
 - 日付境界ロジック（午前3時） → DateHelper ユニットテスト
 - iOS Share Sheet 操作 → システムUI
