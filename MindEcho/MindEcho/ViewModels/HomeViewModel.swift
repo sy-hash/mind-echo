@@ -17,6 +17,7 @@ class HomeViewModel {
     private var durationTimer: Timer?
     private var recordingStartTime: Date?
     private var accumulatedDuration: TimeInterval = 0
+    private var currentRecordingFileName: String?
 
     init(
         modelContext: ModelContext,
@@ -43,12 +44,14 @@ class HomeViewModel {
     func startRecording() {
         do {
             let url = FilePathManager.newRecordingURL()
+            currentRecordingFileName = url.lastPathComponent
             try audioRecorder.startRecording(to: url)
             recordingDuration = 0
             accumulatedDuration = 0
             recordingStartTime = Date()
             startDurationTimer()
         } catch {
+            currentRecordingFileName = nil
             errorMessage = "録音の開始に失敗しました: \(error.localizedDescription)"
         }
     }
@@ -77,25 +80,21 @@ class HomeViewModel {
         audioRecorder.stopRecording()
 
         // Save recording to SwiftData
+        guard let fileName = currentRecordingFileName else { return }
         let today = DateHelper.logicalDate()
         let entry = getOrCreateTodayEntry(for: today)
         let nextSeq = (entry.recordings.map(\.sequenceNumber).max() ?? 0) + 1
-        let now = Date()
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.dateFormat = "yyyyMMdd_HHmmss"
-        let fileName = formatter.string(from: now) + ".m4a"
 
         let recording = Recording(
             sequenceNumber: nextSeq,
             audioFileName: fileName,
-            duration: finalDuration,
-            recordedAt: now
+            duration: finalDuration
         )
         entry.recordings.append(recording)
         entry.updatedAt = Date()
         todayEntry = entry
 
+        currentRecordingFileName = nil
         recordingDuration = 0
         accumulatedDuration = 0
         recordingStartTime = nil
