@@ -18,6 +18,7 @@ class HomeViewModel {
     private var recordingStartTime: Date?
     private var accumulatedDuration: TimeInterval = 0
     private var currentRecordingFileName: String?
+    private var currentRecordingStartedAt: Date?
 
     init(
         modelContext: ModelContext,
@@ -43,8 +44,10 @@ class HomeViewModel {
 
     func startRecording() {
         do {
+            try FilePathManager.ensureDirectoryExists(FilePathManager.recordingsDirectory)
             let url = FilePathManager.newRecordingURL()
             currentRecordingFileName = url.lastPathComponent
+            currentRecordingStartedAt = Date()
             try audioRecorder.startRecording(to: url)
             recordingDuration = 0
             accumulatedDuration = 0
@@ -52,6 +55,7 @@ class HomeViewModel {
             startDurationTimer()
         } catch {
             currentRecordingFileName = nil
+            currentRecordingStartedAt = nil
             errorMessage = "録音の開始に失敗しました: \(error.localizedDescription)"
         }
     }
@@ -88,13 +92,15 @@ class HomeViewModel {
         let recording = Recording(
             sequenceNumber: nextSeq,
             audioFileName: fileName,
-            duration: finalDuration
+            duration: finalDuration,
+            recordedAt: currentRecordingStartedAt ?? Date()
         )
         entry.recordings.append(recording)
         entry.updatedAt = Date()
         todayEntry = entry
 
         currentRecordingFileName = nil
+        currentRecordingStartedAt = nil
         recordingDuration = 0
         accumulatedDuration = 0
         recordingStartTime = nil
