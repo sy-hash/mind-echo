@@ -12,7 +12,7 @@ final class HistoryListUITests: XCTestCase {
     @MainActor
     func testEmptyHistory_showsEmptyState() throws {
         app.launch()
-        app.buttons["tab.history"].tap()
+        app.buttons["履歴"].tap()
 
         // Should show empty state (ContentUnavailableView)
         let emptyText = app.staticTexts["履歴がありません"]
@@ -23,7 +23,7 @@ final class HistoryListUITests: XCTestCase {
     func testSeededHistory_displaysEntries() throws {
         app.launchArguments.append("--seed-history")
         app.launch()
-        app.buttons["tab.history"].tap()
+        app.buttons["履歴"].tap()
 
         let historyList = app.collectionViews["history.entryList"]
         XCTAssertTrue(historyList.waitForExistence(timeout: 5))
@@ -34,7 +34,7 @@ final class HistoryListUITests: XCTestCase {
     func testEntryRow_showsDatePreviewAndRecordingInfo() throws {
         app.launchArguments.append("--seed-history")
         app.launch()
-        app.buttons["tab.history"].tap()
+        app.buttons["履歴"].tap()
 
         let historyList = app.collectionViews["history.entryList"]
         XCTAssertTrue(historyList.waitForExistence(timeout: 5))
@@ -50,7 +50,7 @@ final class HistoryListUITests: XCTestCase {
     func testTapEntry_navigatesToDetail() throws {
         app.launchArguments.append("--seed-history")
         app.launch()
-        app.buttons["tab.history"].tap()
+        app.buttons["履歴"].tap()
 
         let historyList = app.collectionViews["history.entryList"]
         XCTAssertTrue(historyList.waitForExistence(timeout: 5))

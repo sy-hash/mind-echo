@@ -11,7 +11,7 @@ final class EntryDetailUITests: XCTestCase {
 
     private func navigateToDetail() {
         app.launch()
-        app.buttons["tab.history"].tap()
+        app.buttons["履歴"].tap()
         let historyList = app.collectionViews["history.entryList"]
         XCTAssertTrue(historyList.waitForExistence(timeout: 5))
         let firstCell = historyList.cells.firstMatch

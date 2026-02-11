@@ -22,12 +22,12 @@ final class NavigationUITests: XCTestCase {
         app.launch()
 
         // Switch to history tab
-        app.buttons["tab.history"].tap()
+        app.buttons["履歴"].tap()
         let historyList = app.collectionViews["history.entryList"]
         XCTAssertTrue(historyList.waitForExistence(timeout: 5))
 
         // Switch back to today tab
-        app.buttons["tab.today"].tap()
+        app.buttons["今日"].tap()
         let dateLabel = app.staticTexts["home.dateLabel"]
         XCTAssertTrue(dateLabel.waitForExistence(timeout: 5))
     }
@@ -38,7 +38,7 @@ final class NavigationUITests: XCTestCase {
         app.launch()
 
         // Go to history
-        app.buttons["tab.history"].tap()
+        app.buttons["履歴"].tap()
         let historyList = app.collectionViews["history.entryList"]
         XCTAssertTrue(historyList.waitForExistence(timeout: 5))
 
