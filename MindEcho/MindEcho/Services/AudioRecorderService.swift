@@ -32,9 +32,21 @@ class AudioRecorderService: AudioRecording {
     private let pauseFlag = AtomicFlag()
 
     func startRecording(to url: URL) throws {
+        // Set up audio session BEFORE accessing inputNode so the microphone
+        // permission is resolved and the node returns a valid format.
+        let session = AVAudioSession.sharedInstance()
+        try session.setCategory(.record, mode: .default)
+        try session.setActive(true)
+
         let engine = AVAudioEngine()
         let inputNode = engine.inputNode
         let format = inputNode.outputFormat(forBus: 0)
+
+        guard format.sampleRate > 0, format.channelCount > 0 else {
+            try session.setActive(false)
+            throw NSError(domain: "AudioRecorderService", code: -1,
+                          userInfo: [NSLocalizedDescriptionKey: "マイクが利用できません"])
+        }
 
         let settings: [String: Any] = [
             AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
@@ -54,10 +66,6 @@ class AudioRecorderService: AudioRecording {
                 try? file.write(from: buffer)
             }
         }
-
-        let session = AVAudioSession.sharedInstance()
-        try session.setCategory(.record, mode: .default)
-        try session.setActive(true)
 
         try engine.start()
         isRecording = true
