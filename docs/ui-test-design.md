@@ -44,7 +44,6 @@ UIテストは **UI状態遷移**（ボタンの表示/非表示、有効/無効
 - `home.textInputButton`
 - `home.recordingsList`
 - `home.recordingRow.{n}`
-- `home.recordingPlayButton.{n}`
 - `home.textEditorSheet`
 - `home.textEditor`
 - `home.textSaveButton`
@@ -64,7 +63,6 @@ UIテストは **UI状態遷移**（ボタンの表示/非表示、有効/無効
 - `detail.textContent`
 - `detail.recordingsList`
 - `detail.recordingRow.{n}`
-- `detail.playButton.{n}`
 - `detail.deleteButton.{n}`
 - `detail.shareButton`
 - `detail.shareSheet`
@@ -115,7 +113,7 @@ UIテストは **UI状態遷移**（ボタンの表示/非表示、有効/無効
 |-------|---------|
 | `testDetailView_showsDateAndTextContent` | 日付とテキスト内容の表示 |
 | `testDetailView_showsRecordingsList` | 録音リストの表示 |
-| `testPlayButton_togglesPlaybackState` | 再生ボタンタップで再生状態に遷移し、再度タップで停止 |
+| `testPlayButton_togglesPlaybackState` | 音声セルタップで再生状態に遷移し、再度タップで停止 |
 | `testShareButton_opensShareTypeSelection` | 共有ボタンで選択シート表示 |
 | `testEditText_updatesContent` | テキスト編集が反映される |
 

@@ -76,23 +76,23 @@ struct HomeView: View {
                 if let entry = viewModel.todayEntry, !entry.recordings.isEmpty {
                     List {
                         ForEach(entry.sortedRecordings) { recording in
-                            HStack {
-                                Text("#\(recording.sequenceNumber)")
-                                    .font(.headline)
-                                Text(formatDuration(recording.duration))
-                                    .foregroundStyle(.secondary)
-                                Spacer()
-                                Button {
-                                    if viewModel.playingRecordingId == recording.id && viewModel.isPlaying {
-                                        viewModel.pausePlayback()
-                                    } else {
-                                        viewModel.playRecording(recording)
-                                    }
-                                } label: {
+                            Button {
+                                if viewModel.playingRecordingId == recording.id && viewModel.isPlaying {
+                                    viewModel.pausePlayback()
+                                } else {
+                                    viewModel.playRecording(recording)
+                                }
+                            } label: {
+                                HStack {
+                                    Text("#\(recording.sequenceNumber)")
+                                        .font(.headline)
+                                    Text(formatDuration(recording.duration))
+                                        .foregroundStyle(.secondary)
+                                    Spacer()
                                     Image(systemName: viewModel.playingRecordingId == recording.id && viewModel.isPlaying ? "pause.fill" : "play.fill")
                                 }
-                                .accessibilityIdentifier("home.recordingPlayButton.\(recording.sequenceNumber)")
                             }
+                            .buttonStyle(.borderless)
                             .accessibilityIdentifier("home.recordingRow.\(recording.sequenceNumber)")
                         }
                     }

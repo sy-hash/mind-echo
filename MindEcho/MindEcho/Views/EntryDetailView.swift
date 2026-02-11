@@ -59,29 +59,29 @@ struct EntryDetailView: View {
             if !viewModel.entry.recordings.isEmpty {
                 Section("録音") {
                     ForEach(viewModel.entry.sortedRecordings) { recording in
-                        HStack {
-                            Text("#\(recording.sequenceNumber)")
-                                .font(.headline)
+                        Button {
+                            if viewModel.playingRecordingId == recording.id && viewModel.isPlaying {
+                                viewModel.pausePlayback()
+                            } else {
+                                viewModel.playRecording(recording)
+                            }
+                        } label: {
+                            HStack {
+                                Text("#\(recording.sequenceNumber)")
+                                    .font(.headline)
 
-                            Text(formatTime(recording.recordedAt))
-                                .foregroundStyle(.secondary)
+                                Text(formatTime(recording.recordedAt))
+                                    .foregroundStyle(.secondary)
 
-                            Text(formatDuration(recording.duration))
-                                .foregroundStyle(.secondary)
+                                Text(formatDuration(recording.duration))
+                                    .foregroundStyle(.secondary)
 
-                            Spacer()
+                                Spacer()
 
-                            Button {
-                                if viewModel.playingRecordingId == recording.id && viewModel.isPlaying {
-                                    viewModel.pausePlayback()
-                                } else {
-                                    viewModel.playRecording(recording)
-                                }
-                            } label: {
                                 Image(systemName: viewModel.playingRecordingId == recording.id && viewModel.isPlaying ? "pause.fill" : "play.fill")
                             }
-                            .accessibilityIdentifier("detail.playButton.\(recording.sequenceNumber)")
                         }
+                        .buttonStyle(.borderless)
                         .swipeActions(edge: .trailing) {
                             Button(role: .destructive) {
                                 viewModel.deleteRecording(recording)
@@ -93,7 +93,6 @@ struct EntryDetailView: View {
                         .accessibilityIdentifier("detail.recordingRow.\(recording.sequenceNumber)")
                     }
                 }
-                .accessibilityIdentifier("detail.recordingsList")
             }
         }
         .navigationTitle("詳細")

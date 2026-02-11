@@ -45,17 +45,17 @@ final class EntryDetailUITests: XCTestCase {
     func testPlayButton_togglesPlaybackState() throws {
         navigateToDetail()
 
-        // Verify play button exists for the first recording
-        let playButton = app.buttons["detail.playButton.1"]
-        XCTAssertTrue(playButton.waitForExistence(timeout: 5))
+        // Verify recording row exists
+        let recordingRow = app.buttons["detail.recordingRow.1"]
+        XCTAssertTrue(recordingRow.waitForExistence(timeout: 5))
 
-        // Tap to start playback — icon should change to pause
-        playButton.tap()
+        // Tap the recording cell to start playback — icon should change to pause
+        recordingRow.tap()
         let pauseImage = app.images["pause.fill"]
         XCTAssertTrue(pauseImage.waitForExistence(timeout: 5))
 
-        // Tap again to pause — icon should change back to play
-        playButton.tap()
+        // Tap again to stop — icon should change back to play
+        recordingRow.tap()
         let playImage = app.images["play.fill"]
         XCTAssertTrue(playImage.waitForExistence(timeout: 5))
     }
