@@ -4,9 +4,11 @@ import SwiftData
 struct HistoryListView: View {
     @State private var viewModel: HistoryViewModel
     private let modelContext: ModelContext
+    private let audioPlayer: any AudioPlaying
 
-    init(modelContext: ModelContext) {
+    init(modelContext: ModelContext, audioPlayer: any AudioPlaying = AudioPlayerService()) {
         self.modelContext = modelContext
+        self.audioPlayer = audioPlayer
         _viewModel = State(initialValue: HistoryViewModel(modelContext: modelContext))
     }
 
@@ -48,7 +50,7 @@ struct HistoryListView: View {
             }
             .navigationTitle("履歴")
             .navigationDestination(for: JournalEntry.self) { entry in
-                EntryDetailView(entry: entry, modelContext: modelContext)
+                EntryDetailView(entry: entry, modelContext: modelContext, audioPlayer: audioPlayer)
             }
             .onAppear {
                 viewModel.fetchEntries()

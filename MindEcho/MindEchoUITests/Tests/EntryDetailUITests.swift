@@ -6,7 +6,7 @@ final class EntryDetailUITests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
         app = XCUIApplication()
-        app.launchArguments = ["--uitesting", "--mock-recorder", "--seed-history"]
+        app.launchArguments = ["--uitesting", "--mock-recorder", "--mock-player", "--seed-history"]
     }
 
     private func navigateToDetail() {

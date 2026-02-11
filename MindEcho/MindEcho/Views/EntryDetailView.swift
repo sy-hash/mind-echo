@@ -9,10 +9,11 @@ struct EntryDetailView: View {
     @State private var editingText: String = ""
     @State private var isEditingText = false
 
-    init(entry: JournalEntry, modelContext: ModelContext) {
+    init(entry: JournalEntry, modelContext: ModelContext, audioPlayer: any AudioPlaying = AudioPlayerService()) {
         _viewModel = State(initialValue: EntryDetailViewModel(
             entry: entry,
-            modelContext: modelContext
+            modelContext: modelContext,
+            audioPlayer: audioPlayer
         ))
     }
 

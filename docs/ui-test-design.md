@@ -13,6 +13,7 @@ UIテストプロセスはアプリと別プロセスで動作するため、lau
 | `--seed-today-with-recordings` | 今日のエントリ + モック録音データを事前投入 |
 | `--seed-today-with-text` | 今日のエントリ + テキストデータを事前投入 |
 | `--mock-recorder` | MockAudioRecorderService を注入（マイク不要で録音UI状態遷移をテスト） |
+| `--mock-player` | MockAudioPlayerService を注入（実音声ファイル不要で再生UI状態遷移をテスト） |
 
 ## マイク非依存のテスト方式
 
