@@ -619,9 +619,10 @@ AudioMerger は複数の音声ソース（TTS 出力、録音ファイル、無�
 ## テスト方針
 
 - **非UIテスト**: Swift Testing フレームワークを使用してユニットテスト・ロジックテストを記述する
-- **UIテスト**: 基本的に行わない
+- **UIテスト**: メインシナリオを選定し XCTest で記述する（24テストケース）。詳細は [ui-test-design.md](./ui-test-design.md) を参照
 
 各モジュール（MindEchoCore, AudioService, AudioMerger, ExportService）に対して、公開インターフェースのロジックを検証する非UIテストを作成する。
+UIテストはユーザーの主要な操作フローに焦点を当て、5カテゴリでテストする。
 
 ### テスト可能性のための設計（DI 方針）
 
