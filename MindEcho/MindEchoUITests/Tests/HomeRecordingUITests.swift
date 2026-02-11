@@ -6,7 +6,22 @@ final class HomeRecordingUITests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
         app = XCUIApplication()
-        app.launchArguments = ["--uitesting", "--mock-recorder"]
+        app.launchArguments = ["--uitesting"]
+        app.resetAuthorizationStatus(for: .microphone)
+        addUIInterruptionMonitor(withDescription: "Microphone Permission") { alert in
+            let allowButton = alert.buttons["Allow"]
+            if allowButton.exists {
+                allowButton.tap()
+                return true
+            }
+            // Japanese localized
+            let allowButtonJa = alert.buttons["許可"]
+            if allowButtonJa.exists {
+                allowButtonJa.tap()
+                return true
+            }
+            return false
+        }
     }
 
     @MainActor
@@ -23,9 +38,11 @@ final class HomeRecordingUITests: XCTestCase {
     func testStartRecording_showsPauseAndStopButtons() throws {
         app.launch()
         app.buttons["home.recordButton"].tap()
+        // Trigger interrupt monitor for permission alert
+        app.tap()
 
         let pauseBtn = app.buttons["home.pauseButton"]
-        XCTAssertTrue(pauseBtn.waitForExistence(timeout: 5))
+        XCTAssertTrue(pauseBtn.waitForExistence(timeout: 10))
         XCTAssertTrue(app.buttons["home.stopButton"].exists)
         XCTAssertFalse(app.buttons["home.recordButton"].exists)
     }
@@ -34,9 +51,10 @@ final class HomeRecordingUITests: XCTestCase {
     func testPauseRecording_showsResumeButton() throws {
         app.launch()
         app.buttons["home.recordButton"].tap()
+        app.tap()
 
         let pauseBtn = app.buttons["home.pauseButton"]
-        XCTAssertTrue(pauseBtn.waitForExistence(timeout: 5))
+        XCTAssertTrue(pauseBtn.waitForExistence(timeout: 10))
         pauseBtn.tap()
 
         let resumeBtn = app.buttons["home.resumeButton"]
@@ -49,9 +67,10 @@ final class HomeRecordingUITests: XCTestCase {
     func testStopRecording_addsRecordingToList() throws {
         app.launch()
         app.buttons["home.recordButton"].tap()
+        app.tap()
 
         let stopBtn = app.buttons["home.stopButton"]
-        XCTAssertTrue(stopBtn.waitForExistence(timeout: 5))
+        XCTAssertTrue(stopBtn.waitForExistence(timeout: 10))
         stopBtn.tap()
 
         // After stopping, record button should reappear
@@ -69,8 +88,9 @@ final class HomeRecordingUITests: XCTestCase {
 
         // First recording
         app.buttons["home.recordButton"].tap()
+        app.tap()
         let stopBtn1 = app.buttons["home.stopButton"]
-        XCTAssertTrue(stopBtn1.waitForExistence(timeout: 5))
+        XCTAssertTrue(stopBtn1.waitForExistence(timeout: 10))
         stopBtn1.tap()
 
         // Wait for record button to reappear

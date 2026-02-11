@@ -1,3 +1,4 @@
+import AVFoundation
 import SwiftUI
 import SwiftData
 
@@ -96,10 +97,13 @@ struct MindEchoApp: App {
                 content: "サンプルテキスト \(dayOffset)日前"
             )
             entry.textEntries.append(textEntry)
+            let fileName = "sample_\(dayOffset).m4a"
+            let duration = TimeInterval(60 * dayOffset)
+            createSilentAudioFile(named: fileName, duration: 10)
             let recording = Recording(
                 sequenceNumber: 1,
-                audioFileName: "sample_\(dayOffset).m4a",
-                duration: TimeInterval(60 * dayOffset)
+                audioFileName: fileName,
+                duration: duration
             )
             entry.recordings.append(recording)
             context.insert(entry)
@@ -111,14 +115,49 @@ struct MindEchoApp: App {
         let today = DateHelper.today()
         let entry = JournalEntry(date: today)
         for i in 1...3 {
+            let fileName = "today_\(i).m4a"
+            let duration = TimeInterval(30 * i)
+            createSilentAudioFile(named: fileName, duration: 10)
             let recording = Recording(
                 sequenceNumber: i,
-                audioFileName: "today_\(i).m4a",
-                duration: TimeInterval(30 * i)
+                audioFileName: fileName,
+                duration: duration
             )
             entry.recordings.append(recording)
         }
         context.insert(entry)
+    }
+
+    /// Creates a silent audio file in the recordings directory using AVAudioFile.
+    private static func createSilentAudioFile(named fileName: String, duration: TimeInterval) {
+        let dir = FilePathManager.recordingsDirectory
+        try? FilePathManager.ensureDirectoryExists(dir)
+        let url = dir.appendingPathComponent(fileName)
+
+        let sampleRate: Double = 44100
+        let frameCount = AVAudioFrameCount(sampleRate * duration)
+
+        guard let format = AVAudioFormat(standardFormatWithSampleRate: sampleRate, channels: 1),
+              let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frameCount) else { return }
+        buffer.frameLength = frameCount
+
+        let settings: [String: Any] = [
+            AVFormatIDKey: kAudioFormatMPEG4AAC,
+            AVSampleRateKey: sampleRate,
+            AVNumberOfChannelsKey: 1,
+            AVEncoderAudioQualityKey: AVAudioQuality.low.rawValue,
+        ]
+        do {
+            let file = try AVAudioFile(forWriting: url, settings: settings, commonFormat: .pcmFormatFloat32, interleaved: false)
+            try file.write(from: buffer)
+        } catch {
+            // Fallback: create as CAF/PCM
+            guard let pcmFormat = AVAudioFormat(standardFormatWithSampleRate: sampleRate, channels: 1) else { return }
+            do {
+                let file = try AVAudioFile(forWriting: url, settings: pcmFormat.settings)
+                try file.write(from: buffer)
+            } catch {}
+        }
     }
 
     @MainActor

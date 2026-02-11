@@ -6,7 +6,7 @@ final class NavigationUITests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
         app = XCUIApplication()
-        app.launchArguments = ["--uitesting", "--mock-recorder"]
+        app.launchArguments = ["--uitesting"]
     }
 
     @MainActor
