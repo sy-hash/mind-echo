@@ -4,4 +4,7 @@
    <FileRef
       location = "group:MindEcho/MindEcho.xcodeproj">
    </FileRef>
+   <FileRef
+      location = "group:MindEcho/MindEcho.xctestplan">
+   </FileRef>
 </Workspace>
