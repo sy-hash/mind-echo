@@ -1,0 +1,187 @@
+import Foundation
+import Observation
+import SwiftData
+
+@Observable
+class HomeViewModel {
+    var recordingDuration: TimeInterval = 0
+    var playingRecordingId: UUID?
+    var isPlaying = false
+    var playbackProgress: Double = 0
+    var todayEntry: JournalEntry?
+    var errorMessage: String?
+
+    private let modelContext: ModelContext
+    private var audioRecorder: any AudioRecording
+    private var audioPlayer: any AudioPlaying
+    private var durationTimer: Timer?
+    private var recordingStartTime: Date?
+    private var accumulatedDuration: TimeInterval = 0
+
+    init(
+        modelContext: ModelContext,
+        audioRecorder: any AudioRecording,
+        audioPlayer: any AudioPlaying = AudioPlayerService()
+    ) {
+        self.modelContext = modelContext
+        self.audioRecorder = audioRecorder
+        self.audioPlayer = audioPlayer
+        self.audioPlayer.onPlaybackFinished = { [weak self] in
+            self?.isPlaying = false
+            self?.playingRecordingId = nil
+            self?.playbackProgress = 0
+        }
+    }
+
+    // MARK: - Computed (forwarding from recorder)
+
+    var isRecording: Bool { audioRecorder.isRecording }
+    var isRecordingPaused: Bool { audioRecorder.isPaused }
+
+    // MARK: - Recording
+
+    func startRecording() {
+        do {
+            let url = FilePathManager.newRecordingURL()
+            try audioRecorder.startRecording(to: url)
+            recordingDuration = 0
+            accumulatedDuration = 0
+            recordingStartTime = Date()
+            startDurationTimer()
+        } catch {
+            errorMessage = "録音の開始に失敗しました: \(error.localizedDescription)"
+        }
+    }
+
+    func pauseRecording() {
+        if let start = recordingStartTime {
+            accumulatedDuration += Date().timeIntervalSince(start)
+        }
+        recordingStartTime = nil
+        audioRecorder.pauseRecording()
+        stopDurationTimer()
+    }
+
+    func resumeRecording() {
+        audioRecorder.resumeRecording()
+        recordingStartTime = Date()
+        startDurationTimer()
+    }
+
+    func stopRecording() {
+        if let start = recordingStartTime {
+            accumulatedDuration += Date().timeIntervalSince(start)
+        }
+        let finalDuration = accumulatedDuration
+        stopDurationTimer()
+        audioRecorder.stopRecording()
+
+        // Save recording to SwiftData
+        let today = DateHelper.logicalDate()
+        let entry = getOrCreateTodayEntry(for: today)
+        let nextSeq = (entry.recordings.map(\.sequenceNumber).max() ?? 0) + 1
+        let now = Date()
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyyMMdd_HHmmss"
+        let fileName = formatter.string(from: now) + ".m4a"
+
+        let recording = Recording(
+            sequenceNumber: nextSeq,
+            audioFileName: fileName,
+            duration: finalDuration,
+            recordedAt: now
+        )
+        entry.recordings.append(recording)
+        entry.updatedAt = Date()
+        todayEntry = entry
+
+        recordingDuration = 0
+        accumulatedDuration = 0
+        recordingStartTime = nil
+    }
+
+    // MARK: - Playback
+
+    func playRecording(_ recording: Recording) {
+        do {
+            let url = FilePathManager.recordingsDirectory
+                .appendingPathComponent(recording.audioFileName)
+            try audioPlayer.play(url: url)
+            playingRecordingId = recording.id
+            isPlaying = true
+        } catch {
+            errorMessage = "再生に失敗しました: \(error.localizedDescription)"
+        }
+    }
+
+    func pausePlayback() {
+        audioPlayer.pause()
+        isPlaying = false
+    }
+
+    func stopPlayback() {
+        audioPlayer.stop()
+        isPlaying = false
+        playingRecordingId = nil
+        playbackProgress = 0
+    }
+
+    // MARK: - Text
+
+    func saveText(_ text: String) {
+        let today = DateHelper.logicalDate()
+        let entry = getOrCreateTodayEntry(for: today)
+
+        if let existing = entry.sortedTextEntries.first {
+            existing.content = text
+            existing.updatedAt = Date()
+        } else {
+            let textEntry = TextEntry(sequenceNumber: 1, content: text)
+            entry.textEntries.append(textEntry)
+        }
+        entry.updatedAt = Date()
+        todayEntry = entry
+    }
+
+    // MARK: - Data
+
+    func fetchTodayEntry() {
+        let today = DateHelper.logicalDate()
+        let descriptor = FetchDescriptor<JournalEntry>(
+            predicate: #Predicate { $0.date == today }
+        )
+        todayEntry = try? modelContext.fetch(descriptor).first
+    }
+
+    // MARK: - Private
+
+    private func getOrCreateTodayEntry(for logicalDate: Date) -> JournalEntry {
+        if let existing = todayEntry, existing.date == logicalDate {
+            return existing
+        }
+        let descriptor = FetchDescriptor<JournalEntry>(
+            predicate: #Predicate { $0.date == logicalDate }
+        )
+        if let found = try? modelContext.fetch(descriptor).first {
+            todayEntry = found
+            return found
+        }
+        let newEntry = JournalEntry(date: logicalDate)
+        modelContext.insert(newEntry)
+        todayEntry = newEntry
+        return newEntry
+    }
+
+    private func startDurationTimer() {
+        durationTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
+            guard let self, let start = self.recordingStartTime else { return }
+            self.recordingDuration = self.accumulatedDuration + Date().timeIntervalSince(start)
+        }
+    }
+
+    private func stopDurationTimer() {
+        durationTimer?.invalidate()
+        durationTimer = nil
+    }
+}
