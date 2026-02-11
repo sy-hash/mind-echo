@@ -15,12 +15,15 @@ struct TTSGenerator {
 
         return try await withCheckedThrowingContinuation { continuation in
             var buffers: [AVAudioBuffer] = []
+            var resumed = false
             synthesizer.write(utterance) { buffer in
+                guard !resumed else { return }
                 guard let pcmBuffer = buffer as? AVAudioPCMBuffer else { return }
                 if pcmBuffer.frameLength > 0 {
                     buffers.append(pcmBuffer)
                 } else {
                     // Empty buffer signals completion
+                    resumed = true
                     if let combined = Self.combineBuffers(buffers) {
                         continuation.resume(returning: combined)
                     } else {
