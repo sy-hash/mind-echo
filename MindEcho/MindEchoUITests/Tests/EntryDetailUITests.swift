@@ -76,6 +76,40 @@ final class EntryDetailUITests: XCTestCase {
     }
 
     @MainActor
+    func testShareTextOption_presentsActivitySheet() throws {
+        navigateToDetail()
+
+        let shareBtn = app.buttons["detail.shareButton"]
+        XCTAssertTrue(shareBtn.waitForExistence(timeout: 5))
+        shareBtn.tap()
+
+        let textOption = app.buttons["テキスト日記"].firstMatch
+        XCTAssertTrue(textOption.waitForExistence(timeout: 5))
+        textOption.tap()
+
+        // UIActivityViewController should appear after text export
+        let activityList = app.otherElements["ActivityListView"]
+        XCTAssertTrue(activityList.waitForExistence(timeout: 10))
+    }
+
+    @MainActor
+    func testShareAudioOption_presentsActivitySheet() throws {
+        navigateToDetail()
+
+        let shareBtn = app.buttons["detail.shareButton"]
+        XCTAssertTrue(shareBtn.waitForExistence(timeout: 5))
+        shareBtn.tap()
+
+        let audioOption = app.buttons["音声ファイル"].firstMatch
+        XCTAssertTrue(audioOption.waitForExistence(timeout: 5))
+        audioOption.tap()
+
+        // UIActivityViewController should appear after audio export & merge
+        let activityList = app.otherElements["ActivityListView"]
+        XCTAssertTrue(activityList.waitForExistence(timeout: 15))
+    }
+
+    @MainActor
     func testEditText_updatesContent() throws {
         navigateToDetail()
 
