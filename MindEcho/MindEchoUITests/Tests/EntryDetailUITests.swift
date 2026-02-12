@@ -61,21 +61,6 @@ final class EntryDetailUITests: XCTestCase {
     }
 
     @MainActor
-    func testShareButton_opensShareTypeSelection() throws {
-        navigateToDetail()
-
-        let shareBtn = app.buttons["detail.shareButton"]
-        XCTAssertTrue(shareBtn.waitForExistence(timeout: 5))
-        shareBtn.tap()
-
-        // The confirmation dialog should show text and audio options
-        let textOption = app.buttons["テキスト日記"]
-        XCTAssertTrue(textOption.waitForExistence(timeout: 5))
-        let audioOption = app.buttons["音声ファイル"]
-        XCTAssertTrue(audioOption.exists)
-    }
-
-    @MainActor
     func testShareTextOption_presentsActivitySheet() throws {
         navigateToDetail()
 

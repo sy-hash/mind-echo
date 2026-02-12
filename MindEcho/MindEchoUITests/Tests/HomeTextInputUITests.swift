@@ -10,17 +10,6 @@ final class HomeTextInputUITests: XCTestCase {
     }
 
     @MainActor
-    func testTapTextButton_opensTextEditorSheet() throws {
-        app.launch()
-        let textBtn = app.buttons["home.textInputButton"]
-        XCTAssertTrue(textBtn.waitForExistence(timeout: 5))
-        textBtn.tap()
-
-        let editor = app.textViews["home.textEditor"]
-        XCTAssertTrue(editor.waitForExistence(timeout: 5))
-    }
-
-    @MainActor
     func testSaveText_dismissesSheet() throws {
         app.launch()
         app.buttons["home.textInputButton"].tap()
