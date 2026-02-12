@@ -2,29 +2,29 @@ import Foundation
 import SwiftData
 
 @Model
-class JournalEntry {
-    var id: UUID
-    var date: Date  // Logical date normalized to noon (12:00) local time
-    var createdAt: Date
-    var updatedAt: Date
+public class JournalEntry {
+    public var id: UUID
+    public var date: Date  // Logical date normalized to noon (12:00) local time
+    public var createdAt: Date
+    public var updatedAt: Date
     @Relationship(deleteRule: .cascade)
-    var recordings: [Recording]
+    public var recordings: [Recording]
     @Relationship(deleteRule: .cascade)
-    var textEntries: [TextEntry]
+    public var textEntries: [TextEntry]
 
-    var sortedRecordings: [Recording] {
+    public var sortedRecordings: [Recording] {
         recordings.sorted { $0.sequenceNumber < $1.sequenceNumber }
     }
 
-    var sortedTextEntries: [TextEntry] {
+    public var sortedTextEntries: [TextEntry] {
         textEntries.sorted { $0.sequenceNumber < $1.sequenceNumber }
     }
 
-    var totalDuration: TimeInterval {
+    public var totalDuration: TimeInterval {
         recordings.reduce(0) { $0 + $1.duration }
     }
 
-    init(id: UUID = UUID(), date: Date, createdAt: Date = Date(), updatedAt: Date = Date(),
+    public init(id: UUID = UUID(), date: Date, createdAt: Date = Date(), updatedAt: Date = Date(),
          recordings: [Recording] = [], textEntries: [TextEntry] = []) {
         self.id = id
         self.date = date

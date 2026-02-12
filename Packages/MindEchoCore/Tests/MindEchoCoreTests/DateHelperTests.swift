@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-@testable import MindEcho
+@testable import MindEchoCore
 
 @MainActor
 struct DateHelperTests {

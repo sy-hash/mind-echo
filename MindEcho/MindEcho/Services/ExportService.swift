@@ -1,5 +1,7 @@
 import AVFoundation
 import Foundation
+import MindEchoAudio
+import MindEchoCore
 
 struct ExportServiceImpl: Exporting {
     func exportTextJournal(entry: JournalEntry, to directory: URL) async throws -> URL {

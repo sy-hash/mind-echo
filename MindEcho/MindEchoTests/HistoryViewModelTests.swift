@@ -1,5 +1,6 @@
 import Testing
 import Foundation
+import MindEchoCore
 import SwiftData
 @testable import MindEcho
 

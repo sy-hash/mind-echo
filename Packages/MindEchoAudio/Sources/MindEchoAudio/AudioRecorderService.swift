@@ -22,16 +22,18 @@ private final class AtomicFlag: Sendable {
 }
 
 @Observable
-class AudioRecorderService: AudioRecording {
-    var isRecording = false
-    var isPaused = false
+public class AudioRecorderService: AudioRecording {
+    public var isRecording = false
+    public var isPaused = false
 
     private var audioEngine: AVAudioEngine?
     private var audioFile: AVAudioFile?
     /// Thread-safe pause flag for the audio tap callback.
     private let pauseFlag = AtomicFlag()
 
-    func startRecording(to url: URL) throws {
+    public init() {}
+
+    public func startRecording(to url: URL) throws {
         // Set up audio session BEFORE accessing inputNode so the microphone
         // permission is resolved and the node returns a valid format.
         let session = AVAudioSession.sharedInstance()
@@ -54,7 +56,8 @@ class AudioRecorderService: AudioRecording {
             AVNumberOfChannelsKey: 1,
         ]
 
-        try FilePathManager.ensureDirectoryExists(url.deletingLastPathComponent())
+        let parentDir = url.deletingLastPathComponent()
+        try FileManager.default.createDirectory(at: parentDir, withIntermediateDirectories: true)
         let file = try AVAudioFile(forWriting: url, settings: settings)
 
         self.audioEngine = engine
@@ -72,19 +75,19 @@ class AudioRecorderService: AudioRecording {
         isPaused = false
     }
 
-    func pauseRecording() {
+    public func pauseRecording() {
         guard isRecording else { return }
         pauseFlag.value = true
         isPaused = true
     }
 
-    func resumeRecording() {
+    public func resumeRecording() {
         guard isRecording, isPaused else { return }
         pauseFlag.value = false
         isPaused = false
     }
 
-    func stopRecording() {
+    public func stopRecording() {
         audioEngine?.inputNode.removeTap(onBus: 0)
         audioEngine?.stop()
         audioEngine = nil

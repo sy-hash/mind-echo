@@ -2,17 +2,17 @@ import Foundation
 import SwiftData
 
 @Model
-class Recording {
-    var id: UUID
-    var sequenceNumber: Int
-    var audioFileName: String
-    var duration: TimeInterval
-    var recordedAt: Date
+public class Recording {
+    public var id: UUID
+    public var sequenceNumber: Int
+    public var audioFileName: String
+    public var duration: TimeInterval
+    public var recordedAt: Date
 
     @Relationship(inverse: \JournalEntry.recordings)
-    var entry: JournalEntry?
+    public var entry: JournalEntry?
 
-    init(id: UUID = UUID(), sequenceNumber: Int, audioFileName: String,
+    public init(id: UUID = UUID(), sequenceNumber: Int, audioFileName: String,
          duration: TimeInterval, recordedAt: Date = Date()) {
         self.id = id
         self.sequenceNumber = sequenceNumber

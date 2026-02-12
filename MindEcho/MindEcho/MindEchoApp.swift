@@ -1,6 +1,8 @@
 import AVFoundation
-import SwiftUI
+import MindEchoAudio
+import MindEchoCore
 import SwiftData
+import SwiftUI
 
 @main
 struct MindEchoApp: App {

@@ -1,4 +1,5 @@
 import Foundation
+import MindEchoCore
 import Observation
 import SwiftData
 

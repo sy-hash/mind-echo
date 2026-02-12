@@ -3,14 +3,16 @@ import Foundation
 import Observation
 
 @Observable
-class AudioPlayerService: NSObject, AudioPlaying {
-    var playbackProgress: Double = 0
-    @ObservationIgnored var onPlaybackFinished: (@MainActor () -> Void)?
+public class AudioPlayerService: NSObject, AudioPlaying {
+    public var playbackProgress: Double = 0
+    @ObservationIgnored public var onPlaybackFinished: (@MainActor () -> Void)?
 
     private var audioPlayer: AVAudioPlayer?
     private var progressTimer: Timer?
 
-    func play(url: URL) throws {
+    public override init() {}
+
+    public func play(url: URL) throws {
         stop()
 
         let session = AVAudioSession.sharedInstance()
@@ -24,12 +26,12 @@ class AudioPlayerService: NSObject, AudioPlaying {
         startProgressTimer()
     }
 
-    func pause() {
+    public func pause() {
         audioPlayer?.pause()
         stopProgressTimer()
     }
 
-    func stop() {
+    public func stop() {
         audioPlayer?.stop()
         audioPlayer = nil
         playbackProgress = 0
@@ -53,7 +55,7 @@ class AudioPlayerService: NSObject, AudioPlaying {
 }
 
 extension AudioPlayerService: AVAudioPlayerDelegate {
-    nonisolated func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
+    nonisolated public func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
         Task { @MainActor [weak self] in
             guard let self else { return }
             self.playbackProgress = 1.0

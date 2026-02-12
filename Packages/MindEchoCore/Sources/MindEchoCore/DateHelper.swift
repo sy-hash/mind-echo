@@ -1,11 +1,11 @@
 import Foundation
 
-enum DateHelper {
+public enum DateHelper {
     private static let boundaryHour = 3
 
     /// Returns the logical date for the given timestamp, normalized to noon (12:00) local time.
     /// Times between 00:00-02:59 are considered part of the previous day.
-    static func logicalDate(for date: Date = Date(), calendar: Calendar = .current) -> Date {
+    public static func logicalDate(for date: Date = Date(), calendar: Calendar = .current) -> Date {
         var cal = calendar
         cal.timeZone = TimeZone.current
         let components = cal.dateComponents([.year, .month, .day, .hour], from: date)
@@ -24,7 +24,7 @@ enum DateHelper {
     }
 
     /// Returns a formatted display string for the logical date, e.g. "2025年2月7日（金）"
-    static func displayString(for date: Date, calendar: Calendar = .current) -> String {
+    public static func displayString(for date: Date, calendar: Calendar = .current) -> String {
         var cal = calendar
         cal.timeZone = TimeZone.current
         let formatter = DateFormatter()
@@ -36,7 +36,7 @@ enum DateHelper {
     }
 
     /// Returns the logical date for "today" (current moment)
-    static func today(calendar: Calendar = .current) -> Date {
+    public static func today(calendar: Calendar = .current) -> Date {
         logicalDate(for: Date(), calendar: calendar)
     }
 }

@@ -2,17 +2,17 @@ import Foundation
 import SwiftData
 
 @Model
-class TextEntry {
-    var id: UUID
-    var sequenceNumber: Int
-    var content: String
-    var createdAt: Date
-    var updatedAt: Date
+public class TextEntry {
+    public var id: UUID
+    public var sequenceNumber: Int
+    public var content: String
+    public var createdAt: Date
+    public var updatedAt: Date
 
     @Relationship(inverse: \JournalEntry.textEntries)
-    var entry: JournalEntry?
+    public var entry: JournalEntry?
 
-    init(id: UUID = UUID(), sequenceNumber: Int = 1, content: String,
+    public init(id: UUID = UUID(), sequenceNumber: Int = 1, content: String,
          createdAt: Date = Date(), updatedAt: Date = Date()) {
         self.id = id
         self.sequenceNumber = sequenceNumber

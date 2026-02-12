@@ -1,14 +1,14 @@
 import AVFoundation
 import Foundation
 
-enum AudioMergerError: Error {
+public enum AudioMergerError: Error {
     case noInputFiles
     case conversionFailed
 }
 
-struct AudioMerger {
+public struct AudioMerger {
     /// Merges audio sources (optional TTS buffer + silence + recordings) into a single .m4a file.
-    static func merge(
+    public static func merge(
         ttsBuffer: AVAudioPCMBuffer?,
         recordingURLs: [URL],
         silenceDuration: TimeInterval = 0.75,
@@ -16,7 +16,10 @@ struct AudioMerger {
     ) async throws -> URL {
         guard !recordingURLs.isEmpty else { throw AudioMergerError.noInputFiles }
 
-        try FilePathManager.ensureDirectoryExists(outputURL.deletingLastPathComponent())
+        try FileManager.default.createDirectory(
+            at: outputURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
 
         // Read first recording to determine format
         let firstFile = try AVAudioFile(forReading: recordingURLs[0])

@@ -1,5 +1,7 @@
-import SwiftUI
+import MindEchoAudio
+import MindEchoCore
 import SwiftData
+import SwiftUI
 
 struct EntryDetailView: View {
     @State private var viewModel: EntryDetailViewModel

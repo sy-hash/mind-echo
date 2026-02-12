@@ -1,6 +1,6 @@
 import Foundation
 
-protocol AudioRecording {
+public protocol AudioRecording {
     var isRecording: Bool { get }
     var isPaused: Bool { get }
     func startRecording(to url: URL) throws

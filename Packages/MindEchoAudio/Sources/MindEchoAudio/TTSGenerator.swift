@@ -1,9 +1,11 @@
 import AVFoundation
 import Foundation
 
-struct TTSGenerator {
+extension AVAudioPCMBuffer: @retroactive @unchecked Sendable {}
+
+public struct TTSGenerator {
     /// Generates a TTS audio buffer for the date announcement in Japanese.
-    static func generateDateAnnouncement(for date: Date) async throws -> AVAudioPCMBuffer {
+    public static func generateDateAnnouncement(for date: Date) async throws -> AVAudioPCMBuffer {
         let calendar = Calendar.current
         let components = calendar.dateComponents([.year, .month, .day], from: date)
         let text = "これは\(components.year!)年\(components.month!)月\(components.day!)日の録音です。"

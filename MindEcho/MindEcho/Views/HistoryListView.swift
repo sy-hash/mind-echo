@@ -1,5 +1,7 @@
-import SwiftUI
+import MindEchoAudio
+import MindEchoCore
 import SwiftData
+import SwiftUI
 
 struct HistoryListView: View {
     @State private var viewModel: HistoryViewModel

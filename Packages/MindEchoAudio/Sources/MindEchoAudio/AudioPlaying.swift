@@ -1,6 +1,6 @@
 import Foundation
 
-protocol AudioPlaying {
+public protocol AudioPlaying {
     var playbackProgress: Double { get }
     var onPlaybackFinished: (@MainActor () -> Void)? { get set }
     func play(url: URL) throws
