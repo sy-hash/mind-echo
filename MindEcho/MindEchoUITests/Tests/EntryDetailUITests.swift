@@ -110,6 +110,31 @@ final class EntryDetailUITests: XCTestCase {
     }
 
     @MainActor
+    func testSwipeToDelete_removesRecordingAndHidesSection() throws {
+        navigateToDetail()
+
+        // Verify recording section and row exist
+        let sectionHeader = app.staticTexts["録音"]
+        XCTAssertTrue(sectionHeader.waitForExistence(timeout: 5))
+        let recordingRow = app.buttons["detail.recordingRow.1"]
+        XCTAssertTrue(recordingRow.waitForExistence(timeout: 5))
+
+        // Swipe left to reveal delete action
+        recordingRow.swipeLeft()
+        let deleteButton = app.buttons["削除"]
+        XCTAssertTrue(deleteButton.waitForExistence(timeout: 5))
+        deleteButton.tap()
+
+        // Recording row should disappear
+        let rowGone = NSPredicate(format: "exists == false")
+        expectation(for: rowGone, evaluatedWith: recordingRow)
+        waitForExpectations(timeout: 5)
+
+        // Section header should also disappear since this was the only recording
+        XCTAssertFalse(sectionHeader.exists)
+    }
+
+    @MainActor
     func testEditText_updatesContent() throws {
         navigateToDetail()
 
