@@ -80,13 +80,9 @@ public class AudioRecorderService: AudioRecording {
             }
             let rms = sqrt(sum / Float(frameLength))
 
-            // Convert to dB and normalize for WaveformLiveCanvas.
-            // The renderer internally does `1 - sample` to get bar height,
-            // so we must pass inverted values: silence ≈ 1.0, loud ≈ 0.0.
-            let db = 20 * log10(max(rms, 1e-6))
-            let minDb: Float = -50
-            let maxDb: Float = 0
-            let level = 1 - max(0, min(1, (db - minDb) / (maxDb - minDb)))
+            // Match DSWaveformImage reference: 1 - pow(10, averagePower / 20)
+            // which simplifies to (1 - rms) when averagePower = 20*log10(rms).
+            let level = 1 - rms
 
             // Append 3 copies per callback to match Voice Memos animation speed.
             DispatchQueue.main.async {
