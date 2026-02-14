@@ -6,6 +6,7 @@ import Observation
 class MockAudioRecorderService: AudioRecording {
     var isRecording = false
     var isPaused = false
+    var audioLevels: [Float] = []
     private(set) var recordingURL: URL?
 
     func startRecording(to url: URL) throws {
