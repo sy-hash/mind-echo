@@ -41,6 +41,7 @@ class HomeViewModel {
 
     var isRecording: Bool { audioRecorder.isRecording }
     var isRecordingPaused: Bool { audioRecorder.isPaused }
+    var audioLevels: [Float] { audioRecorder.audioLevels }
 
     // MARK: - Recording
 

@@ -39,6 +39,10 @@ jobs:
             {
               "language": "Japanese"
             }
+          claude_args: |
+            --model claude-opus-4-1-20250805
+            --max-turns 10
+
           # Optional: Customize the trigger phrase (default: @claude)
           # trigger_phrase: "/claude"
 

@@ -1,3 +1,5 @@
+import DSWaveformImage
+import DSWaveformImageViews
 import MindEchoAudio
 import MindEchoCore
 import SwiftData
@@ -25,11 +27,22 @@ struct HomeView: View {
 
                 Spacer()
 
-                // Recording duration (shown when recording)
+                // Recording duration and waveform (shown when recording)
                 if viewModel.isRecording {
                     Text(formatDuration(viewModel.recordingDuration))
                         .font(.system(.largeTitle, design: .monospaced))
                         .accessibilityIdentifier("home.recordingDuration")
+
+                    WaveformLiveCanvas(
+                        samples: viewModel.audioLevels,
+                        configuration: Waveform.Configuration(
+                            style: .striped(.init(color: .red, width: 3, spacing: 2)),
+                            damping: .init()
+                        ),
+                        shouldDrawSilencePadding: true
+                    )
+                    .frame(height: 60)
+                    .opacity(viewModel.isRecordingPaused ? 0.5 : 1.0)
                 }
 
                 // Recording controls
