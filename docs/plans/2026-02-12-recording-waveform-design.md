@@ -2,11 +2,15 @@
 
 ## Overview
 
-Recording during the home screen currently only shows elapsed time. Users cannot visually confirm that audio is actually being captured. This design adds a real-time waveform bar visualization during recording.
+Recording during the home screen currently only shows elapsed time. Users cannot visually confirm that audio is actually being captured. This design adds a real-time waveform visualization during recording using [DSWaveformImage](https://github.com/dmrschmidt/DSWaveformImage).
 
-## Style
+## Library
 
-Real-time vertical bars flowing from left to right (similar to Apple Voice Memos or LINE recording UI).
+**DSWaveformImage** (v14.x) — two modules:
+- `DSWaveformImage`: core waveform generation
+- `DSWaveformImageViews`: SwiftUI views (`WaveformLiveCanvas`)
+
+Added to **App Target only** (`MindEcho.xcodeproj`). MindEchoAudio remains dependency-free.
 
 ## Placement
 
@@ -30,7 +34,7 @@ Between the recording duration display and the control buttons (pause/stop).
 ## Data Flow
 
 ```
-AVAudioEngine (installTap) → AudioRecorderService → HomeViewModel → WaveformView
+AVAudioEngine (installTap) → AudioRecorderService → HomeViewModel → WaveformLiveCanvas
 ```
 
 The existing `installTap` callback in `AudioRecorderService` receives `AVAudioPCMBuffer`. RMS (root mean square) is calculated from the buffer's `floatChannelData`, converted to a normalized 0.0-1.0 level, and appended to `audioLevels`.
@@ -60,62 +64,50 @@ Add computed property forwarding from recorder:
 var audioLevels: [Float] { audioRecorder.audioLevels }
 ```
 
-### 4. WaveformView (NEW: `MindEcho/MindEcho/Views/WaveformView.swift`)
+### 4. HomeView (`MindEcho/MindEcho/Views/HomeView.swift`)
 
+Insert `WaveformLiveCanvas` below the duration display:
 ```swift
-struct WaveformView: View {
-    let levels: [Float]       // 0.0-1.0 normalized audio levels
-    let isPaused: Bool        // Whether recording is paused
-    let barWidth: CGFloat     // Width of each bar (default: 3pt)
-    let barSpacing: CGFloat   // Space between bars (default: 2pt)
-    let maxBars: Int          // Max visible bars
-}
+import DSWaveformImageViews
+
+// Inside recording block:
+WaveformLiveCanvas(
+    samples: viewModel.audioLevels,
+    configuration: Waveform.Configuration(
+        style: .striped(.init(color: .red, width: 3, spacing: 2)),
+        damping: .init()
+    ),
+    shouldDrawSilencePadding: true
+)
+.frame(height: 60)
 ```
 
-Display logic:
-- Take the last `maxBars` entries from `levels` array
-- Bar height = level * view height (minimum 2pt guaranteed)
-- Rightmost bar is newest, older data flows left
-- `maxBars` auto-calculated from view width via `GeometryReader`
-
-Visual properties:
-- Bar color: `Color.red` (consistent with recording button)
-- Corner radius: 1.5 (half of bar width)
-- View height: fixed 60pt
-- When paused: waveform remains, opacity reduced to 0.5
-
-### 5. HomeView (`MindEcho/MindEcho/Views/HomeView.swift`)
-
-Insert `WaveformView` below the duration display:
-```swift
-if viewModel.isRecording {
-    Text(formatDuration(viewModel.recordingDuration))
-    WaveformView(
-        levels: viewModel.audioLevels,
-        isPaused: viewModel.isRecordingPaused
-    )
-    .frame(height: 60)
-    .accessibilityIdentifier("home.waveform")
-}
-```
-
-### 6. MockAudioRecorderService (`MindEcho/MindEcho/Mocks/MockAudioRecorderService.swift`)
+### 5. MockAudioRecorderService (`MindEcho/MindEcho/Mocks/MockAudioRecorderService.swift`)
 
 Add `var audioLevels: [Float] = []` to conform to updated protocol.
 
+### 6. MindEcho.xcodeproj
+
+Add DSWaveformImage as SPM dependency (v14.x):
+- Repository: `https://github.com/dmrschmidt/DSWaveformImage`
+- Products: `DSWaveformImage`, `DSWaveformImageViews`
+
 ## Pause Behavior
 
-- When paused: waveform bars remain displayed as-is, no new bars added, opacity reduced to 0.5
-- When resumed: new bars continue from where it left off
-- When stopped: `audioLevels` cleared, waveform disappears
+| State | Waveform |
+|-------|----------|
+| Recording | Live waveform displayed |
+| Paused | Waveform remains as-is, opacity reduced to 0.5 |
+| Stopped | `audioLevels` cleared, waveform disappears |
 
 ## Dependencies
 
-None. Uses only standard Apple frameworks (AVFoundation + SwiftUI).
+- **DSWaveformImage** v14.x (SPM, App Target only)
+- MindEchoAudio: no new dependencies
 
 ## Testing
 
-- No new unit tests needed (RMS depends on `AVAudioPCMBuffer`, hard to mock; `WaveformView` is pure visual)
+- No new unit tests needed (RMS depends on `AVAudioPCMBuffer`, hard to mock; waveform is pure visual)
 - Mock updated for protocol conformance
 - Existing UI tests unaffected (no dependency on waveform)
 - Manual verification on real device required
@@ -127,6 +119,6 @@ None. Uses only standard Apple frameworks (AVFoundation + SwiftUI).
 | `AudioRecording.swift` | Add `audioLevels` property |
 | `AudioRecorderService.swift` | Add RMS calculation in tap callback |
 | `HomeViewModel.swift` | Forward `audioLevels` |
-| `WaveformView.swift` | **New file** - waveform bar rendering |
-| `HomeView.swift` | Integrate `WaveformView` |
+| `HomeView.swift` | Integrate `WaveformLiveCanvas` |
 | `MockAudioRecorderService.swift` | Add `audioLevels` property |
+| `MindEcho.xcodeproj` | Add DSWaveformImage SPM dependency |
