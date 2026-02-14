@@ -1,0 +1,37 @@
+{
+  "configurations" : [
+    {
+      "id" : "9F61CE74-C461-4A7E-B439-26A54C857EFC",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "performanceAntipatternCheckerEnabled" : true,
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:MindEcho.xcodeproj",
+      "identifier" : "0BD6D7F92F3856DE00D7656F",
+      "name" : "MindEcho"
+    }
+  },
+  "testTargets" : [
+    {
+      "parallelizable" : true,
+      "target" : {
+        "containerPath" : "container:MindEcho.xcodeproj",
+        "identifier" : "0BD6D8082F3856E000D7656F",
+        "name" : "MindEchoTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:MindEcho.xcodeproj",
+        "identifier" : "0BD6D8122F3856E000D7656F",
+        "name" : "MindEchoUITests"
+      }
+    }
+  ],
+  "version" : 1
+}

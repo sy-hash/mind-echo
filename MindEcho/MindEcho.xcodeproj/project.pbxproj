@@ -6,6 +6,11 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		0BA1C00100000001000000A1 /* MindEchoCore in Frameworks */ = {isa = PBXBuildFile; productRef = 0BA1C00100000003000000A3 /* MindEchoCore */; };
+		0BA1C00100000002000000A2 /* MindEchoAudio in Frameworks */ = {isa = PBXBuildFile; productRef = 0BA1C00100000004000000A4 /* MindEchoAudio */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		0BD6D80A2F3856E000D7656F /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -57,6 +62,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0BA1C00100000001000000A1 /* MindEchoCore in Frameworks */,
+				0BA1C00100000002000000A2 /* MindEchoAudio in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -119,6 +126,8 @@
 			);
 			name = MindEcho;
 			packageProductDependencies = (
+				0BA1C00100000003000000A3 /* MindEchoCore */,
+				0BA1C00100000004000000A4 /* MindEchoAudio */,
 			);
 			productName = MindEcho;
 			productReference = 0BD6D7FA2F3856DE00D7656F /* MindEcho.app */;
@@ -202,6 +211,10 @@
 			);
 			mainGroup = 0BD6D7F12F3856DE00D7656F;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				0BA1C00100000005000000A5 /* XCLocalSwiftPackageReference "../Packages/MindEchoCore" */,
+				0BA1C00100000006000000A6 /* XCLocalSwiftPackageReference "../Packages/MindEchoAudio" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 0BD6D7FB2F3856DE00D7656F /* Products */;
 			projectDirPath = "";
@@ -407,8 +420,12 @@
 				DEVELOPMENT_TEAM = LYMDWEXP2V;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = YES;
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "MindEcho uses the microphone to record your voice memos.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UIBackgroundModes = "(audio)";
+				INFOPLIST_KEY_UIFileSharingEnabled = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -439,8 +456,12 @@
 				DEVELOPMENT_TEAM = LYMDWEXP2V;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = YES;
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "MindEcho uses the microphone to record your voice memos.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UIBackgroundModes = "(audio)";
+				INFOPLIST_KEY_UIFileSharingEnabled = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -585,6 +606,28 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		0BA1C00100000005000000A5 /* XCLocalSwiftPackageReference "../Packages/MindEchoCore" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../Packages/MindEchoCore;
+		};
+		0BA1C00100000006000000A6 /* XCLocalSwiftPackageReference "../Packages/MindEchoAudio" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../Packages/MindEchoAudio;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		0BA1C00100000003000000A3 /* MindEchoCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = MindEchoCore;
+		};
+		0BA1C00100000004000000A4 /* MindEchoAudio */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = MindEchoAudio;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 0BD6D7F22F3856DE00D7656F /* Project object */;
 }

@@ -25,36 +25,47 @@
 
 ## モジュール構成
 
-マルチモジュール構成（Swift Package）で開発する。4つのライブラリモジュール + 1つのアプリターゲットに分割する。
+マルチモジュール構成（ローカル Swift Package + App Target）で開発する。2つの SPM ライブラリパッケージ + 1つのアプリターゲットに分割する。
 
 ### 依存関係
 
 ```
 MindEchoApp (App Target)
-├── MindEchoCore
-├── AudioService
-├── AudioMerger
-└── ExportService
-    ├── MindEchoCore
-    └── AudioMerger
+├── MindEchoCore   (local Swift Package)
+└── MindEchoAudio  (local Swift Package)
+```
+
+### ディレクトリ配置
+
+```
+mind-echo/
+├── Packages/
+│   ├── MindEchoCore/
+│   │   ├── Package.swift
+│   │   ├── Sources/MindEchoCore/
+│   │   └── Tests/MindEchoCoreTests/
+│   └── MindEchoAudio/
+│       ├── Package.swift
+│       ├── Sources/MindEchoAudio/
+│       └── Tests/MindEchoAudioTests/
+└── MindEcho/
+    └── MindEcho/             (App Target)
 ```
 
 ### モジュール一覧
 
 | モジュール | 責務 | 主な型 | 依存先 |
 |-----------|------|--------|--------|
-| **MindEchoCore** | ドメインモデル, 日付ロジック（午前3時境界）, ファイルパス/命名規則, ディレクトリ管理 | `JournalEntry`, `Recording`, `TextEntry`, `DateHelper`, `FilePathManager` | Foundation, SwiftData |
-| **AudioService** | 録音（一時停止/再開含む）, 再生（プログレス追跡含む）, AVAudioSession 管理 | `AudioRecorderService`, `AudioPlayerService` | AVFoundation |
-| **AudioMerger** | 複数音声ファイルの結合, TTS 日付アナウンス生成, 無音挿入 | `AudioMerger`, `TTSGenerator` | AVFoundation |
-| **ExportService** | エクスポート生成（テキスト/音声）, Documents/Exports/ へのコピー | `ExportService` | MindEchoCore, AudioMerger |
-| **MindEchoApp** | Views, ViewModels, App lifecycle | `HomeView`, `HomeViewModel` 等 | 全モジュール |
+| **MindEchoCore** | ドメインモデル, 日付ロジック（午前3時境界）, ファイルパス/命名規則, ディレクトリ管理, エクスポート protocol | `JournalEntry`, `Recording`, `TextEntry`, `ShareType`, `DateHelper`, `FilePathManager`, `Exporting` | Foundation, SwiftData |
+| **MindEchoAudio** | 録音（一時停止/再開含む）, 再生（プログレス追跡含む）, AVAudioSession 管理, 複数音声ファイルの結合, TTS 日付アナウンス生成, 無音挿入 | `AudioRecorderService`, `AudioPlayerService`, `AudioMerger`, `TTSGenerator`, `AudioRecording`, `AudioPlaying` | AVFoundation |
+| **MindEchoApp** | Views, ViewModels, ExportService 実装, Mocks, App lifecycle | `HomeView`, `HomeViewModel`, `ExportServiceImpl` 等 | MindEchoCore, MindEchoAudio |
 
 ### 設計方針
 
-- **AudioService** は録音と再生をまとめる。どちらも AVAudioSession の管理が必要でセッション設定を共有でき、単体では1〜2ファイル程度のためモジュールとしては薄すぎる。録音は `AVAudioEngine` の input node tap を使用し、tap コールバック内で `AVAudioFile` への書き出し（録音）を行う
-- **AudioMerger** は独立モジュールとする。録音・再生（リアルタイム操作）とマージ（バッチ処理）は性質が異なり、入出力が `[URL] → URL` と明確で他モジュールへの依存がない
-- **AudioService, AudioMerger** は MindEchoCore に依存しない。ファイルパス（URL）や文字列など基本型のみで動作し、ドメインモデルとの紐付けは ViewModel 層（App Target）が担う
-- **ExportService** は MindEchoCore に依存する。テキストエクスポートのフォーマット生成にドメイン構造の知識が必要なため
+- **MindEchoAudio** は録音・再生・結合・TTS を1パッケージに統合する。全て AVFoundation を共通依存とし、音声処理という同一の関心領域に属する。AudioMerger 単独（2ファイル/約170行）や AudioService 単独では独立パッケージにするには薄すぎる
+- **MindEchoAudio** は MindEchoCore に依存しない（コンパイル時に強制）。ファイルパス（URL）や文字列など基本型のみで動作し、ドメインモデルとの紐付けは ViewModel 層（App Target）が担う
+- **ExportServiceImpl** は App Target に配置する。約60行の薄いブリッジで MindEchoCore と MindEchoAudio の両方に依存するため、独立パッケージ化すると依存チェーンが増えるだけで利点がない
+- **MindEchoAudio** は AVFoundation のコールバックパターン（audio tap, delegate 等）を多用するため、Swift language mode を v5 に設定し strict concurrency チェックを緩和する
 
 ## データモデル
 
@@ -334,7 +345,7 @@ struct HomeView: View {
 - **今日の録音リスト（下部）** — 今日既に録音がある場合、各録音を連番で一覧表示:
   - 連番（#1, #2, ...）
   - 録音時間
-  - 再生 / 一時停止ボタン（個別再生）
+  - セルタップで再生 / 停止（個別再生）
 
 **動作フロー（録音）:**
 
@@ -377,7 +388,7 @@ struct HomeView: View {
 - テキスト内容（編集可能）
 - 録音セクション（録音がある場合）— 各 Recording を連番順にリスト表示:
   - 連番と録音時刻（例: #1 14:30）
-  - 再生ボタン / 一時停止ボタン（個別再生）
+  - セルタップで再生 / 停止（個別再生）
   - 録音時間の表示
   - 個別の録音削除ボタン（スワイプ or ボタン）
 
