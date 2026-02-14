@@ -65,7 +65,7 @@ public class AudioRecorderService: AudioRecording {
         self.audioFile = file
 
         let flag = pauseFlag
-        inputNode.installTap(onBus: 0, bufferSize: 4096, format: format) { [weak self] buffer, _ in
+        inputNode.installTap(onBus: 0, bufferSize: 1024, format: format) { [weak self] buffer, _ in
             if !flag.value {
                 try? file.write(from: buffer)
             }
@@ -80,14 +80,17 @@ public class AudioRecorderService: AudioRecording {
             }
             let rms = sqrt(sum / Float(frameLength))
 
-            // Convert to dB and normalize to 0.0-1.0
+            // Convert to dB and normalize for WaveformLiveCanvas.
+            // The renderer internally does `1 - sample` to get bar height,
+            // so we must pass inverted values: silence ≈ 1.0, loud ≈ 0.0.
             let db = 20 * log10(max(rms, 1e-6))
-            let minDb: Float = -60
+            let minDb: Float = -50
             let maxDb: Float = 0
-            let normalized = max(0, min(1, (db - minDb) / (maxDb - minDb)))
+            let level = 1 - max(0, min(1, (db - minDb) / (maxDb - minDb)))
 
+            // Append 3 copies per callback to match Voice Memos animation speed.
             DispatchQueue.main.async {
-                self?.audioLevels.append(normalized)
+                self?.audioLevels.append(contentsOf: [level, level, level])
             }
         }
 
