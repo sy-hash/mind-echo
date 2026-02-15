@@ -17,93 +17,103 @@ struct HomeView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 20) {
-                // Date display
-                Text(DateHelper.displayString(for: DateHelper.today()))
-                    .font(.title2)
-                    .accessibilityIdentifier("home.dateLabel")
+            GeometryReader { geometry in
+                ScrollView {
+                    VStack(spacing: 20) {
+                        // Date display
+                        Text(DateHelper.displayString(for: DateHelper.today()))
+                            .font(.title2)
+                            .accessibilityIdentifier("home.dateLabel")
 
-                Spacer()
+                        Spacer()
 
-                // Recording duration (shown when recording)
-                if viewModel.isRecording {
-                    Text(formatDuration(viewModel.recordingDuration))
-                        .font(.system(.largeTitle, design: .monospaced))
-                        .accessibilityIdentifier("home.recordingDuration")
-                }
-
-                // Recording controls
-                HStack(spacing: 30) {
-                    if viewModel.isRecording {
-                        if viewModel.isRecordingPaused {
-                            Button { viewModel.resumeRecording() } label: {
-                                Image(systemName: "play.circle.fill")
-                                    .font(.system(size: 50))
-                            }
-                            .accessibilityIdentifier("home.resumeButton")
-                        } else {
-                            Button { viewModel.pauseRecording() } label: {
-                                Image(systemName: "pause.circle.fill")
-                                    .font(.system(size: 50))
-                            }
-                            .accessibilityIdentifier("home.pauseButton")
+                        // Recording duration (shown when recording)
+                        if viewModel.isRecording {
+                            Text(formatDuration(viewModel.recordingDuration))
+                                .font(.system(.largeTitle, design: .monospaced))
+                                .accessibilityIdentifier("home.recordingDuration")
                         }
 
-                        Button { viewModel.stopRecording() } label: {
-                            Image(systemName: "stop.circle.fill")
-                                .font(.system(size: 50))
-                                .foregroundStyle(.red)
-                        }
-                        .accessibilityIdentifier("home.stopButton")
-                    } else {
-                        Button { viewModel.startRecording() } label: {
-                            Image(systemName: "mic.circle.fill")
-                                .font(.system(size: 70))
-                                .foregroundStyle(.red)
-                        }
-                        .accessibilityIdentifier("home.recordButton")
-                    }
-                }
-
-                // Text input button
-                Button {
-                    editingText = viewModel.todayEntry?.sortedTextEntries.first?.content ?? ""
-                    showTextEditor = true
-                } label: {
-                    Label("テキスト入力", systemImage: "square.and.pencil")
-                }
-                .accessibilityIdentifier("home.textInputButton")
-
-                // Today's recordings list
-                if let entry = viewModel.todayEntry, !entry.recordings.isEmpty {
-                    List {
-                        ForEach(entry.sortedRecordings) { recording in
-                            Button {
-                                if viewModel.playingRecordingId == recording.id && viewModel.isPlaying {
-                                    viewModel.pausePlayback()
+                        // Recording controls
+                        HStack(spacing: 30) {
+                            if viewModel.isRecording {
+                                if viewModel.isRecordingPaused {
+                                    Button { viewModel.resumeRecording() } label: {
+                                        Image(systemName: "play.circle.fill")
+                                            .font(.system(size: 50))
+                                    }
+                                    .accessibilityIdentifier("home.resumeButton")
                                 } else {
-                                    viewModel.playRecording(recording)
+                                    Button { viewModel.pauseRecording() } label: {
+                                        Image(systemName: "pause.circle.fill")
+                                            .font(.system(size: 50))
+                                    }
+                                    .accessibilityIdentifier("home.pauseButton")
                                 }
-                            } label: {
-                                HStack {
-                                    Text("#\(recording.sequenceNumber)")
-                                        .font(.headline)
-                                    Text(formatDuration(recording.duration))
-                                        .foregroundStyle(.secondary)
-                                    Spacer()
-                                    Image(systemName: viewModel.playingRecordingId == recording.id && viewModel.isPlaying ? "pause.fill" : "play.fill")
+
+                                Button { viewModel.stopRecording() } label: {
+                                    Image(systemName: "stop.circle.fill")
+                                        .font(.system(size: 50))
+                                        .foregroundStyle(.red)
+                                }
+                                .accessibilityIdentifier("home.stopButton")
+                            } else {
+                                Button { viewModel.startRecording() } label: {
+                                    Image(systemName: "mic.circle.fill")
+                                        .font(.system(size: 70))
+                                        .foregroundStyle(.red)
+                                }
+                                .accessibilityIdentifier("home.recordButton")
+                            }
+                        }
+
+                        // Text input button
+                        Button {
+                            editingText = viewModel.todayEntry?.sortedTextEntries.first?.content ?? ""
+                            showTextEditor = true
+                        } label: {
+                            Label("テキスト入力", systemImage: "square.and.pencil")
+                        }
+                        .accessibilityIdentifier("home.textInputButton")
+
+                        // Today's recordings list
+                        if let entry = viewModel.todayEntry, !entry.recordings.isEmpty {
+                            VStack(spacing: 0) {
+                                ForEach(entry.sortedRecordings) { recording in
+                                    Button {
+                                        if viewModel.playingRecordingId == recording.id && viewModel.isPlaying {
+                                            viewModel.pausePlayback()
+                                        } else {
+                                            viewModel.playRecording(recording)
+                                        }
+                                    } label: {
+                                        HStack {
+                                            Text("#\(recording.sequenceNumber)")
+                                                .font(.headline)
+                                            Text(formatDuration(recording.duration))
+                                                .foregroundStyle(.secondary)
+                                            Spacer()
+                                            Image(systemName: viewModel.playingRecordingId == recording.id && viewModel.isPlaying ? "pause.fill" : "play.fill")
+                                        }
+                                        .padding(.vertical, 12)
+                                    }
+                                    .buttonStyle(.borderless)
+                                    .accessibilityIdentifier("home.recordingRow.\(recording.sequenceNumber)")
+
+                                    if recording.id != entry.sortedRecordings.last?.id {
+                                        Divider()
+                                    }
                                 }
                             }
-                            .buttonStyle(.borderless)
-                            .accessibilityIdentifier("home.recordingRow.\(recording.sequenceNumber)")
+                            .accessibilityIdentifier("home.recordingsList")
+                        } else {
+                            Spacer()
                         }
                     }
-                    .accessibilityIdentifier("home.recordingsList")
-                } else {
-                    Spacer()
+                    .padding()
+                    .frame(minHeight: geometry.size.height)
                 }
             }
-            .padding()
             .navigationTitle("今日")
             .onAppear {
                 viewModel.fetchTodayEntry()
