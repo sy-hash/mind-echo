@@ -80,9 +80,10 @@ public class AudioRecorderService: AudioRecording {
             }
             let rms = sqrt(sum / Float(frameLength))
 
-            // Match DSWaveformImage reference: 1 - pow(10, averagePower / 20)
-            // which simplifies to (1 - rms) when averagePower = 20*log10(rms).
-            let level = 1 - rms
+            // Amplify raw RMS (typically 0.01-0.1 for speech) so the
+            // waveform is visually responsive, then convert for the renderer
+            // which internally does `1 - sample` to get bar height.
+            let level = 1 - min(rms * 10, 1)
 
             // Append 3 copies per callback to match Voice Memos animation speed.
             DispatchQueue.main.async {
