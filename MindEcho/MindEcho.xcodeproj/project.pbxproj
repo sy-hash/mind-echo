@@ -50,11 +50,6 @@
 			path = MindEchoUITests;
 			sourceTree = "<group>";
 		};
-		0BD6D8432F3869B900D7656F /* docs */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = docs;
-			sourceTree = "<group>";
-		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -87,7 +82,6 @@
 		0BD6D7F12F3856DE00D7656F = {
 			isa = PBXGroup;
 			children = (
-				0BD6D8432F3869B900D7656F /* docs */,
 				0BD6D7FC2F3856DE00D7656F /* MindEcho */,
 				0BD6D80C2F3856E000D7656F /* MindEchoTests */,
 				0BD6D8162F3856E000D7656F /* MindEchoUITests */,
@@ -122,7 +116,6 @@
 			);
 			fileSystemSynchronizedGroups = (
 				0BD6D7FC2F3856DE00D7656F /* MindEcho */,
-				0BD6D8432F3869B900D7656F /* docs */,
 			);
 			name = MindEcho;
 			packageProductDependencies = (
@@ -427,8 +420,8 @@
 				INFOPLIST_KEY_UIBackgroundModes = "(audio)";
 				INFOPLIST_KEY_UIFileSharingEnabled = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -463,8 +456,8 @@
 				INFOPLIST_KEY_UIBackgroundModes = "(audio)";
 				INFOPLIST_KEY_UIFileSharingEnabled = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
