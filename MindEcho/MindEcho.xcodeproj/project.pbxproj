@@ -34,9 +34,22 @@
 		0BD6D8132F3856E000D7656F /* MindEchoUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MindEchoUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		0B20B0D82F420F2E00AF8690 /* Exceptions for "MindEcho" folder in "MindEcho" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 0BD6D7F92F3856DE00D7656F /* MindEcho */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		0BD6D7FC2F3856DE00D7656F /* MindEcho */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				0B20B0D82F420F2E00AF8690 /* Exceptions for "MindEcho" folder in "MindEcho" target */,
+			);
 			path = MindEcho;
 			sourceTree = "<group>";
 		};
@@ -413,6 +426,7 @@
 				DEVELOPMENT_TEAM = LYMDWEXP2V;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = MindEcho/Info.plist;
 				INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = YES;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "MindEcho uses the microphone to record your voice memos.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -449,6 +463,7 @@
 				DEVELOPMENT_TEAM = LYMDWEXP2V;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = MindEcho/Info.plist;
 				INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = YES;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "MindEcho uses the microphone to record your voice memos.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
