@@ -41,6 +41,7 @@ class HomeViewModel {
 
     var isRecording: Bool { audioRecorder.isRecording }
     var isRecordingPaused: Bool { audioRecorder.isPaused }
+    var audioLevels: [Float] { audioRecorder.audioLevels }
 
     // MARK: - Recording
 
@@ -171,12 +172,10 @@ class HomeViewModel {
             predicate: #Predicate { $0.date == logicalDate }
         )
         if let found = try? modelContext.fetch(descriptor).first {
-            todayEntry = found
             return found
         }
         let newEntry = JournalEntry(date: logicalDate)
         modelContext.insert(newEntry)
-        todayEntry = newEntry
         return newEntry
     }
 

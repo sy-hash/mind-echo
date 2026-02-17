@@ -1,3 +1,5 @@
+import DSWaveformImage
+import DSWaveformImageViews
 import MindEchoAudio
 import MindEchoCore
 import SwiftData
@@ -32,6 +34,17 @@ struct HomeView: View {
                             Text(formatDuration(viewModel.recordingDuration))
                                 .font(.system(.largeTitle, design: .monospaced))
                                 .accessibilityIdentifier("home.recordingDuration")
+
+                            WaveformLiveCanvas(
+                                samples: viewModel.audioLevels,
+                                configuration: Waveform.Configuration(
+                                    style: .striped(.init(color: .red, width: 3, spacing: 3)),
+                                    damping: .init()
+                                ),
+                                shouldDrawSilencePadding: false
+                            )
+                            .frame(height: 80)
+                            .accessibilityIdentifier("home.waveform")
                         }
 
                         // Recording controls
@@ -80,24 +93,25 @@ struct HomeView: View {
                         if let entry = viewModel.todayEntry, !entry.recordings.isEmpty {
                             VStack(spacing: 0) {
                                 ForEach(entry.sortedRecordings) { recording in
-                                    Button {
+                                    HStack {
+                                        Text("#\(recording.sequenceNumber)")
+                                            .font(.headline)
+                                        Text(formatDuration(recording.duration))
+                                            .foregroundStyle(.secondary)
+                                        Spacer()
+                                        Image(systemName: viewModel.playingRecordingId == recording.id && viewModel.isPlaying ? "pause.fill" : "play.fill")
+                                    }
+                                    .padding(.vertical, 12)
+                                    .contentShape(Rectangle())
+                                    .onTapGesture {
                                         if viewModel.playingRecordingId == recording.id && viewModel.isPlaying {
                                             viewModel.pausePlayback()
                                         } else {
                                             viewModel.playRecording(recording)
                                         }
-                                    } label: {
-                                        HStack {
-                                            Text("#\(recording.sequenceNumber)")
-                                                .font(.headline)
-                                            Text(formatDuration(recording.duration))
-                                                .foregroundStyle(.secondary)
-                                            Spacer()
-                                            Image(systemName: viewModel.playingRecordingId == recording.id && viewModel.isPlaying ? "pause.fill" : "play.fill")
-                                        }
-                                        .padding(.vertical, 12)
                                     }
-                                    .buttonStyle(.borderless)
+                                    .accessibilityElement(children: .combine)
+                                    .accessibilityAddTraits(.isButton)
                                     .accessibilityIdentifier("home.recordingRow.\(recording.sequenceNumber)")
 
                                     if recording.id != entry.sortedRecordings.last?.id {
@@ -105,6 +119,7 @@ struct HomeView: View {
                                     }
                                 }
                             }
+                            .accessibilityElement(children: .contain)
                             .accessibilityIdentifier("home.recordingsList")
                         } else {
                             Spacer()
