@@ -25,6 +25,7 @@ private final class AtomicFlag: Sendable {
 public class AudioRecorderService: AudioRecording {
     public var isRecording = false
     public var isPaused = false
+    public var audioLevels: [Float] = []
 
     private var audioEngine: AVAudioEngine?
     private var audioFile: AVAudioFile?
@@ -63,10 +64,35 @@ public class AudioRecorderService: AudioRecording {
         self.audioEngine = engine
         self.audioFile = file
 
+        audioLevels = []
+
         let flag = pauseFlag
-        inputNode.installTap(onBus: 0, bufferSize: 4096, format: format) { buffer, _ in
+        inputNode.installTap(onBus: 0, bufferSize: 4096, format: format) { [weak self] buffer, _ in
             if !flag.value {
                 try? file.write(from: buffer)
+            }
+
+            // Calculate RMS from PCM buffer
+            guard let channelData = buffer.floatChannelData?[0] else { return }
+            let frameLength = Int(buffer.frameLength)
+            guard frameLength > 0 else { return }
+
+            var sum: Float = 0
+            for i in 0..<frameLength {
+                let sample = channelData[i]
+                sum += sample * sample
+            }
+            let rms = sqrtf(sum / Float(frameLength))
+
+            // Convert to dB, then to linear (reference implementation pattern)
+            let dB = 20 * log10f(max(rms, 1e-6))
+            let linear = 1 - powf(10, dB / 20)
+
+            // Add sample 3 times for faster animation (per reference implementation)
+            DispatchQueue.main.async {
+                self?.audioLevels.append(linear)
+                self?.audioLevels.append(linear)
+                self?.audioLevels.append(linear)
             }
         }
 
@@ -95,6 +121,7 @@ public class AudioRecorderService: AudioRecording {
         isRecording = false
         isPaused = false
         pauseFlag.value = false
+        audioLevels = []
 
         try? AVAudioSession.sharedInstance().setActive(false)
     }
