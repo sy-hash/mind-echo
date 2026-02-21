@@ -39,15 +39,28 @@ jobs:
             {
               "language": "Japanese"
             }
-          # Optional: Customize the trigger phrase (default: @claude)
-          # trigger_phrase: "/claude"
+          allowed_tools: |
+            Bash(xcodebuild build *)
+            Bash(xcodebuild test *)
+            Bash(xcrun simctl *)
+            Read
+            Edit
+            Write
+            Glob
+            Grep
+          custom_instructions: |
+            ## Build Verification Rule
 
-          # Optional: Trigger when specific user is assigned to an issue
-          # assignee_trigger: "claude-bot"
+            プロダクトコード（Packages/ または MindEcho/MindEcho/ 配下の .swift ファイル）を
+            変更した場合は、必ず以下のコマンドでビルドが通ることを確認すること。
 
-          # Optional: Configure Claude's behavior with CLI arguments
-          # claude_args: |
-          #   --model claude-opus-4-1-20250805
-          #   --max-turns 10
-          #   --allowedTools "Bash(npm install),Bash(npm run build),Bash(npm run test:*),Bash(npm run lint:*)"
-          #   --system-prompt "Follow our coding standards. Ensure all new code has tests. Use TypeScript for new files."
+            ```bash
+            xcodebuild build \
+              -workspace MindEcho.xcworkspace \
+              -scheme MindEcho \
+              -destination 'platform=iOS Simulator,name=iPhone 17'
+            ```
+
+            - ビルドエラーが発生した場合は、エラーを修正して再度ビルドを実行する
+            - テストコードのみの変更、ドキュメントのみの変更の場合はビルド不要
+            - ビルド結果（成功/失敗）をコメントで報告する
