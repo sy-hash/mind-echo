@@ -6,7 +6,7 @@ final class HomeRecordingUITests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
         app = XCUIApplication()
-        app.launchArguments = ["--uitesting"]
+        app.launchArguments = ["--uitesting", "--mock-recorder"]
         app.resetAuthorizationStatus(for: .microphone)
         addUIInterruptionMonitor(withDescription: "Microphone Permission") { alert in
             let allowButton = alert.buttons["Allow"]

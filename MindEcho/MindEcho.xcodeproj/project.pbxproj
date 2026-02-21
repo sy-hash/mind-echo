@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		0BA1C00100000001000000A1 /* MindEchoCore in Frameworks */ = {isa = PBXBuildFile; productRef = 0BA1C00100000003000000A3 /* MindEchoCore */; };
 		0BA1C00100000002000000A2 /* MindEchoAudio in Frameworks */ = {isa = PBXBuildFile; productRef = 0BA1C00100000004000000A4 /* MindEchoAudio */; };
+		0BA1C00100000010000000B1 /* DSWaveformImage in Frameworks */ = {isa = PBXBuildFile; productRef = 0BA1C00100000008000000A8 /* DSWaveformImage */; };
+		0BA1C00100000011000000B2 /* DSWaveformImageViews in Frameworks */ = {isa = PBXBuildFile; productRef = 0BA1C00100000009000000A9 /* DSWaveformImageViews */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -72,6 +74,8 @@
 			files = (
 				0BA1C00100000001000000A1 /* MindEchoCore in Frameworks */,
 				0BA1C00100000002000000A2 /* MindEchoAudio in Frameworks */,
+				0BA1C00100000010000000B1 /* DSWaveformImage in Frameworks */,
+				0BA1C00100000011000000B2 /* DSWaveformImageViews in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -134,6 +138,8 @@
 			packageProductDependencies = (
 				0BA1C00100000003000000A3 /* MindEchoCore */,
 				0BA1C00100000004000000A4 /* MindEchoAudio */,
+				0BA1C00100000008000000A8 /* DSWaveformImage */,
+				0BA1C00100000009000000A9 /* DSWaveformImageViews */,
 			);
 			productName = MindEcho;
 			productReference = 0BD6D7FA2F3856DE00D7656F /* MindEcho.app */;
@@ -220,6 +226,7 @@
 			packageReferences = (
 				0BA1C00100000005000000A5 /* XCLocalSwiftPackageReference "../Packages/MindEchoCore" */,
 				0BA1C00100000006000000A6 /* XCLocalSwiftPackageReference "../Packages/MindEchoAudio" */,
+				0BA1C00100000007000000A7 /* XCRemoteSwiftPackageReference "DSWaveformImage" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 0BD6D7FB2F3856DE00D7656F /* Products */;
@@ -626,6 +633,17 @@
 		};
 /* End XCLocalSwiftPackageReference section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		0BA1C00100000007000000A7 /* XCRemoteSwiftPackageReference "DSWaveformImage" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/dmrschmidt/DSWaveformImage";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 14.3.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
 		0BA1C00100000003000000A3 /* MindEchoCore */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -634,6 +652,16 @@
 		0BA1C00100000004000000A4 /* MindEchoAudio */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = MindEchoAudio;
+		};
+		0BA1C00100000008000000A8 /* DSWaveformImage */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0BA1C00100000007000000A7 /* XCRemoteSwiftPackageReference "DSWaveformImage" */;
+			productName = DSWaveformImage;
+		};
+		0BA1C00100000009000000A9 /* DSWaveformImageViews */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0BA1C00100000007000000A7 /* XCRemoteSwiftPackageReference "DSWaveformImage" */;
+			productName = DSWaveformImageViews;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
