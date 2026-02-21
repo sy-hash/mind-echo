@@ -56,7 +56,6 @@ jobs:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           ASC_KEY_PATH: ${{ runner.temp }}/AuthKey.p8
-          BUILD_NUMBER: ${{ github.run_number }}
         run: bundle exec fastlane beta
 
       - name: Clean up keychain and provisioning profile
