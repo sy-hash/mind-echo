@@ -68,9 +68,8 @@ public class AudioRecorderService: AudioRecording {
 
         let flag = pauseFlag
         inputNode.installTap(onBus: 0, bufferSize: 4096, format: format) { [weak self] buffer, _ in
-            if !flag.value {
-                try? file.write(from: buffer)
-            }
+            guard !flag.value else { return }
+            try? file.write(from: buffer)
 
             // Calculate RMS from PCM buffer
             guard let channelData = buffer.floatChannelData?[0] else { return }
@@ -104,12 +103,14 @@ public class AudioRecorderService: AudioRecording {
     public func pauseRecording() {
         guard isRecording else { return }
         pauseFlag.value = true
+        audioEngine?.pause()
         isPaused = true
     }
 
     public func resumeRecording() {
         guard isRecording, isPaused else { return }
         pauseFlag.value = false
+        try? audioEngine?.start()
         isPaused = false
     }
 
