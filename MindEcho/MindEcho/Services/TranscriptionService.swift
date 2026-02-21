@@ -52,31 +52,32 @@ final class TranscriptionService {
     // MARK: - Private
 
     private func transcribeWithSpeechAnalyzer(audioURL: URL) async throws -> String {
-        // SpeechAnalyzer (iOS 26+) を使用してオンデバイスで書き起こす
-        let analyzer = SpeechAnalyzer(modules: [SpeechTranscriber()])
-
-        // 音声ファイルを AVAudioFile として開く
+        let transcriber = SpeechTranscriber(locale: .current, preset: .transcription)
         let audioFile = try AVAudioFile(forReading: audioURL)
-        let format = audioFile.processingFormat
-        let frameCount = AVAudioFrameCount(audioFile.length)
+        let analyzer = SpeechAnalyzer(modules: [transcriber])
 
-        guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frameCount) else {
-            throw TranscriptionError.failed("音声バッファの作成に失敗しました")
-        }
-        try audioFile.read(into: buffer)
-
-        // バッファを AsyncStream に変換して SpeechAnalyzer に渡す
-        let (stream, continuation) = AsyncStream<AVAudioPCMBuffer>.makeStream()
-        continuation.yield(buffer)
-        continuation.finish()
-
-        var finalText = ""
-        for try await result in analyzer.results(for: stream, audioFormat: format) {
-            if let transcription = result.speechRecognitionResult?.bestTranscription {
-                finalText = transcription.formattedString
+        // アナライザーの起動と結果収集を並行して実行
+        return try await withThrowingTaskGroup(of: String?.self) { group in
+            group.addTask {
+                try await analyzer.start(inputAudioFile: audioFile, finishAfterFile: true)
+                return nil
             }
-        }
 
-        return finalText
+            group.addTask {
+                var finalText = ""
+                for try await result in transcriber.results {
+                    finalText = String(result.text.characters)
+                }
+                return finalText
+            }
+
+            var transcription = ""
+            for try await result in group {
+                if let text = result {
+                    transcription = text
+                }
+            }
+            return transcription
+        }
     }
 }
