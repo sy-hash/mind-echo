@@ -226,7 +226,7 @@
 			packageReferences = (
 				0BA1C00100000005000000A5 /* XCLocalSwiftPackageReference "../Packages/MindEchoCore" */,
 				0BA1C00100000006000000A6 /* XCLocalSwiftPackageReference "../Packages/MindEchoAudio" */,
-				0BA1C00100000007000000A7 /* XCLocalSwiftPackageReference "../../DSWaveformImage" */,
+				0BA1C00100000007000000A7 /* XCRemoteSwiftPackageReference "DSWaveformImage" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 0BD6D7FB2F3856DE00D7656F /* Products */;
@@ -631,11 +631,18 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = ../Packages/MindEchoAudio;
 		};
-		0BA1C00100000007000000A7 /* XCLocalSwiftPackageReference "../../DSWaveformImage" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = ../../DSWaveformImage;
-		};
 /* End XCLocalSwiftPackageReference section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		0BA1C00100000007000000A7 /* XCRemoteSwiftPackageReference "DSWaveformImage" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/dmrschmidt/DSWaveformImage";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 14.3.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
 		0BA1C00100000003000000A3 /* MindEchoCore */ = {
@@ -648,10 +655,12 @@
 		};
 		0BA1C00100000008000000A8 /* DSWaveformImage */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 0BA1C00100000007000000A7 /* XCRemoteSwiftPackageReference "DSWaveformImage" */;
 			productName = DSWaveformImage;
 		};
 		0BA1C00100000009000000A9 /* DSWaveformImageViews */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 0BA1C00100000007000000A7 /* XCRemoteSwiftPackageReference "DSWaveformImage" */;
 			productName = DSWaveformImageViews;
 		};
 /* End XCSwiftPackageProductDependency section */
