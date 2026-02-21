@@ -13,6 +13,12 @@ class HomeViewModel {
     var todayEntry: JournalEntry?
     var errorMessage: String?
 
+    // MARK: - Transcription
+
+    var transcriptionTargetRecording: Recording?
+    var transcriptionState: TranscriptionState = .idle
+    var showTranscriptionSheet = false
+
     private let modelContext: ModelContext
     private var audioRecorder: any AudioRecording
     private var audioPlayer: any AudioPlaying
@@ -160,6 +166,33 @@ class HomeViewModel {
             predicate: #Predicate { $0.date == today }
         )
         todayEntry = try? modelContext.fetch(descriptor).first
+    }
+
+    // MARK: - Transcription
+
+    func startTranscription(for recording: Recording) {
+        transcriptionTargetRecording = recording
+        transcriptionState = .loading
+        showTranscriptionSheet = true
+
+        let audioURL = FilePathManager.recordingsDirectory
+            .appendingPathComponent(recording.audioFileName)
+        let service = TranscriptionService()
+
+        Task { @MainActor in
+            do {
+                let text = try await service.transcribe(audioURL: audioURL)
+                transcriptionState = .success(text.isEmpty ? "(書き起こし結果がありませんでした)" : text)
+            } catch {
+                transcriptionState = .failure(error.localizedDescription)
+            }
+        }
+    }
+
+    func dismissTranscription() {
+        showTranscriptionSheet = false
+        transcriptionTargetRecording = nil
+        transcriptionState = .idle
     }
 
     // MARK: - Private

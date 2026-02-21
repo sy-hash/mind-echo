@@ -436,6 +436,7 @@
 				INFOPLIST_FILE = MindEcho/Info.plist;
 				INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = YES;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "MindEcho uses the microphone to record your voice memos.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "音声記録の内容をテキストに書き起こすために使用します。";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UIBackgroundModes = "(audio)";
@@ -477,6 +478,7 @@
 				INFOPLIST_FILE = MindEcho/Info.plist;
 				INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = YES;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "MindEcho uses the microphone to record your voice memos.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "音声記録の内容をテキストに書き起こすために使用します。";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UIBackgroundModes = "(audio)";

@@ -99,6 +99,14 @@ struct HomeView: View {
                                         Text(formatDuration(recording.duration))
                                             .foregroundStyle(.secondary)
                                         Spacer()
+                                        Button {
+                                            viewModel.startTranscription(for: recording)
+                                        } label: {
+                                            Image(systemName: "text.bubble")
+                                                .foregroundStyle(.blue)
+                                        }
+                                        .accessibilityIdentifier("home.transcribeButton.\(recording.sequenceNumber)")
+                                        .padding(.trailing, 8)
                                         Image(systemName: viewModel.playingRecordingId == recording.id && viewModel.isPlaying ? "pause.fill" : "play.fill")
                                     }
                                     .padding(.vertical, 12)
@@ -110,8 +118,7 @@ struct HomeView: View {
                                             viewModel.playRecording(recording)
                                         }
                                     }
-                                    .accessibilityElement(children: .combine)
-                                    .accessibilityAddTraits(.isButton)
+                                    .accessibilityElement(children: .contain)
                                     .accessibilityIdentifier("home.recordingRow.\(recording.sequenceNumber)")
 
                                     if recording.id != entry.sortedRecordings.last?.id {
@@ -145,6 +152,16 @@ struct HomeView: View {
                     }
                 )
                 .accessibilityIdentifier("home.textEditorSheet")
+            }
+            .sheet(isPresented: $viewModel.showTranscriptionSheet) {
+                TranscriptionSheet(
+                    sequenceNumber: viewModel.transcriptionTargetRecording?.sequenceNumber ?? 0,
+                    state: viewModel.transcriptionState,
+                    onDismiss: {
+                        viewModel.dismissTranscription()
+                    }
+                )
+                .accessibilityIdentifier("home.transcriptionSheet")
             }
         }
     }
