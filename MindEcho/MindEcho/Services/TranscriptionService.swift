@@ -53,7 +53,7 @@ final class TranscriptionService {
 
     private func transcribeWithSpeechAnalyzer(audioURL: URL) async throws -> String {
         // SpeechAnalyzer (iOS 26+) を使用してオンデバイスで書き起こす
-        let analyzer = SpeechAnalyzer()
+        let analyzer = SpeechAnalyzer(modules: [SpeechTranscriber()])
 
         // 音声ファイルを AVAudioFile として開く
         let audioFile = try AVAudioFile(forReading: audioURL)
