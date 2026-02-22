@@ -1,6 +1,6 @@
 # UIテスト設計
 
-メインシナリオを選定し XCTest で UIテストを記述する（5カテゴリ・21テストケース）。
+メインシナリオを選定し XCTest で UIテストを記述する（6カテゴリ・25テストケース）。
 
 ## テストデータセットアップ（Launch Arguments）
 
@@ -14,6 +14,7 @@ UIテストプロセスはアプリと別プロセスで動作するため、lau
 | `--seed-today-with-text` | 今日のエントリ + テキストデータを事前投入 |
 | `--mock-recorder` | MockAudioRecorderService を注入（マイク不要で録音UI状態遷移をテスト） |
 | `--mock-player` | MockAudioPlayerService を注入（実音声ファイル不要で再生UI状態遷移をテスト） |
+| `--mock-transcription` | TranscriptionView 内の書き起こしクロージャを mock に差し替え（Speech フレームワーク不要でテスト） |
 
 ## マイク非依存のテスト方式
 
@@ -48,6 +49,8 @@ UIテストは **UI状態遷移**（ボタンの表示/非表示、有効/無効
 - `home.textEditor`
 - `home.textSaveButton`
 - `home.textCancelButton`
+- `home.transcribeButton.{n}`
+- `home.transcriptionSheet`
 
 ### HistoryListView
 
@@ -56,6 +59,12 @@ UIテストは **UI状態遷移**（ボタンの表示/非表示、有効/無効
 - `history.entryDate.{date}`
 - `history.entryPreview.{date}`
 - `history.entryRecordingInfo.{date}`
+
+### TranscriptionView
+
+- `transcription.loading`
+- `transcription.resultText`
+- `transcription.error`
 
 ### EntryDetailView
 
@@ -69,7 +78,7 @@ UIテストは **UI状態遷移**（ボタンの表示/非表示、有効/無効
 - `detail.shareTextOption`
 - `detail.shareAudioOption`
 
-## テストケース（5カテゴリ・24テスト）
+## テストケース（6カテゴリ・25テスト）
 
 ### 1. NavigationUITests（3テスト）
 
@@ -89,11 +98,10 @@ UIテストは **UI状態遷移**（ボタンの表示/非表示、有効/無効
 | `testStopRecording_addsRecordingToList` | 停止で録音リストにエントリ追加 |
 | `testMultipleRecordings_appearInOrder` | 複数録音が連番順に表示 |
 
-### 3. HomeTextInputUITests（4テスト）
+### 3. HomeTextInputUITests（3テスト）
 
 | テスト | 検証内容 |
 |-------|---------|
-| `testTapTextButton_opensTextEditorSheet` | テキスト入力ボタンでシート表示 |
 | `testSaveText_dismissesSheet` | 保存でシート閉じる |
 | `testCancelText_dismissesWithoutSaving` | キャンセルで保存せずシート閉じる |
 | `testEditExistingText_opensWithPreviousContent` | 既存テキストがエディタに表示 |
@@ -107,15 +115,25 @@ UIテストは **UI状態遷移**（ボタンの表示/非表示、有効/無効
 | `testEntryRow_showsDatePreviewAndRecordingInfo` | セルに日付・プレビュー・録音情報 |
 | `testTapEntry_navigatesToDetail` | セルタップで詳細画面へ遷移 |
 
-### 5. EntryDetailUITests（5テスト）
+### 5. EntryDetailUITests（7テスト）
 
 | テスト | 検証内容 |
 |-------|---------|
 | `testDetailView_showsDateAndTextContent` | 日付とテキスト内容の表示 |
 | `testDetailView_showsRecordingsList` | 録音リストの表示 |
 | `testPlayButton_togglesPlaybackState` | 音声セルタップで再生状態に遷移し、再度タップで停止 |
-| `testShareButton_opensShareTypeSelection` | 共有ボタンで選択シート表示 |
+| `testShareTextOption_presentsActivitySheet` | テキスト共有で Activity Sheet 表示 |
+| `testShareAudioOption_presentsActivitySheet` | 音声共有で Activity Sheet 表示 |
+| `testSwipeToDelete_removesRecordingAndHidesSection` | スワイプ削除で録音が削除される |
 | `testEditText_updatesContent` | テキスト編集が反映される |
+
+### 6. TranscriptionUITests（3テスト）
+
+| テスト | 検証内容 |
+|-------|---------|
+| `testTranscribeButton_opensTranscriptionSheet` | 書き起こしボタンタップでモーダル表示・結果テキスト表示 |
+| `testTranscription_showsResultText` | 書き起こし完了後にモックテキストが表示される |
+| `testTranscription_dismissSheet` | シートをスワイプで閉じてホーム画面に戻る |
 
 ## テスト対象外（明示的に除外）
 
@@ -124,6 +142,7 @@ UIテストは **UI状態遷移**（ボタンの表示/非表示、有効/無効
 - 日付境界ロジック（午前3時） → DateHelper ユニットテスト
 - iOS Share Sheet 操作 → システムUI
 - バックグラウンド録音 → 実機テスト
+- 実音声の書き起こし精度 → Speech フレームワーク依存、実機テスト
 
 ## 実装順序
 
@@ -133,6 +152,7 @@ UIテストは **UI状態遷移**（ボタンの表示/非表示、有効/無効
 2. **NavigationUITests** — TabView + 画面スタブ実装後
 3. **HistoryListUITests + EntryDetailUITests** — 履歴画面・詳細画面実装後
 4. **HomeRecordingUITests + HomeTextInputUITests** — ホーム画面 + MockRecorder 実装後
+5. **TranscriptionUITests** — 書き起こし機能実装後
 
 ## 検証方法
 
