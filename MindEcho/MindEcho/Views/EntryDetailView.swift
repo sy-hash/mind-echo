@@ -72,8 +72,14 @@ struct EntryDetailView: View {
                 Button {
                     exportAndShare()
                 } label: {
-                    Image(systemName: "square.and.arrow.up")
+                    if isExporting {
+                        ProgressView()
+                            .controlSize(.small)
+                    } else {
+                        Image(systemName: "square.and.arrow.up")
+                    }
                 }
+                .disabled(isExporting)
                 .accessibilityIdentifier("detail.shareButton")
             }
         }
@@ -82,10 +88,10 @@ struct EntryDetailView: View {
         }
     }
 
-    @MainActor
     private func exportAndShare() {
+        guard !isExporting else { return }
         isExporting = true
-        Task { @MainActor in
+        Task {
             do {
                 let url = try await viewModel.exportForSharing()
                 shareURL = url
