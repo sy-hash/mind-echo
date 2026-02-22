@@ -62,7 +62,6 @@ struct EntryDetailView: View {
                         .accessibilityIdentifier("detail.recordingRow.\(recording.sequenceNumber)")
                     }
                 }
-                .accessibilityIdentifier("detail.recordingsList")
             }
         }
         .navigationTitle("詳細")
