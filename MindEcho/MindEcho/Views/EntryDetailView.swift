@@ -91,7 +91,7 @@ struct EntryDetailView: View {
     private func exportAndShare() {
         guard !isExporting else { return }
         isExporting = true
-        Task {
+        Task { @MainActor in
             do {
                 let url = try await viewModel.exportForSharing()
                 shareURL = url
