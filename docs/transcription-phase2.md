@@ -84,18 +84,17 @@ init(modelContext: ModelContext,
 
 ### ExportService の変更
 
-- `ShareType` に `.transcription` ケースを追加
+- `ShareType` に `.transcription` ケースを追加（`.textJournal` は廃止済み）
 - `Exporting` protocol に `exportTranscription` メソッドを追加:
 
 ```swift
 enum ShareType {
-    case textJournal
-    case transcription      // 追加: 文字起こしテキスト（全 Recording の transcription を結合した .txt）
+    case transcription      // 文字起こしテキスト（全 Recording の transcription を結合した .txt）
     case audio
 }
 
 protocol Exporting {
-    // ... 既存メソッド ...
+    func exportMergedAudio(entry: JournalEntry, to directory: URL) async throws -> URL
     func exportTranscription(entry: JournalEntry, to directory: URL) async throws -> URL  // 追加
 }
 ```
@@ -119,7 +118,7 @@ protocol Exporting {
 - ホーム画面: 録音リストに文字起こしテキストのプレビューを追加
 - エントリ詳細画面: 録音ごとに文字起こしテキスト（展開/折りたたみ可能）を表示
 - 履歴画面: 検索対象に `Recording.transcription` を追加
-- 共有シート: 「文字起こしテキスト」選択肢を追加
+- 共有: 「文字起こしテキスト」エクスポート機能を追加
 
 ### パーミッション
 

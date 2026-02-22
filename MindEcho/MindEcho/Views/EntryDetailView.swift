@@ -5,11 +5,8 @@ import SwiftUI
 
 struct EntryDetailView: View {
     @State private var viewModel: EntryDetailViewModel
-    @State private var showShareSheet = false
     @State private var shareURL: URL?
     @State private var isExporting = false
-    @State private var editingText: String = ""
-    @State private var isEditingText = false
 
     init(entry: JournalEntry, modelContext: ModelContext, audioPlayer: any AudioPlaying = AudioPlayerService()) {
         _viewModel = State(initialValue: EntryDetailViewModel(
@@ -26,35 +23,6 @@ struct EntryDetailView: View {
                 Text(DateHelper.displayString(for: viewModel.entry.date))
                     .font(.title2)
                     .accessibilityIdentifier("detail.dateHeader")
-            }
-
-            // Text content
-            Section("テキスト") {
-                if isEditingText {
-                    TextEditor(text: $editingText)
-                        .frame(minHeight: 100)
-                        .accessibilityIdentifier("detail.textContent")
-
-                    HStack {
-                        Button("キャンセル") {
-                            isEditingText = false
-                        }
-                        Spacer()
-                        Button("保存") {
-                            viewModel.saveText(editingText)
-                            isEditingText = false
-                        }
-                    }
-                } else {
-                    let textContent = viewModel.entry.sortedTextEntries.first?.content ?? ""
-                    Text(textContent.isEmpty ? "テキストなし" : textContent)
-                        .foregroundStyle(textContent.isEmpty ? .secondary : .primary)
-                        .accessibilityIdentifier("detail.textContent")
-                        .onTapGesture {
-                            editingText = textContent
-                            isEditingText = true
-                        }
-                }
             }
 
             // Recordings section
@@ -95,43 +63,37 @@ struct EntryDetailView: View {
                         .accessibilityIdentifier("detail.recordingRow.\(recording.sequenceNumber)")
                     }
                 }
+                .accessibilityIdentifier("detail.recordingsList")
             }
         }
         .navigationTitle("詳細")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {
-                    showShareSheet = true
+                    exportAndShare()
                 } label: {
-                    Image(systemName: "square.and.arrow.up")
+                    if isExporting {
+                        ProgressView()
+                            .controlSize(.small)
+                    } else {
+                        Image(systemName: "square.and.arrow.up")
+                    }
                 }
+                .disabled(isExporting)
                 .accessibilityIdentifier("detail.shareButton")
             }
         }
-        .confirmationDialog("共有内容を選択", isPresented: $showShareSheet) {
-            Button("テキスト日記") {
-                exportAndShare(type: .textJournal)
-            }
-            .accessibilityIdentifier("detail.shareTextOption")
-
-            Button("音声ファイル") {
-                exportAndShare(type: .audio)
-            }
-            .accessibilityIdentifier("detail.shareAudioOption")
-
-            Button("キャンセル", role: .cancel) {}
-        }
-        .accessibilityIdentifier("detail.shareSheet")
         .sheet(item: $shareURL) { url in
             ShareSheet(activityItems: [url])
         }
     }
 
-    private func exportAndShare(type: ShareType) {
+    private func exportAndShare() {
+        guard !isExporting else { return }
         isExporting = true
         Task {
             do {
-                let url = try await viewModel.exportForSharing(type: type)
+                let url = try await viewModel.exportForSharing()
                 shareURL = url
             } catch {
                 // Handle error silently for now

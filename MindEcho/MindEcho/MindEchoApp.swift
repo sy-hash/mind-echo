@@ -19,7 +19,6 @@ struct MindEchoApp: App {
         let schema = Schema([
             JournalEntry.self,
             Recording.self,
-            TextEntry.self,
         ])
         let config = ModelConfiguration(
             schema: schema,
@@ -51,9 +50,6 @@ struct MindEchoApp: App {
             }
             if args.contains("--seed-today-with-recordings") {
                 Self.seedTodayWithRecordings(context: context)
-            }
-            if args.contains("--seed-today-with-text") {
-                Self.seedTodayWithText(context: context)
             }
         }
     }
@@ -94,11 +90,6 @@ struct MindEchoApp: App {
             )!
             let logicalDate = DateHelper.logicalDate(for: referenceDate)
             let entry = JournalEntry(date: logicalDate)
-            let textEntry = TextEntry(
-                sequenceNumber: 1,
-                content: "サンプルテキスト \(dayOffset)日前"
-            )
-            entry.textEntries.append(textEntry)
             let fileName = "sample_\(dayOffset).m4a"
             let duration = TimeInterval(60 * dayOffset)
             createSilentAudioFile(named: fileName, duration: 10)
@@ -162,15 +153,4 @@ struct MindEchoApp: App {
         }
     }
 
-    @MainActor
-    private static func seedTodayWithText(context: ModelContext) {
-        let today = DateHelper.today()
-        let entry = JournalEntry(date: today)
-        let textEntry = TextEntry(
-            sequenceNumber: 1,
-            content: "今日のテストテキスト"
-        )
-        entry.textEntries.append(textEntry)
-        context.insert(entry)
-    }
 }
