@@ -2,13 +2,54 @@ name: TestFlight
 
 on:
   workflow_dispatch:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  pull-requests: write
 
 jobs:
   deploy:
     runs-on: macos-26
     timeout-minutes: 30
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event_name == 'issue_comment' &&
+        github.event.issue.pull_request &&
+        github.event.sender.login == 'sy-hash' &&
+        contains(github.event.comment.body, '/flight')
+      )
     steps:
+      - name: Add eyes reaction
+        if: github.event_name == 'issue_comment'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.reactions.createForIssueComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: context.payload.comment.id,
+              content: 'eyes'
+            });
+
+      - name: Get PR head ref
+        if: github.event_name == 'issue_comment'
+        id: pr
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+            core.setOutput('ref', pr.data.head.ref);
+
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ steps.pr.outputs.ref || github.ref }}
 
       - name: Install the Apple certificate and provisioning profile
         env:
@@ -53,6 +94,42 @@ jobs:
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           ASC_KEY_PATH: ${{ runner.temp }}/AuthKey.p8
         run: bundle exec fastlane beta
+
+      - name: Comment on PR (success)
+        if: github.event_name == 'issue_comment' && success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `✅ TestFlight デプロイが完了しました。\n\n[ログを確認](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`
+            });
+
+      - name: Comment on PR (failure)
+        if: github.event_name == 'issue_comment' && failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `❌ TestFlight デプロイが失敗しました。\n\n[ログを確認](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`
+            });
+
+      - name: Add result reaction
+        if: github.event_name == 'issue_comment' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.reactions.createForIssueComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: context.payload.comment.id,
+              content: '${{ job.status }}' === 'success' ? 'rocket' : '-1'
+            });
 
       - name: Clean up keychain and provisioning profile
         if: always()
