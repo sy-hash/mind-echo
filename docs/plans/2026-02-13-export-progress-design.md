@@ -38,7 +38,6 @@ Add progress-reporting overload:
 ```swift
 public protocol Exporting {
     // Existing (unchanged)
-    func exportTextJournal(entry: JournalEntry, to directory: URL) async throws -> URL
     func exportMergedAudio(entry: JournalEntry, to directory: URL) async throws -> URL
 
     // New
@@ -120,7 +119,7 @@ In `exportForSharing(type:)` for `.audio`:
 - Pass `onProgress` closure that updates properties on `@MainActor`
 - Set `isExporting = false` on completion (via `defer`)
 
-Text export does not show progress (it completes near-instantly).
+Audio export is the only export type that shows progress.
 
 ### 5. EntryDetailView (`MindEcho/MindEcho/Views/EntryDetailView.swift`)
 
