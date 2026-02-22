@@ -9,6 +9,7 @@ struct HomeView: View {
     @State private var viewModel: HomeViewModel
     @State private var showTextEditor = false
     @State private var editingText = ""
+    @State private var transcriptionTargetRecording: Recording?
 
     init(modelContext: ModelContext, audioRecorder: any AudioRecording) {
         _viewModel = State(initialValue: HomeViewModel(
@@ -99,6 +100,12 @@ struct HomeView: View {
                                         Text(formatDuration(recording.duration))
                                             .foregroundStyle(.secondary)
                                         Spacer()
+                                        Button {
+                                            transcriptionTargetRecording = recording
+                                        } label: {
+                                            Image(systemName: "doc.text")
+                                        }
+                                        .accessibilityIdentifier("home.transcribeButton.\(recording.sequenceNumber)")
                                         Image(systemName: viewModel.playingRecordingId == recording.id && viewModel.isPlaying ? "pause.fill" : "play.fill")
                                     }
                                     .padding(.vertical, 12)
@@ -145,6 +152,10 @@ struct HomeView: View {
                     }
                 )
                 .accessibilityIdentifier("home.textEditorSheet")
+            }
+            .sheet(item: $transcriptionTargetRecording) { recording in
+                TranscriptionView(recording: recording)
+                    .accessibilityIdentifier("home.transcriptionSheet")
             }
         }
     }

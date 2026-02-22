@@ -10,5 +10,7 @@
 	<array>
 		<string>audio</string>
 	</array>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>録音内容の書き起こしに音声認識を使用します。</string>
 </dict>
 </plist>
