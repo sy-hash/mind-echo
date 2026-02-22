@@ -9,6 +9,7 @@ struct MindEchoApp: App {
     private let modelContainer: ModelContainer
     private let audioRecorder: any AudioRecording
     private let audioPlayer: any AudioPlaying
+    private let transcriptionService: any Transcribing
 
     init() {
         let args = ProcessInfo.processInfo.arguments
@@ -43,6 +44,14 @@ struct MindEchoApp: App {
             audioPlayer = AudioPlayerService()
         }
 
+        if args.contains("--mock-transcription-success") {
+            transcriptionService = MockTranscriptionService(mockResult: .success("モックの書き起こし結果テキストです。"))
+        } else if args.contains("--mock-transcription-failure") {
+            transcriptionService = MockTranscriptionService(mockResult: .failure)
+        } else {
+            transcriptionService = TranscriptionService()
+        }
+
         // Seed data for UI testing
         if isUITesting {
             let context = modelContainer.mainContext
@@ -64,7 +73,8 @@ struct MindEchoApp: App {
                 Tab("今日", systemImage: "mic.circle.fill") {
                     HomeView(
                         modelContext: modelContainer.mainContext,
-                        audioRecorder: audioRecorder
+                        audioRecorder: audioRecorder,
+                        transcriptionService: transcriptionService
                     )
                 }
                 .accessibilityIdentifier("tab.today")

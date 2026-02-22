@@ -22,6 +22,7 @@ class HomeViewModel {
     private let modelContext: ModelContext
     private var audioRecorder: any AudioRecording
     private var audioPlayer: any AudioPlaying
+    private let transcriptionService: any Transcribing
     private var durationTimer: Timer?
     private var recordingStartTime: Date?
     private var accumulatedDuration: TimeInterval = 0
@@ -31,11 +32,13 @@ class HomeViewModel {
     init(
         modelContext: ModelContext,
         audioRecorder: any AudioRecording,
-        audioPlayer: any AudioPlaying = AudioPlayerService()
+        audioPlayer: any AudioPlaying = AudioPlayerService(),
+        transcriptionService: any Transcribing = TranscriptionService()
     ) {
         self.modelContext = modelContext
         self.audioRecorder = audioRecorder
         self.audioPlayer = audioPlayer
+        self.transcriptionService = transcriptionService
         self.audioPlayer.onPlaybackFinished = { [weak self] in
             self?.isPlaying = false
             self?.playingRecordingId = nil
@@ -177,11 +180,10 @@ class HomeViewModel {
 
         let audioURL = FilePathManager.recordingsDirectory
             .appendingPathComponent(recording.audioFileName)
-        let service = TranscriptionService()
 
         Task { @MainActor in
             do {
-                let text = try await service.transcribe(audioURL: audioURL)
+                let text = try await transcriptionService.transcribe(audioURL: audioURL)
                 transcriptionState = .success(text.isEmpty ? "(書き起こし結果がありませんでした)" : text)
             } catch {
                 transcriptionState = .failure(error.localizedDescription)

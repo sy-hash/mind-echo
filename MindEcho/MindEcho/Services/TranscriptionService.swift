@@ -24,7 +24,7 @@ enum TranscriptionError: LocalizedError {
 // MARK: - TranscriptionService
 
 /// SpeechAnalyzer（iOS 26+）を使ったオンデバイス音声書き起こしサービス
-final class TranscriptionService {
+final class TranscriptionService: Transcribing {
 
     // MARK: Authorization
 

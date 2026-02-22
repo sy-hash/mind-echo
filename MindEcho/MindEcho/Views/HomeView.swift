@@ -10,10 +10,15 @@ struct HomeView: View {
     @State private var showTextEditor = false
     @State private var editingText = ""
 
-    init(modelContext: ModelContext, audioRecorder: any AudioRecording) {
+    init(
+        modelContext: ModelContext,
+        audioRecorder: any AudioRecording,
+        transcriptionService: any Transcribing = TranscriptionService()
+    ) {
         _viewModel = State(initialValue: HomeViewModel(
             modelContext: modelContext,
-            audioRecorder: audioRecorder
+            audioRecorder: audioRecorder,
+            transcriptionService: transcriptionService
         ))
     }
 

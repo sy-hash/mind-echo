@@ -1,6 +1,6 @@
 # UIテスト設計
 
-メインシナリオを選定し XCTest で UIテストを記述する（5カテゴリ・21テストケース）。
+メインシナリオを選定し XCTest で UIテストを記述する（6カテゴリ・30テストケース）。
 
 ## テストデータセットアップ（Launch Arguments）
 
@@ -14,6 +14,8 @@ UIテストプロセスはアプリと別プロセスで動作するため、lau
 | `--seed-today-with-text` | 今日のエントリ + テキストデータを事前投入 |
 | `--mock-recorder` | MockAudioRecorderService を注入（マイク不要で録音UI状態遷移をテスト） |
 | `--mock-player` | MockAudioPlayerService を注入（実音声ファイル不要で再生UI状態遷移をテスト） |
+| `--mock-transcription-success` | MockTranscriptionService（成功）を注入（SpeechAnalyzer 不要で書き起こしUI状態遷移をテスト） |
+| `--mock-transcription-failure` | MockTranscriptionService（失敗）を注入（エラー状態のUI遷移をテスト） |
 
 ## マイク非依存のテスト方式
 
@@ -23,6 +25,12 @@ UIテストプロセスはアプリと別プロセスで動作するため、lau
 - 停止時にダミーの `Recording` エントリを作成
 
 UIテストは **UI状態遷移**（ボタンの表示/非表示、有効/無効）を検証し、実際の音声キャプチャは検証対象外とする。
+
+## 書き起こし非依存のテスト方式
+
+SpeechAnalyzer（iOS 26+）はシミュレータ上で権限取得が困難なため、`--mock-transcription-success` / `--mock-transcription-failure` 引数で `MockTranscriptionService`（`Transcribing` protocol 準拠）を注入する。モックは:
+- 0.3秒の短いディレイ後に固定テキストを返す（success）またはエラーを throw する（failure）
+- `SpeechAnalyzer` / `SFSpeechRecognizer` を一切使わない
 
 ## Accessibility Identifier 一覧
 
@@ -44,10 +52,20 @@ UIテストは **UI状態遷移**（ボタンの表示/非表示、有効/無効
 - `home.textInputButton`
 - `home.recordingsList`
 - `home.recordingRow.{n}`
+- `home.transcribeButton.{n}`
 - `home.textEditorSheet`
 - `home.textEditor`
 - `home.textSaveButton`
 - `home.textCancelButton`
+- `home.transcriptionSheet`
+
+### TranscriptionSheet
+
+- `transcription.closeButton`
+- `transcription.idleView`
+- `transcription.loadingView`
+- `transcription.resultText`
+- `transcription.errorView`
 
 ### HistoryListView
 
@@ -69,7 +87,7 @@ UIテストは **UI状態遷移**（ボタンの表示/非表示、有効/無効
 - `detail.shareTextOption`
 - `detail.shareAudioOption`
 
-## テストケース（5カテゴリ・24テスト）
+## テストケース（6カテゴリ・30テスト）
 
 ### 1. NavigationUITests（3テスト）
 
@@ -98,7 +116,18 @@ UIテストは **UI状態遷移**（ボタンの表示/非表示、有効/無効
 | `testCancelText_dismissesWithoutSaving` | キャンセルで保存せずシート閉じる |
 | `testEditExistingText_opensWithPreviousContent` | 既存テキストがエディタに表示 |
 
-### 4. HistoryListUITests（4テスト）
+### 4. HomeTranscriptionUITests（6テスト）
+
+| テスト | 検証内容 | Launch Arguments |
+|-------|---------|-----------------|
+| `testTranscribeButton_appearsForEachRecording` | 録音セルごとに書き起こしボタンが表示される | `--mock-transcription-success` |
+| `testTapTranscribeButton_opensTranscriptionSheet` | 書き起こしボタンタップでシートが表示される | `--mock-transcription-success` |
+| `testTranscriptionSheet_showsSequenceNumberInTitle` | シートタイトルに録音連番が表示される | `--mock-transcription-success` |
+| `testTranscriptionSuccess_showsResultText` | 成功時に書き起こし結果テキストが表示される | `--mock-transcription-success` |
+| `testTranscriptionFailure_showsErrorView` | 失敗時にエラービューが表示される | `--mock-transcription-failure` |
+| `testTranscriptionSheet_closeButton_dismissesSheet` | 閉じるボタンでシートが閉じる | `--mock-transcription-success` |
+
+### 5. HistoryListUITests（4テスト）
 
 | テスト | 検証内容 |
 |-------|---------|
@@ -107,7 +136,7 @@ UIテストは **UI状態遷移**（ボタンの表示/非表示、有効/無効
 | `testEntryRow_showsDatePreviewAndRecordingInfo` | セルに日付・プレビュー・録音情報 |
 | `testTapEntry_navigatesToDetail` | セルタップで詳細画面へ遷移 |
 
-### 5. EntryDetailUITests（5テスト）
+### 6. EntryDetailUITests（5テスト）
 
 | テスト | 検証内容 |
 |-------|---------|
@@ -124,6 +153,7 @@ UIテストは **UI状態遷移**（ボタンの表示/非表示、有効/無効
 - 日付境界ロジック（午前3時） → DateHelper ユニットテスト
 - iOS Share Sheet 操作 → システムUI
 - バックグラウンド録音 → 実機テスト
+- 実際の SpeechAnalyzer 書き起こし品質 → 実機テスト
 
 ## 実装順序
 
@@ -133,6 +163,7 @@ UIテストは **UI状態遷移**（ボタンの表示/非表示、有効/無効
 2. **NavigationUITests** — TabView + 画面スタブ実装後
 3. **HistoryListUITests + EntryDetailUITests** — 履歴画面・詳細画面実装後
 4. **HomeRecordingUITests + HomeTextInputUITests** — ホーム画面 + MockRecorder 実装後
+5. **HomeTranscriptionUITests** — 書き起こし機能 + MockTranscriptionService 実装後
 
 ## 検証方法
 
