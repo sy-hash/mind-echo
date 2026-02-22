@@ -32,6 +32,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 1
+          token: ${{ secrets.CLAUDE_CODE_PAT }}
 
       - name: Run Claude Code
         id: claude
