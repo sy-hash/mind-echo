@@ -4,30 +4,6 @@ import MindEchoAudio
 import MindEchoCore
 
 struct ExportServiceImpl: Exporting {
-    func exportTextJournal(entry: JournalEntry, to directory: URL) async throws -> URL {
-        try FilePathManager.ensureDirectoryExists(directory)
-
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.dateFormat = "yyyyMMdd"
-        let dateStr = formatter.string(from: entry.date)
-
-        // Weekday for header
-        let weekdayFormatter = DateFormatter()
-        weekdayFormatter.locale = Locale(identifier: "en_US_POSIX")
-        weekdayFormatter.dateFormat = "yyyy-MM-dd (EEE)"
-        let headerDate = weekdayFormatter.string(from: entry.date)
-
-        var content = "# Journal: \(headerDate)\n\n"
-        for textEntry in entry.sortedTextEntries {
-            content += textEntry.content + "\n"
-        }
-
-        let outputURL = directory.appendingPathComponent("\(dateStr)_journal.txt")
-        try content.write(to: outputURL, atomically: true, encoding: .utf8)
-        return outputURL
-    }
-
     func exportMergedAudio(entry: JournalEntry, to directory: URL) async throws -> URL {
         try FilePathManager.ensureDirectoryExists(directory)
 
