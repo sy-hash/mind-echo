@@ -6,7 +6,6 @@ import SwiftUI
 struct EntryDetailView: View {
     @State private var viewModel: EntryDetailViewModel
     @State private var shareURL: URL?
-    @State private var isExporting = false
 
     init(entry: JournalEntry, modelContext: ModelContext, audioPlayer: any AudioPlaying = AudioPlayerService()) {
         _viewModel = State(initialValue: EntryDetailViewModel(
@@ -82,17 +81,14 @@ struct EntryDetailView: View {
         }
     }
 
-    @MainActor
     private func exportAndShare() {
-        isExporting = true
-        Task { @MainActor in
+        Task {
             do {
                 let url = try await viewModel.exportForSharing()
                 shareURL = url
             } catch {
                 // Handle error silently for now
             }
-            isExporting = false
         }
     }
 
