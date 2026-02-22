@@ -67,7 +67,7 @@ UIテストは **UI状態遷移**（ボタンの表示/非表示、有効/無効
 - `detail.deleteButton.{n}`
 - `detail.shareButton`
 
-## テストケース（6カテゴリ・25テスト）
+## テストケース（5カテゴリ・19テスト）
 
 ### 1. NavigationUITests（3テスト）
 

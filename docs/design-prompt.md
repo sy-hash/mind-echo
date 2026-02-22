@@ -220,7 +220,7 @@ class HistoryViewModel {
 }
 
 /// 共有タイプ
-/// ExportService モジュールで定義し、App Target から参照する
+/// Packages/MindEchoCore/Sources/MindEchoCore/ShareType.swift で定義し、App Target から参照する
 enum ShareType {
     case audio              // 音声ファイル（全録音を結合した .m4a）
 }

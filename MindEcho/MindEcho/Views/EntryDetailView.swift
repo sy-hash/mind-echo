@@ -63,6 +63,7 @@ struct EntryDetailView: View {
                         .accessibilityIdentifier("detail.recordingRow.\(recording.sequenceNumber)")
                     }
                 }
+                .accessibilityIdentifier("detail.recordingsList")
             }
         }
         .navigationTitle("詳細")
@@ -81,9 +82,10 @@ struct EntryDetailView: View {
         }
     }
 
+    @MainActor
     private func exportAndShare() {
         isExporting = true
-        Task {
+        Task { @MainActor in
             do {
                 let url = try await viewModel.exportForSharing()
                 shareURL = url
