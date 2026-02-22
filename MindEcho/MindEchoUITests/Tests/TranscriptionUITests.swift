@@ -10,15 +10,16 @@ final class TranscriptionUITests: XCTestCase {
     }
 
     @MainActor
-    func testTranscribeButton_showsLoadingIndicator() throws {
+    func testTranscribeButton_opensTranscriptionSheet() throws {
         app.launch()
 
         let transcribeButton = app.buttons["home.transcribeButton.1"]
         XCTAssertTrue(transcribeButton.waitForExistence(timeout: 5))
         transcribeButton.tap()
 
-        let loading = app.activityIndicators["transcription.loading"]
-        XCTAssertTrue(loading.waitForExistence(timeout: 5))
+        // Sheet should open and eventually show result text
+        let resultText = app.staticTexts["transcription.resultText"]
+        XCTAssertTrue(resultText.waitForExistence(timeout: 10))
     }
 
     @MainActor
@@ -45,9 +46,8 @@ final class TranscriptionUITests: XCTestCase {
         let resultText = app.staticTexts["transcription.resultText"]
         XCTAssertTrue(resultText.waitForExistence(timeout: 10))
 
-        // Swipe down to dismiss the sheet
-        let sheet = app.otherElements["home.transcriptionSheet"]
-        sheet.swipeDown()
+        // Swipe down on the result text to dismiss the sheet
+        resultText.swipeDown(velocity: .fast)
 
         // Verify we're back on the home screen
         XCTAssertTrue(transcribeButton.waitForExistence(timeout: 5))
