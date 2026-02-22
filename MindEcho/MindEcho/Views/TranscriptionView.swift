@@ -1,4 +1,5 @@
 import MindEchoCore
+import Speech
 import SwiftUI
 
 struct TranscriptionView: View {
@@ -32,6 +33,13 @@ struct TranscriptionView: View {
             .navigationBarTitleDisplayMode(.inline)
         }
         .task {
+            if ProcessInfo.processInfo.arguments.contains("--mock-transcription") {
+                viewModel.transcribe = { _, _ in
+                    try await Task.sleep(for: .milliseconds(500))
+                    return "これはモックの書き起こし結果です。テスト用のテキストデータ。"
+                }
+                viewModel.checkAuthorization = { .authorized }
+            }
             await viewModel.startTranscription(recording: recording)
         }
     }
