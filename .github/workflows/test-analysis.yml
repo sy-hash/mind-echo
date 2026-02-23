@@ -104,7 +104,8 @@ jobs:
             - NEEDS_HUMAN: 環境問題やアーキテクチャ変更が必要で自動修正が困難
 
             ## 出力
-            `/tmp/test-classification.txt` に分類結果を1行で書き出してください。
+            `${{ github.workspace }}/test-classification.txt` に分類結果を1行で書き出してください。
+            Writeツールを使って書き出すこと。Bashは使わないでください。
             内容は FIXABLE, FLAKY, NEEDS_HUMAN のいずれかのみ。
           claude_args: '--max-turns 3 --allowedTools "Write"'
 
@@ -112,7 +113,7 @@ jobs:
         id: classify
         if: steps.pr.outputs.number && !steps.loop-check.outputs.skip
         run: |
-          CLASS=$(cat /tmp/test-classification.txt 2>/dev/null | tr -d '[:space:]' || echo "NEEDS_HUMAN")
+          CLASS=$(cat "${{ github.workspace }}/test-classification.txt" 2>/dev/null | tr -d '[:space:]' || echo "NEEDS_HUMAN")
 
           # 有効な分類値かバリデーション
           if [ "$CLASS" != "FIXABLE" ] && [ "$CLASS" != "FLAKY" ] && [ "$CLASS" != "NEEDS_HUMAN" ]; then
