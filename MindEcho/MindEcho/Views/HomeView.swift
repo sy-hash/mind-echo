@@ -17,58 +17,57 @@ struct HomeView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                ScrollView {
-                    VStack(spacing: 20) {
-                        // Date display
-                        Text(DateHelper.displayString(for: DateHelper.today()))
-                            .font(.title2)
-                            .accessibilityIdentifier("home.dateLabel")
+            ScrollView {
+                VStack(spacing: 20) {
+                    // Date display
+                    Text(DateHelper.displayString(for: DateHelper.today()))
+                        .font(.title2)
+                        .accessibilityIdentifier("home.dateLabel")
 
-                        // Today's recordings list
-                        if let entry = viewModel.todayEntry, !entry.recordings.isEmpty {
-                            VStack(spacing: 0) {
-                                ForEach(entry.sortedRecordings) { recording in
-                                    HStack {
-                                        Text("#\(recording.sequenceNumber)")
-                                            .font(.headline)
-                                        Text(formatDuration(recording.duration))
-                                            .foregroundStyle(.secondary)
-                                        Spacer()
-                                        Button {
-                                            transcriptionTargetRecording = recording
-                                        } label: {
-                                            Image(systemName: "doc.text")
-                                        }
-                                        .accessibilityIdentifier("home.transcribeButton.\(recording.sequenceNumber)")
-                                        Image(systemName: viewModel.playingRecordingId == recording.id && viewModel.isPlaying ? "pause.fill" : "play.fill")
+                    // Today's recordings list
+                    if let entry = viewModel.todayEntry, !entry.recordings.isEmpty {
+                        VStack(spacing: 0) {
+                            ForEach(entry.sortedRecordings) { recording in
+                                HStack {
+                                    Text("#\(recording.sequenceNumber)")
+                                        .font(.headline)
+                                    Text(formatDuration(recording.duration))
+                                        .foregroundStyle(.secondary)
+                                    Spacer()
+                                    Button {
+                                        transcriptionTargetRecording = recording
+                                    } label: {
+                                        Image(systemName: "doc.text")
                                     }
-                                    .padding(.vertical, 12)
-                                    .contentShape(Rectangle())
-                                    .onTapGesture {
-                                        if viewModel.playingRecordingId == recording.id && viewModel.isPlaying {
-                                            viewModel.pausePlayback()
-                                        } else {
-                                            viewModel.playRecording(recording)
-                                        }
-                                    }
-                                    .accessibilityElement(children: .combine)
-                                    .accessibilityAddTraits(.isButton)
-                                    .accessibilityIdentifier("home.recordingRow.\(recording.sequenceNumber)")
-
-                                    if recording.id != entry.sortedRecordings.last?.id {
-                                        Divider()
+                                    .accessibilityIdentifier("home.transcribeButton.\(recording.sequenceNumber)")
+                                    Image(systemName: viewModel.playingRecordingId == recording.id && viewModel.isPlaying ? "pause.fill" : "play.fill")
+                                }
+                                .padding(.vertical, 12)
+                                .contentShape(Rectangle())
+                                .onTapGesture {
+                                    if viewModel.playingRecordingId == recording.id && viewModel.isPlaying {
+                                        viewModel.pausePlayback()
+                                    } else {
+                                        viewModel.playRecording(recording)
                                     }
                                 }
-                            }
-                            .accessibilityElement(children: .contain)
-                            .accessibilityIdentifier("home.recordingsList")
-                        }
-                    }
-                    .padding()
-                }
+                                .accessibilityElement(children: .combine)
+                                .accessibilityAddTraits(.isButton)
+                                .accessibilityIdentifier("home.recordingRow.\(recording.sequenceNumber)")
 
-                // Recording start button - fixed at bottom for stable accessibility
+                                if recording.id != entry.sortedRecordings.last?.id {
+                                    Divider()
+                                }
+                            }
+                        }
+                        .accessibilityElement(children: .contain)
+                        .accessibilityIdentifier("home.recordingsList")
+                    }
+                }
+                .padding()
+            }
+            .safeAreaInset(edge: .bottom) {
+                // Recording start button - pinned to safe area bottom for stable accessibility
                 Button {
                     isRecordingModalPresented = true
                 } label: {
