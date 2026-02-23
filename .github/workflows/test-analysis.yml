@@ -106,7 +106,7 @@ jobs:
             ## 出力
             `/tmp/test-classification.txt` に分類結果を1行で書き出してください。
             内容は FIXABLE, FLAKY, NEEDS_HUMAN のいずれかのみ。
-          claude_args: '--max-turns 3'
+          claude_args: '--max-turns 3 --allowedTools "Write"'
 
       - name: Read classification
         id: classify
