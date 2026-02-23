@@ -588,7 +588,6 @@ protocol Exporting {
 - **NotebookLM Enterprise API 連携**: Google Cloud の NotebookLM Enterprise API が利用可能になれば、アプリから直接ノートブックにソースを追加する自動化が可能
 - **ウィジェット**: ホーム画面から直接録音を開始するウィジェット
 - **リマインダー通知**: 毎日の記録を促すローカル通知
-- **音声文字起こし**: SpeechAnalyzer / SpeechTranscriber（iOS 26 新API）を使用したリアルタイム文字起こし機能（実装済み）
 - **タグ / カテゴリ**: エントリにタグを付けて分類
 - **気分トラッキング**: エントリに気分アイコンを付与
 - **Foundation Models 連携**: iOS 26 のオンデバイス Foundation Models を使い、ジャーナルの要約やタイトル自動生成
