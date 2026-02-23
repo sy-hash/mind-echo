@@ -9,14 +9,41 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DESTINATION: 'platform=iOS Simulator,name=iPhone 17'
+  WORKSPACE: MindEcho.xcworkspace
+
 jobs:
-  test:
+  unit-tests:
+    name: Unit Tests
     runs-on: macos-26
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - name: Run Tests
+      - uses: actions/checkout@v6
+
+      - name: Run Unit Tests (MindEchoTests)
         run: |
           xcodebuild test \
-            -workspace MindEcho.xcworkspace \
+            -workspace $WORKSPACE \
             -scheme MindEcho \
-            -destination 'platform=iOS Simulator,name=iPhone 17'
+            -destination "$DESTINATION" \
+            -only-testing:MindEchoTests
+
+  ui-tests:
+    name: UI Tests
+    runs-on: macos-26
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Run UI Tests (MindEchoUITests)
+        run: |
+          xcodebuild test \
+            -workspace $WORKSPACE \
+            -scheme MindEcho \
+            -destination "$DESTINATION" \
+            -only-testing:MindEchoUITests
