@@ -17,25 +17,13 @@ struct HomeView: View {
 
     var body: some View {
         NavigationStack {
-            GeometryReader { geometry in
+            VStack(spacing: 0) {
                 ScrollView {
                     VStack(spacing: 20) {
                         // Date display
                         Text(DateHelper.displayString(for: DateHelper.today()))
                             .font(.title2)
                             .accessibilityIdentifier("home.dateLabel")
-
-                        Spacer()
-
-                        // Recording start button
-                        Button {
-                            isRecordingModalPresented = true
-                        } label: {
-                            Image(systemName: "mic.circle.fill")
-                                .font(.system(size: 70))
-                                .foregroundStyle(.red)
-                        }
-                        .accessibilityIdentifier("home.recordButton")
 
                         // Today's recordings list
                         if let entry = viewModel.todayEntry, !entry.recordings.isEmpty {
@@ -75,13 +63,21 @@ struct HomeView: View {
                             }
                             .accessibilityElement(children: .contain)
                             .accessibilityIdentifier("home.recordingsList")
-                        } else {
-                            Spacer()
                         }
                     }
                     .padding()
-                    .frame(minHeight: geometry.size.height)
                 }
+
+                // Recording start button - fixed at bottom for stable accessibility
+                Button {
+                    isRecordingModalPresented = true
+                } label: {
+                    Image(systemName: "mic.circle.fill")
+                        .font(.system(size: 70))
+                        .foregroundStyle(.red)
+                }
+                .accessibilityIdentifier("home.recordButton")
+                .padding(.vertical)
             }
             .navigationTitle("今日")
             .onAppear {
