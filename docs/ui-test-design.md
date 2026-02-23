@@ -1,6 +1,6 @@
 # UIテスト設計
 
-メインシナリオを選定し XCTest で UIテストを記述する（5カテゴリ・19テストケース）。
+メインシナリオを選定し XCTest で UIテストを記述する（5カテゴリ・15テストケース）。
 
 ## テストデータセットアップ（Launch Arguments）
 
@@ -37,14 +37,26 @@ UIテストは **UI状態遷移**（ボタンの表示/非表示、有効/無効
 
 - `home.dateLabel`
 - `home.recordButton`
-- `home.pauseButton`
-- `home.resumeButton`
-- `home.stopButton`
-- `home.recordingDuration`
 - `home.recordingsList`
 - `home.recordingRow.{n}`
 - `home.transcribeButton.{n}`
 - `home.transcriptionSheet`
+
+### RecordingModalView
+
+録音中はモーダルシートとして表示される。録音中と書き起こし後で表示要素が切り替わる。
+
+**録音中（`viewModel.isRecording == true`）**
+
+- `recording.duration` — 録音時間（モノスペースフォント）
+- `recording.waveform` — リアルタイム波形表示
+- `recording.pauseButton` — 一時停止ボタン（録音中のみ表示）
+- `recording.resumeButton` — 再開ボタン（一時停止中のみ表示）
+- `recording.stopButton` — 停止ボタン
+
+**書き起こし後（`viewModel.isRecording == false`）**
+
+- `recording.transcriptionResult` — 書き起こし結果テキスト（成功・失敗どちらも同じ識別子）
 
 ### HistoryListView
 
@@ -77,15 +89,28 @@ UIテストは **UI状態遷移**（ボタンの表示/非表示、有効/無効
 | `testTabSwitching_navigatesBetweenTodayAndHistory` | タブ切り替えで画面が遷移する |
 | `testHistoryToDetail_pushesAndPops` | 履歴→詳細への push/pop ナビゲーション |
 
-### 2. HomeRecordingUITests（5テスト）
+### 2. HomeRecordingUITests（1テスト）
+
+録音UIをモーダルに移行したことで、複数の独立したテストケースを1つの統合フローテストに統合した。
 
 | テスト | 検証内容 |
 |-------|---------|
-| `testInitialState_showsRecordButtonOnly` | 初期状態で録音ボタンのみ表示 |
-| `testStartRecording_showsPauseAndStopButtons` | 録音開始で一時停止・停止ボタン表示 |
-| `testPauseRecording_showsResumeButton` | 一時停止で再開ボタン表示 |
-| `testStopRecording_addsRecordingToList` | 停止で録音リストにエントリ追加 |
-| `testMultipleRecordings_appearInOrder` | 複数録音が連番順に表示 |
+| `testRecordingModalFlow` | 録音ボタン → モーダル → 一時停止 → 再開 → 停止 → 書き起こし → 閉じる → 2回目録音 → 行数確認まで12ステップを通しで検証 |
+
+**テストステップ詳細:**
+
+1. `home.recordButton` の存在確認
+2. 録音ボタンタップ → モーダルが開き録音開始
+3. モーダル要素（`recording.duration` / `recording.waveform` / `recording.pauseButton` / `recording.stopButton`）の存在確認
+4. 一時停止ボタンタップ → `recording.resumeButton` に切り替わることを確認
+5. 再開ボタンタップ → `recording.pauseButton` に戻ることを確認
+6. 停止ボタンタップ → 書き起こし開始
+7. `recording.transcriptionResult` が表示されることを確認
+8. スワイプダウンでモーダルを閉じる
+9. `home.recordingRow.1` がリストに追加されることを確認
+10. 2回目の録音開始（`isHittable` predicate で安定待機）
+11. 停止 → 書き起こし結果を確認 → スワイプで閉じる
+12. `home.recordingRow.1` と `home.recordingRow.2` が両方存在することを確認
 
 ### 3. HistoryListUITests（4テスト）
 
