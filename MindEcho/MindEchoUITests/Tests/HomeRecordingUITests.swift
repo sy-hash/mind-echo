@@ -65,8 +65,13 @@ final class HomeRecordingUITests: XCTestCase {
         let recordingRow1 = app.descendants(matching: .any)["home.recordingRow.1"]
         XCTAssertTrue(recordingRow1.waitForExistence(timeout: 5))
 
-        // 10. Second recording
+        // 10. Second recording - wait for button to be hittable after layout update from recording row being added
         XCTAssertTrue(recordBtn.waitForExistence(timeout: 5))
+        let hittableExpectation = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "isHittable == true"),
+            object: recordBtn
+        )
+        wait(for: [hittableExpectation], timeout: 5.0)
         recordBtn.tap()
 
         XCTAssertTrue(app.buttons["recording.stopButton"].waitForExistence(timeout: 10))

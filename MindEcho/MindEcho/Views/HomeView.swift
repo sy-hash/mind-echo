@@ -66,18 +66,6 @@ struct HomeView: View {
                 }
                 .padding()
             }
-            .safeAreaInset(edge: .bottom) {
-                // Recording start button - pinned to safe area bottom for stable accessibility
-                Button {
-                    isRecordingModalPresented = true
-                } label: {
-                    Image(systemName: "mic.circle.fill")
-                        .font(.system(size: 70))
-                        .foregroundStyle(.red)
-                }
-                .accessibilityIdentifier("home.recordButton")
-                .padding(.vertical)
-            }
             .navigationTitle("今日")
             .onAppear {
                 viewModel.fetchTodayEntry()
@@ -95,6 +83,19 @@ struct HomeView: View {
                 TranscriptionView(recording: recording)
                     .accessibilityIdentifier("home.transcriptionSheet")
             }
+        }
+        // Recording start button - pinned outside NavigationStack for stable accessibility frame
+        // regardless of ScrollView content updates
+        .safeAreaInset(edge: .bottom) {
+            Button {
+                isRecordingModalPresented = true
+            } label: {
+                Image(systemName: "mic.circle.fill")
+                    .font(.system(size: 70))
+                    .foregroundStyle(.red)
+            }
+            .accessibilityIdentifier("home.recordButton")
+            .padding(.vertical)
         }
     }
 
