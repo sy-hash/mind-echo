@@ -6,12 +6,25 @@ import SwiftData
 
 @Observable
 class HomeViewModel {
+    enum TranscriptionState: Equatable {
+        case idle
+        case loading
+        case success(String)
+        case failure(String)
+    }
+
     var recordingDuration: TimeInterval = 0
     var playingRecordingId: UUID?
     var isPlaying = false
     var playbackProgress: Double = 0
     var todayEntry: JournalEntry?
     var errorMessage: String?
+    private(set) var transcriptionState: TranscriptionState = .idle
+
+    @ObservationIgnored
+    var transcribe: (URL, Locale) async throws -> String = { url, locale in
+        try await TranscriptionService().transcribe(audioFileURL: url, locale: locale)
+    }
 
     private let modelContext: ModelContext
     private var audioRecorder: any AudioRecording
@@ -21,6 +34,7 @@ class HomeViewModel {
     private var accumulatedDuration: TimeInterval = 0
     private var currentRecordingFileName: String?
     private var currentRecordingStartedAt: Date?
+    private var lastRecordedFileName: String?
 
     init(
         modelContext: ModelContext,
@@ -46,6 +60,8 @@ class HomeViewModel {
     // MARK: - Recording
 
     func startRecording() {
+        transcriptionState = .idle
+        lastRecordedFileName = nil
         do {
             try FilePathManager.ensureDirectoryExists(FilePathManager.recordingsDirectory)
             let url = FilePathManager.newRecordingURL()
@@ -88,6 +104,7 @@ class HomeViewModel {
 
         // Save recording to SwiftData
         guard let fileName = currentRecordingFileName else { return }
+        lastRecordedFileName = fileName
         let today = DateHelper.logicalDate()
         let entry = getOrCreateTodayEntry(for: today)
         let nextSeq = (entry.recordings.map(\.sequenceNumber).max() ?? 0) + 1
@@ -107,6 +124,25 @@ class HomeViewModel {
         recordingDuration = 0
         accumulatedDuration = 0
         recordingStartTime = nil
+    }
+
+    // MARK: - Transcription
+
+    func startTranscription() async {
+        guard let fileName = lastRecordedFileName else { return }
+        let url = FilePathManager.recordingsDirectory.appendingPathComponent(fileName)
+        transcriptionState = .loading
+        do {
+            let text = try await transcribe(url, Locale(identifier: "ja-JP"))
+            transcriptionState = text.isEmpty ? .failure("書き起こし結果が空でした。") : .success(text)
+        } catch {
+            transcriptionState = .failure("書き起こしに失敗しました: \(error.localizedDescription)")
+        }
+    }
+
+    func resetTranscriptionState() {
+        transcriptionState = .idle
+        lastRecordedFileName = nil
     }
 
     // MARK: - Playback

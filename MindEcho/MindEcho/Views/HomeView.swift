@@ -1,5 +1,3 @@
-import DSWaveformImage
-import DSWaveformImageViews
 import MindEchoAudio
 import MindEchoCore
 import SwiftData
@@ -8,6 +6,7 @@ import SwiftUI
 struct HomeView: View {
     @State private var viewModel: HomeViewModel
     @State private var transcriptionTargetRecording: Recording?
+    @State private var isRecordingModalPresented = false
 
     init(modelContext: ModelContext, audioRecorder: any AudioRecording) {
         _viewModel = State(initialValue: HomeViewModel(
@@ -28,56 +27,15 @@ struct HomeView: View {
 
                         Spacer()
 
-                        // Recording duration (shown when recording)
-                        if viewModel.isRecording {
-                            Text(formatDuration(viewModel.recordingDuration))
-                                .font(.system(.largeTitle, design: .monospaced))
-                                .accessibilityIdentifier("home.recordingDuration")
-
-                            WaveformLiveCanvas(
-                                samples: viewModel.audioLevels,
-                                configuration: Waveform.Configuration(
-                                    style: .striped(.init(color: .red, width: 3, spacing: 3)),
-                                    damping: .init()
-                                ),
-                                shouldDrawSilencePadding: false
-                            )
-                            .frame(height: 80)
-                            .accessibilityIdentifier("home.waveform")
+                        // Recording start button
+                        Button {
+                            isRecordingModalPresented = true
+                        } label: {
+                            Image(systemName: "mic.circle.fill")
+                                .font(.system(size: 70))
+                                .foregroundStyle(.red)
                         }
-
-                        // Recording controls
-                        HStack(spacing: 30) {
-                            if viewModel.isRecording {
-                                if viewModel.isRecordingPaused {
-                                    Button { viewModel.resumeRecording() } label: {
-                                        Image(systemName: "play.circle.fill")
-                                            .font(.system(size: 50))
-                                    }
-                                    .accessibilityIdentifier("home.resumeButton")
-                                } else {
-                                    Button { viewModel.pauseRecording() } label: {
-                                        Image(systemName: "pause.circle.fill")
-                                            .font(.system(size: 50))
-                                    }
-                                    .accessibilityIdentifier("home.pauseButton")
-                                }
-
-                                Button { viewModel.stopRecording() } label: {
-                                    Image(systemName: "stop.circle.fill")
-                                        .font(.system(size: 50))
-                                        .foregroundStyle(.red)
-                                }
-                                .accessibilityIdentifier("home.stopButton")
-                            } else {
-                                Button { viewModel.startRecording() } label: {
-                                    Image(systemName: "mic.circle.fill")
-                                        .font(.system(size: 70))
-                                        .foregroundStyle(.red)
-                                }
-                                .accessibilityIdentifier("home.recordButton")
-                            }
-                        }
+                        .accessibilityIdentifier("home.recordButton")
 
                         // Today's recordings list
                         if let entry = viewModel.todayEntry, !entry.recordings.isEmpty {
@@ -128,6 +86,15 @@ struct HomeView: View {
             .navigationTitle("今日")
             .onAppear {
                 viewModel.fetchTodayEntry()
+            }
+            .sheet(isPresented: $isRecordingModalPresented, onDismiss: {
+                if viewModel.isRecording {
+                    viewModel.stopRecording()
+                }
+                viewModel.resetTranscriptionState()
+                viewModel.fetchTodayEntry()
+            }) {
+                RecordingModalView(viewModel: viewModel)
             }
             .sheet(item: $transcriptionTargetRecording) { recording in
                 TranscriptionView(recording: recording)

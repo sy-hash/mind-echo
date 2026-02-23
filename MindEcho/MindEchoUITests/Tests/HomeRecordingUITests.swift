@@ -6,7 +6,7 @@ final class HomeRecordingUITests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
         app = XCUIApplication()
-        app.launchArguments = ["--uitesting", "--mock-recorder"]
+        app.launchArguments = ["--uitesting", "--mock-recorder", "--mock-transcription"]
         app.resetAuthorizationStatus(for: .microphone)
         addUIInterruptionMonitor(withDescription: "Microphone Permission") { alert in
             let allowButton = alert.buttons["Allow"]
@@ -25,89 +25,60 @@ final class HomeRecordingUITests: XCTestCase {
     }
 
     @MainActor
-    func testInitialState_showsRecordButtonOnly() throws {
+    func testRecordingModalFlow() throws {
         app.launch()
-        let recordBtn = app.buttons["home.recordButton"]
-        XCTAssertTrue(recordBtn.waitForExistence(timeout: 5))
-        XCTAssertFalse(app.buttons["home.pauseButton"].exists)
-        XCTAssertFalse(app.buttons["home.stopButton"].exists)
-        XCTAssertFalse(app.buttons["home.resumeButton"].exists)
-    }
 
-    @MainActor
-    func testStartRecording_showsPauseAndStopButtons() throws {
-        app.launch()
-        app.buttons["home.recordButton"].tap()
-        // Trigger interrupt monitor for permission alert
-        app.tap()
-
-        let pauseBtn = app.buttons["home.pauseButton"]
-        XCTAssertTrue(pauseBtn.waitForExistence(timeout: 10))
-        XCTAssertTrue(app.buttons["home.stopButton"].exists)
-        XCTAssertFalse(app.buttons["home.recordButton"].exists)
-    }
-
-    @MainActor
-    func testPauseRecording_showsResumeButton() throws {
-        app.launch()
-        app.buttons["home.recordButton"].tap()
-        app.tap()
-
-        let pauseBtn = app.buttons["home.pauseButton"]
-        XCTAssertTrue(pauseBtn.waitForExistence(timeout: 10))
-        pauseBtn.tap()
-
-        let resumeBtn = app.buttons["home.resumeButton"]
-        XCTAssertTrue(resumeBtn.waitForExistence(timeout: 5))
-        XCTAssertTrue(app.buttons["home.stopButton"].exists)
-        XCTAssertFalse(app.buttons["home.pauseButton"].exists)
-    }
-
-    @MainActor
-    func testStopRecording_addsRecordingToList() throws {
-        app.launch()
-        app.buttons["home.recordButton"].tap()
-        app.tap()
-
-        let stopBtn = app.buttons["home.stopButton"]
-        XCTAssertTrue(stopBtn.waitForExistence(timeout: 10))
-        stopBtn.tap()
-
-        // After stopping, record button should reappear
+        // 1. Assert home.recordButton exists
         let recordBtn = app.buttons["home.recordButton"]
         XCTAssertTrue(recordBtn.waitForExistence(timeout: 5))
 
-        // A recording should be added to the list
-        let recordingRow = app.descendants(matching: .any)["home.recordingRow.1"]
-        XCTAssertTrue(recordingRow.waitForExistence(timeout: 5))
-    }
-
-    @MainActor
-    func testMultipleRecordings_appearInOrder() throws {
-        app.launch()
-
-        // First recording
-        app.buttons["home.recordButton"].tap()
-        app.tap()
-        let stopBtn1 = app.buttons["home.stopButton"]
-        XCTAssertTrue(stopBtn1.waitForExistence(timeout: 10))
-        stopBtn1.tap()
-
-        // Wait for record button to reappear
-        let recordBtn = app.buttons["home.recordButton"]
-        XCTAssertTrue(recordBtn.waitForExistence(timeout: 5))
-
-        // Second recording
+        // 2. Tap home.recordButton → modal opens + recording starts
         recordBtn.tap()
-        let stopBtn2 = app.buttons["home.stopButton"]
-        XCTAssertTrue(stopBtn2.waitForExistence(timeout: 5))
-        stopBtn2.tap()
+        // Trigger interrupt monitor for microphone permission alert
+        app.tap()
 
-        // Both recordings should be in the list
-        XCTAssertTrue(app.buttons["home.recordButton"].waitForExistence(timeout: 5))
-        let row1 = app.descendants(matching: .any)["home.recordingRow.1"]
-        let row2 = app.descendants(matching: .any)["home.recordingRow.2"]
-        XCTAssertTrue(row1.waitForExistence(timeout: 5))
-        XCTAssertTrue(row2.waitForExistence(timeout: 5))
+        // 3. Assert modal recording elements exist
+        XCTAssertTrue(app.staticTexts["recording.duration"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.otherElements["recording.waveform"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["recording.pauseButton"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["recording.stopButton"].waitForExistence(timeout: 5))
+
+        // 4. Tap pause
+        app.buttons["recording.pauseButton"].tap()
+        XCTAssertTrue(app.buttons["recording.resumeButton"].waitForExistence(timeout: 5))
+
+        // 5. Tap resume
+        app.buttons["recording.resumeButton"].tap()
+        XCTAssertTrue(app.buttons["recording.pauseButton"].waitForExistence(timeout: 5))
+
+        // 6. Tap stop → transcription starts
+        app.buttons["recording.stopButton"].tap()
+
+        // 7. Assert transcription result is shown
+        let transcriptionResult = app.staticTexts["recording.transcriptionResult"]
+        XCTAssertTrue(transcriptionResult.waitForExistence(timeout: 10))
+
+        // 8. Dismiss modal by swiping down
+        app.swipeDown()
+
+        // 9. Assert first recording row exists in home list
+        let recordingRow1 = app.descendants(matching: .any)["home.recordingRow.1"]
+        XCTAssertTrue(recordingRow1.waitForExistence(timeout: 5))
+
+        // 10. Second recording
+        XCTAssertTrue(recordBtn.waitForExistence(timeout: 5))
+        recordBtn.tap()
+
+        XCTAssertTrue(app.buttons["recording.stopButton"].waitForExistence(timeout: 10))
+        app.buttons["recording.stopButton"].tap()
+
+        XCTAssertTrue(app.staticTexts["recording.transcriptionResult"].waitForExistence(timeout: 10))
+
+        // 11. Dismiss second modal
+        app.swipeDown()
+
+        // 12. Assert both recording rows exist
+        XCTAssertTrue(app.descendants(matching: .any)["home.recordingRow.1"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.descendants(matching: .any)["home.recordingRow.2"].waitForExistence(timeout: 5))
     }
 }
