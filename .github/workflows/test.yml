@@ -18,6 +18,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -31,29 +32,278 @@ jobs:
   unit-tests:
     name: Unit Tests
     runs-on: macos-26
-    timeout-minutes: 20
+    timeout-minutes: 50
+    outputs:
+      success: ${{ steps.result.outputs.success }}
+      failure-type: ${{ steps.result.outputs.failure-type }}
+      summary: ${{ steps.result.outputs.summary }}
     steps:
       - uses: actions/checkout@v6
 
-      - name: Run Unit Tests (MindEchoTests)
+      - name: Run Unit Tests (attempt 1)
+        id: attempt1
+        continue-on-error: true
         run: |
+          set -o pipefail
           xcodebuild test \
-            -workspace $WORKSPACE \
+            -workspace "$WORKSPACE" \
             -scheme MindEcho \
             -destination "$DESTINATION" \
-            -only-testing:MindEchoTests
+            -only-testing:MindEchoTests 2>&1 | tee /tmp/unit-test.log
+
+      - name: Detect failure type
+        id: detect
+        if: steps.attempt1.outcome == 'failure'
+        run: |
+          if grep -qiE \
+            "simulator could not be booted|lost connection to the simulator|unable to boot|Simulator crash|device not found|Timed out|iPhoneSimulator" \
+            /tmp/unit-test.log; then
+            echo "type=flaky" >> "$GITHUB_OUTPUT"
+          else
+            echo "type=code-error" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run Unit Tests (attempt 2 - retry for flaky)
+        id: attempt2
+        if: steps.attempt1.outcome == 'failure' && steps.detect.outputs.type == 'flaky'
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -workspace "$WORKSPACE" \
+            -scheme MindEcho \
+            -destination "$DESTINATION" \
+            -only-testing:MindEchoTests 2>&1 | tee /tmp/unit-test.log
+
+      - name: Evaluate result
+        id: result
+        if: always()
+        run: |
+          A1="${{ steps.attempt1.outcome }}"
+          DTYPE="${{ steps.detect.outputs.type }}"
+          A2="${{ steps.attempt2.outcome }}"
+
+          if [ "$A1" = "success" ]; then
+            echo "success=true" >> "$GITHUB_OUTPUT"
+            echo "failure-type=" >> "$GITHUB_OUTPUT"
+          elif [ "$DTYPE" = "flaky" ] && [ "$A2" = "success" ]; then
+            echo "success=true" >> "$GITHUB_OUTPUT"
+            echo "failure-type=" >> "$GITHUB_OUTPUT"
+          else
+            echo "success=false" >> "$GITHUB_OUTPUT"
+            echo "failure-type=${DTYPE:-code-error}" >> "$GITHUB_OUTPUT"
+          fi
+
+          SUMMARY=$(grep "Executed .* tests" /tmp/unit-test.log 2>/dev/null | tail -1 || echo "No test results")
+          echo "summary=$SUMMARY" >> "$GITHUB_OUTPUT"
+
+      - name: Fail if tests failed
+        if: always() && steps.result.outputs.success == 'false'
+        run: exit 1
 
   ui-tests:
     name: UI Tests
     runs-on: macos-26
-    timeout-minutes: 20
+    timeout-minutes: 50
+    outputs:
+      success: ${{ steps.result.outputs.success }}
+      failure-type: ${{ steps.result.outputs.failure-type }}
+      summary: ${{ steps.result.outputs.summary }}
     steps:
       - uses: actions/checkout@v6
 
-      - name: Run UI Tests (MindEchoUITests)
+      - name: Run UI Tests (attempt 1)
+        id: attempt1
+        continue-on-error: true
         run: |
+          set -o pipefail
           xcodebuild test \
-            -workspace $WORKSPACE \
+            -workspace "$WORKSPACE" \
             -scheme MindEcho \
             -destination "$DESTINATION" \
-            -only-testing:MindEchoUITests
+            -only-testing:MindEchoUITests 2>&1 | tee /tmp/ui-test.log
+
+      - name: Detect failure type
+        id: detect
+        if: steps.attempt1.outcome == 'failure'
+        run: |
+          if grep -qiE \
+            "simulator could not be booted|lost connection to the simulator|unable to boot|Simulator crash|device not found|Timed out|iPhoneSimulator" \
+            /tmp/ui-test.log; then
+            echo "type=flaky" >> "$GITHUB_OUTPUT"
+          else
+            echo "type=code-error" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run UI Tests (attempt 2 - retry for flaky)
+        id: attempt2
+        if: steps.attempt1.outcome == 'failure' && steps.detect.outputs.type == 'flaky'
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -workspace "$WORKSPACE" \
+            -scheme MindEcho \
+            -destination "$DESTINATION" \
+            -only-testing:MindEchoUITests 2>&1 | tee /tmp/ui-test.log
+
+      - name: Evaluate result
+        id: result
+        if: always()
+        run: |
+          A1="${{ steps.attempt1.outcome }}"
+          DTYPE="${{ steps.detect.outputs.type }}"
+          A2="${{ steps.attempt2.outcome }}"
+
+          if [ "$A1" = "success" ]; then
+            echo "success=true" >> "$GITHUB_OUTPUT"
+            echo "failure-type=" >> "$GITHUB_OUTPUT"
+          elif [ "$DTYPE" = "flaky" ] && [ "$A2" = "success" ]; then
+            echo "success=true" >> "$GITHUB_OUTPUT"
+            echo "failure-type=" >> "$GITHUB_OUTPUT"
+          else
+            echo "success=false" >> "$GITHUB_OUTPUT"
+            echo "failure-type=${DTYPE:-code-error}" >> "$GITHUB_OUTPUT"
+          fi
+
+          SUMMARY=$(grep "Executed .* tests" /tmp/ui-test.log 2>/dev/null | tail -1 || echo "No test results")
+          echo "summary=$SUMMARY" >> "$GITHUB_OUTPUT"
+
+      - name: Fail if tests failed
+        if: always() && steps.result.outputs.success == 'false'
+        run: exit 1
+
+  post-results:
+    name: Post Results
+    runs-on: ubuntu-latest
+    needs: [unit-tests, ui-tests]
+    if: always() && github.event_name == 'pull_request'
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Post test results and handle failures
+        uses: actions/github-script@v7
+        env:
+          UNIT_SUCCESS: ${{ needs.unit-tests.outputs.success }}
+          UNIT_SUMMARY: ${{ needs.unit-tests.outputs.summary }}
+          UNIT_FAILURE_TYPE: ${{ needs.unit-tests.outputs.failure-type }}
+          UI_SUCCESS: ${{ needs.ui-tests.outputs.success }}
+          UI_SUMMARY: ${{ needs.ui-tests.outputs.summary }}
+          UI_FAILURE_TYPE: ${{ needs.ui-tests.outputs.failure-type }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        with:
+          script: |
+            const unitSuccess = process.env.UNIT_SUCCESS === 'true';
+            const uiSuccess = process.env.UI_SUCCESS === 'true';
+            const unitSummary = process.env.UNIT_SUMMARY || 'N/A';
+            const uiSummary = process.env.UI_SUMMARY || 'N/A';
+            const unitFailureType = process.env.UNIT_FAILURE_TYPE || 'code-error';
+            const uiFailureType = process.env.UI_FAILURE_TYPE || 'code-error';
+            const runUrl = process.env.RUN_URL;
+            const allPassed = unitSuccess && uiSuccess;
+
+            const summaryMarker = '<!-- test-action-bot -->';
+            const claudeMarker = '<!-- test-action-bot-claude-request -->';
+            const humanReviewMarker = '<!-- test-action-bot-human-review -->';
+
+            const prNumber = context.payload.pull_request.number;
+
+            // Build summary comment
+            const statusIcon = allPassed ? '✅' : '❌';
+            const unitLabel = unitSuccess
+              ? '✅ 成功'
+              : `❌ 失敗 (${unitFailureType === 'flaky' ? 'Flaky・リトライ済み' : 'コードエラー'})`;
+            const uiLabel = uiSuccess
+              ? '✅ 成功'
+              : `❌ 失敗 (${uiFailureType === 'flaky' ? 'Flaky・リトライ済み' : 'コードエラー'})`;
+
+            let body = `${summaryMarker}\n## ${statusIcon} テスト結果\n\n`;
+            body += `| テストスイート | 結果 | サマリー |\n`;
+            body += `|:-------------|:-----|:--------|\n`;
+            body += `| Unit Tests | ${unitLabel} | ${unitSummary} |\n`;
+            body += `| UI Tests | ${uiLabel} | ${uiSummary} |\n`;
+            body += `\n[ワークフロー実行の詳細を見る](${runUrl})\n`;
+            body += `\n---\n*🤖 test-action-bot による自動コメント*`;
+
+            // Get existing comments
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+            });
+
+            // Update or create summary comment
+            const existingSummary = comments.find(c => c.body.includes(summaryMarker));
+            if (existingSummary) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existingSummary.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body,
+              });
+            }
+
+            // Handle failures: @claude request or human review
+            if (!allPassed) {
+              const alreadyRequested = comments.some(c => c.body.includes(claudeMarker));
+
+              if (alreadyRequested) {
+                // Already posted @claude request once — request human review
+                const alreadyHumanReview = comments.some(c => c.body.includes(humanReviewMarker));
+                if (!alreadyHumanReview) {
+                  await github.rest.issues.createComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: prNumber,
+                    body: [
+                      humanReviewMarker,
+                      '## ⚠️ テストが依然として失敗しています - 人間のレビューが必要です',
+                      '',
+                      '自動修正を試みましたが、テストが引き続き失敗しています。手動でのレビューをお願いします。',
+                      '',
+                      `[ワークフロー実行の詳細を見る](${runUrl})`,
+                      '',
+                      '---',
+                      '*🤖 test-action-bot による自動コメント*',
+                    ].join('\n'),
+                  });
+                }
+              } else {
+                // First failure — request @claude fix
+                const failedSuites = [];
+                if (!unitSuccess) {
+                  const label = unitFailureType === 'flaky' ? 'Flaky・リトライ済み' : 'コードエラー';
+                  failedSuites.push(`- **Unit Tests**: ${unitSummary}（${label}）`);
+                }
+                if (!uiSuccess) {
+                  const label = uiFailureType === 'flaky' ? 'Flaky・リトライ済み' : 'コードエラー';
+                  failedSuites.push(`- **UI Tests**: ${uiSummary}（${label}）`);
+                }
+
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: prNumber,
+                  body: [
+                    claudeMarker,
+                    '@claude テストが失敗しています。ワークフローのログを確認し、失敗の原因を特定して修正してください。',
+                    '',
+                    '### 失敗したテスト',
+                    '',
+                    ...failedSuites,
+                    '',
+                    `[ワークフロー実行の詳細を見る](${runUrl})`,
+                    '',
+                    '---',
+                    '*🤖 test-action-bot による自動コメント*',
+                  ].join('\n'),
+                });
+              }
+            }
