@@ -8,7 +8,7 @@ import SwiftData
 @MainActor
 struct HomeViewModelTests {
     private func makeViewModel() throws -> (HomeViewModel, MockAudioRecorderService, MockAudioPlayerService, ModelContainer) {
-        let schema = Schema([JournalEntry.self, Recording.self, TextEntry.self])
+        let schema = Schema([JournalEntry.self, Recording.self])
         let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: schema, configurations: [config])
         let context = container.mainContext
@@ -71,29 +71,14 @@ struct HomeViewModelTests {
         #expect(seqs == [1, 2])
     }
 
-    @Test func saveText_createsTextEntry() throws {
-        let (vm, _, _, _container) = try makeViewModel()
-        vm.saveText("Hello World")
-        #expect(vm.todayEntry != nil)
-        #expect(vm.todayEntry?.textEntries.count == 1)
-        #expect(vm.todayEntry?.sortedTextEntries.first?.content == "Hello World")
-    }
-
-    @Test func saveText_updatesExistingTextEntry() throws {
-        let (vm, _, _, _container) = try makeViewModel()
-        vm.saveText("First")
-        vm.saveText("Updated")
-        #expect(vm.todayEntry?.textEntries.count == 1)
-        #expect(vm.todayEntry?.sortedTextEntries.first?.content == "Updated")
-    }
-
     @Test func fetchTodayEntry_findsExistingEntry() throws {
         let (vm, _, _, _container) = try makeViewModel()
-        vm.saveText("Test text")
+        vm.startRecording()
+        vm.stopRecording()
         // Clear local reference
         vm.todayEntry = nil
         vm.fetchTodayEntry()
         #expect(vm.todayEntry != nil)
-        #expect(vm.todayEntry?.sortedTextEntries.first?.content == "Test text")
+        #expect(vm.todayEntry?.recordings.count == 1)
     }
 }

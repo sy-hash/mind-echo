@@ -1,6 +1,6 @@
 ## Project Overview
 
-**MindEcho** は、日々の記録をテキストと音声で保存できる iOS ジャーナリングアプリです。
+**MindEcho** は、日々の記録を音声で保存できる iOS ジャーナリングアプリです。
 
 - **目的**: AI アプリ（Google NotebookLM など）との連携を前提とした記録のフロントエンド
 - **技術スタック**: SwiftUI, SwiftData, AVFoundation
@@ -20,7 +20,7 @@ MindEchoApp (App Target)
 
 | モジュール | 責務 | 主な型 |
 |-----------|------|--------|
-| **MindEchoCore** | ドメインモデル, 日付ロジック, ファイル管理, エクスポート protocol | `JournalEntry`, `Recording`, `TextEntry`, `DateHelper`, `FilePathManager`, `Exporting` |
+| **MindEchoCore** | ドメインモデル, 日付ロジック, ファイル管理, エクスポート protocol | `JournalEntry`, `Recording`, `DateHelper`, `FilePathManager`, `Exporting` |
 | **MindEchoAudio** | 録音・再生・音声結合・TTS 生成 | `AudioRecorderService`, `AudioPlayerService`, `AudioMerger`, `TTSGenerator` |
 | **MindEchoApp** | Views, ViewModels, ExportService 実装, Mocks | `HomeView`, `HomeViewModel`, `ExportServiceImpl` 等 |
 
@@ -132,8 +132,7 @@ xcodebuild test \
 
 ```
 JournalEntry (1日1エントリ)
-├── recordings: [Recording]      (音声記録、連番管理)
-└── textEntries: [TextEntry]     (テキスト記録、連番管理)
+└── recordings: [Recording]      (音声記録、連番管理)
 ```
 
 ## Important Notes for Claude

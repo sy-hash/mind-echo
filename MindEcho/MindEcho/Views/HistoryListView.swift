@@ -28,14 +28,6 @@ struct HistoryListView: View {
                                         .font(.headline)
                                         .accessibilityIdentifier("history.entryDate.\(dateTag(entry.date))")
 
-                                    if let text = entry.sortedTextEntries.first?.content, !text.isEmpty {
-                                        Text(text)
-                                            .lineLimit(2)
-                                            .font(.subheadline)
-                                            .foregroundStyle(.secondary)
-                                            .accessibilityIdentifier("history.entryPreview.\(dateTag(entry.date))")
-                                    }
-
                                     if !entry.recordings.isEmpty {
                                         Text("\u{1F3A4} \(entry.recordings.count)件 / \(formatTotalDuration(entry.totalDuration))")
                                             .font(.caption)
