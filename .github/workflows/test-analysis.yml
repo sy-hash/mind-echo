@@ -1,0 +1,182 @@
+name: Test Analysis
+
+on:
+  workflow_run:
+    workflows: ["Test"]
+    types: [completed]
+
+permissions:
+  contents: read
+  pull-requests: write
+  actions: write
+
+concurrency:
+  group: test-analysis-${{ github.event.workflow_run.head_branch }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    if: >
+      github.event.workflow_run.conclusion == 'failure' &&
+      github.event.workflow_run.event == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Get PR number
+        id: pr
+        run: |
+          PR_NUMBER='${{ github.event.workflow_run.pull_requests[0].number }}'
+          if [ -z "$PR_NUMBER" ] || [ "$PR_NUMBER" = "null" ]; then
+            echo "No PR found. Skipping."
+            exit 0
+          fi
+          echo "number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
+
+      - name: Check for existing auto-fix comment
+        id: loop-check
+        if: steps.pr.outputs.number
+        env:
+          GH_TOKEN: ${{ secrets.CLAUDE_CODE_PAT }}
+        run: |
+          EXISTING=$(gh pr view "${{ steps.pr.outputs.number }}" \
+            --repo "${{ github.repository }}" \
+            --json comments --jq '.comments[].body' \
+            | grep -c 'test-analysis-auto' || true)
+          if [ "$EXISTING" -gt "0" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Fetch failed logs
+        id: logs
+        if: steps.pr.outputs.number && !steps.loop-check.outputs.skip
+        env:
+          GH_TOKEN: ${{ secrets.CLAUDE_CODE_PAT }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+        run: |
+          # どのジョブが失敗したか
+          FAILED_JOBS=$(gh run view "$RUN_ID" --repo "${{ github.repository }}" \
+            --json jobs --jq '[.jobs[] | select(.conclusion == "failure") | .name] | join(", ")')
+          echo "failed_jobs=$FAILED_JOBS" >> "$GITHUB_OUTPUT"
+
+          # 失敗ログの取得
+          FAILED_LOG=$(gh run view "$RUN_ID" --repo "${{ github.repository }}" \
+            --log-failed 2>/dev/null || echo "")
+
+          # xcodebuild のエラー行を抽出（50行上限）
+          SUMMARY=$(echo "$FAILED_LOG" | grep -E \
+            "(error:|Test Case.*failed|Executed.*with.*failure|\*\* TEST FAILED \*\*)" \
+            | head -50)
+
+          # GITHUB_OUTPUT に書き出し（複数行対応）
+          {
+            echo "summary<<LOGS_EOF"
+            echo "$SUMMARY"
+            echo "LOGS_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Checkout
+        if: steps.pr.outputs.number && !steps.loop-check.outputs.skip
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          token: ${{ secrets.CLAUDE_CODE_PAT }}
+
+      - name: Analyze with Claude
+        id: analyze
+        if: steps.pr.outputs.number && !steps.loop-check.outputs.skip
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ secrets.CLAUDE_CODE_PAT }}
+          direct_prompt: |
+            以下のテスト失敗ログを分析して分類してください。
+
+            失敗ジョブ: ${{ steps.logs.outputs.failed_jobs }}
+
+            失敗ログ:
+            ```
+            ${{ steps.logs.outputs.summary }}
+            ```
+
+            ## 分類基準
+            - FIXABLE: コード修正で解決できる明確なバグ（アサーション失敗、コンパイルエラー等）
+            - FLAKY: タイミング依存、非決定的な失敗（タイムアウト、順序依存等）
+            - NEEDS_HUMAN: 環境問題やアーキテクチャ変更が必要で自動修正が困難
+
+            ## 出力
+            `/tmp/test-classification.txt` に分類結果を1行で書き出してください。
+            内容は FIXABLE, FLAKY, NEEDS_HUMAN のいずれかのみ。
+          allowed_tools: |
+            Read
+            Grep
+            Glob
+            Write
+
+      - name: Read classification
+        id: classify
+        if: steps.pr.outputs.number && !steps.loop-check.outputs.skip
+        run: |
+          CLASS=$(cat /tmp/test-classification.txt 2>/dev/null | tr -d '[:space:]' || echo "NEEDS_HUMAN")
+          echo "result=$CLASS" >> "$GITHUB_OUTPUT"
+          echo "Classification: $CLASS"
+
+      - name: Request fix via @claude
+        if: steps.classify.outputs.result == 'FIXABLE'
+        env:
+          GH_TOKEN: ${{ secrets.CLAUDE_CODE_PAT }}
+        run: |
+          gh pr comment "${{ steps.pr.outputs.number }}" \
+            --repo "${{ github.repository }}" \
+            --body "$(cat <<'EOF'
+          <!-- test-analysis-auto -->
+          @claude 以下のテスト失敗を修正してください。
+
+          **失敗ジョブ**: ${{ steps.logs.outputs.failed_jobs }}
+          **Workflow Run**: ${{ github.event.workflow_run.html_url }}
+
+          ```
+          ${{ steps.logs.outputs.summary }}
+          ```
+
+          テストが通るようにコードを修正し、ビルドが通ることも確認してください。
+          EOF
+          )"
+
+      - name: Rerun failed tests
+        if: steps.classify.outputs.result == 'FLAKY'
+        env:
+          GH_TOKEN: ${{ secrets.CLAUDE_CODE_PAT }}
+        run: |
+          gh run rerun "${{ github.event.workflow_run.id }}" \
+            --repo "${{ github.repository }}" --failed
+
+          gh pr comment "${{ steps.pr.outputs.number }}" \
+            --repo "${{ github.repository }}" \
+            --body "$(cat <<'EOF'
+          <!-- test-analysis-auto -->
+          ⚠️ **Flaky テスト検出**: 失敗がタイミング依存の可能性があるため、失敗ジョブを自動リランしました。
+
+          **失敗ジョブ**: ${{ steps.logs.outputs.failed_jobs }}
+          **Workflow Run**: ${{ github.event.workflow_run.html_url }}
+          EOF
+          )"
+
+      - name: Request human review
+        if: steps.classify.outputs.result == 'NEEDS_HUMAN'
+        env:
+          GH_TOKEN: ${{ secrets.CLAUDE_CODE_PAT }}
+        run: |
+          gh pr comment "${{ steps.pr.outputs.number }}" \
+            --repo "${{ github.repository }}" \
+            --body "$(cat <<'EOF'
+          <!-- test-analysis-auto -->
+          🔍 **テスト失敗の自動分析結果**: 自動修正が困難な失敗です。人間によるレビューが必要です。
+
+          **失敗ジョブ**: ${{ steps.logs.outputs.failed_jobs }}
+          **Workflow Run**: ${{ github.event.workflow_run.html_url }}
+
+          ```
+          ${{ steps.logs.outputs.summary }}
+          ```
+          EOF
+          )"
