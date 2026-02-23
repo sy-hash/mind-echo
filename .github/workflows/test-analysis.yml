@@ -81,42 +81,44 @@ jobs:
           ref: ${{ github.event.workflow_run.head_sha }}
           token: ${{ secrets.CLAUDE_CODE_PAT }}
 
-      - name: Analyze with Claude
-        id: analyze
+      - name: Install Claude Code
         if: steps.pr.outputs.number && !steps.loop-check.outputs.skip
-        uses: anthropics/claude-code-action@v1
-        with:
-          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          github_token: ${{ secrets.CLAUDE_CODE_PAT }}
-          direct_prompt: |
-            以下のテスト失敗ログを分析して分類してください。
+        run: npm install -g @anthropic-ai/claude-code
 
-            失敗ジョブ: ${{ steps.logs.outputs.failed_jobs }}
-
-            失敗ログ:
-            ```
-            ${{ steps.logs.outputs.summary }}
-            ```
-
-            ## 分類基準
-            - FIXABLE: コード修正で解決できる明確なバグ（アサーション失敗、コンパイルエラー等）
-            - FLAKY: タイミング依存、非決定的な失敗（タイムアウト、順序依存等）
-            - NEEDS_HUMAN: 環境問題やアーキテクチャ変更が必要で自動修正が困難
-
-            ## 出力
-            `/tmp/test-classification.txt` に分類結果を1行で書き出してください。
-            内容は FIXABLE, FLAKY, NEEDS_HUMAN のいずれかのみ。
-          allowed_tools: |
-            Read
-            Grep
-            Glob
-            Write
-
-      - name: Read classification
+      - name: Analyze and classify with Claude
         id: classify
         if: steps.pr.outputs.number && !steps.loop-check.outputs.skip
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
         run: |
-          CLASS=$(cat /tmp/test-classification.txt 2>/dev/null | tr -d '[:space:]' || echo "NEEDS_HUMAN")
+          PROMPT=$(cat <<'PROMPT_EOF'
+          以下のテスト失敗ログを分析して、FIXABLE, FLAKY, NEEDS_HUMAN のいずれか1つだけを出力してください。
+          他の文字は一切不要です。
+
+          ## 分類基準
+          - FIXABLE: コード修正で解決できる明確なバグ（アサーション失敗、コンパイルエラー等）
+          - FLAKY: タイミング依存、非決定的な失敗（タイムアウト、順序依存等）
+          - NEEDS_HUMAN: 環境問題やアーキテクチャ変更が必要で自動修正が困難
+          PROMPT_EOF
+          )
+
+          LOGS=$(cat <<'LOGS_EOF'
+          失敗ジョブ: ${{ steps.logs.outputs.failed_jobs }}
+
+          失敗ログ:
+          ${{ steps.logs.outputs.summary }}
+          LOGS_EOF
+          )
+
+          CLASS=$(claude -p "$PROMPT"$'\n\n'"$LOGS" --max-turns 1 \
+            | tr -d '[:space:]')
+
+          # 有効な分類値かバリデーション
+          if [ "$CLASS" != "FIXABLE" ] && [ "$CLASS" != "FLAKY" ] && [ "$CLASS" != "NEEDS_HUMAN" ]; then
+            echo "Unexpected classification: $CLASS — falling back to NEEDS_HUMAN"
+            CLASS="NEEDS_HUMAN"
+          fi
+
           echo "result=$CLASS" >> "$GITHUB_OUTPUT"
           echo "Classification: $CLASS"
 
