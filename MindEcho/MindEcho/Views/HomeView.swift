@@ -7,8 +7,6 @@ import SwiftUI
 
 struct HomeView: View {
     @State private var viewModel: HomeViewModel
-    @State private var showTextEditor = false
-    @State private var editingText = ""
     @State private var transcriptionTargetRecording: Recording?
 
     init(modelContext: ModelContext, audioRecorder: any AudioRecording) {
@@ -81,15 +79,6 @@ struct HomeView: View {
                             }
                         }
 
-                        // Text input button
-                        Button {
-                            editingText = viewModel.todayEntry?.sortedTextEntries.first?.content ?? ""
-                            showTextEditor = true
-                        } label: {
-                            Label("テキスト入力", systemImage: "square.and.pencil")
-                        }
-                        .accessibilityIdentifier("home.textInputButton")
-
                         // Today's recordings list
                         if let entry = viewModel.todayEntry, !entry.recordings.isEmpty {
                             VStack(spacing: 0) {
@@ -139,19 +128,6 @@ struct HomeView: View {
             .navigationTitle("今日")
             .onAppear {
                 viewModel.fetchTodayEntry()
-            }
-            .sheet(isPresented: $showTextEditor) {
-                TextEditorSheet(
-                    text: $editingText,
-                    onSave: {
-                        viewModel.saveText(editingText)
-                        showTextEditor = false
-                    },
-                    onCancel: {
-                        showTextEditor = false
-                    }
-                )
-                .accessibilityIdentifier("home.textEditorSheet")
             }
             .sheet(item: $transcriptionTargetRecording) { recording in
                 TranscriptionView(recording: recording)

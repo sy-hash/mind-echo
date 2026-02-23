@@ -69,28 +69,10 @@ class EntryDetailViewModel {
         entry.updatedAt = Date()
     }
 
-    // MARK: - Text
-
-    func saveText(_ text: String) {
-        if let existing = entry.sortedTextEntries.first {
-            existing.content = text
-            existing.updatedAt = Date()
-        } else {
-            let textEntry = TextEntry(sequenceNumber: 1, content: text)
-            entry.textEntries.append(textEntry)
-        }
-        entry.updatedAt = Date()
-    }
-
     // MARK: - Export
 
-    func exportForSharing(type: ShareType) async throws -> URL {
+    func exportForSharing() async throws -> URL {
         let exportDir = FilePathManager.exportsDirectory
-        switch type {
-        case .textJournal:
-            return try await exportService.exportTextJournal(entry: entry, to: exportDir)
-        case .audio:
-            return try await exportService.exportMergedAudio(entry: entry, to: exportDir)
-        }
+        return try await exportService.exportMergedAudio(entry: entry, to: exportDir)
     }
 }

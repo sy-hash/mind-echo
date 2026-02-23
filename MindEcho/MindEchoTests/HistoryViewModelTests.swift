@@ -7,7 +7,7 @@ import SwiftData
 @MainActor
 struct HistoryViewModelTests {
     private func makeContext() throws -> (ModelContext, ModelContainer) {
-        let schema = Schema([JournalEntry.self, Recording.self, TextEntry.self])
+        let schema = Schema([JournalEntry.self, Recording.self])
         let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: schema, configurations: [config])
         return (container.mainContext, container)

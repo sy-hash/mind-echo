@@ -20,19 +20,11 @@ final class EntryDetailUITests: XCTestCase {
     }
 
     @MainActor
-    func testDetailView_showsDateAndTextContent() throws {
+    func testDetailView_showsDateAndRecordingsList() throws {
         navigateToDetail()
 
         let dateHeader = app.staticTexts["detail.dateHeader"]
         XCTAssertTrue(dateHeader.waitForExistence(timeout: 5))
-
-        let textContent = app.staticTexts["detail.textContent"]
-        XCTAssertTrue(textContent.waitForExistence(timeout: 5))
-    }
-
-    @MainActor
-    func testDetailView_showsRecordingsList() throws {
-        navigateToDetail()
 
         // Verify recording section and content exist
         let sectionHeader = app.staticTexts["録音"]
@@ -61,33 +53,12 @@ final class EntryDetailUITests: XCTestCase {
     }
 
     @MainActor
-    func testShareTextOption_presentsActivitySheet() throws {
+    func testShareButton_presentsActivitySheet() throws {
         navigateToDetail()
 
         let shareBtn = app.buttons["detail.shareButton"]
         XCTAssertTrue(shareBtn.waitForExistence(timeout: 5))
         shareBtn.tap()
-
-        let textOption = app.buttons["テキスト日記"].firstMatch
-        XCTAssertTrue(textOption.waitForExistence(timeout: 5))
-        textOption.tap()
-
-        // UIActivityViewController should appear after text export
-        let activityList = app.otherElements["ActivityListView"]
-        XCTAssertTrue(activityList.waitForExistence(timeout: 10))
-    }
-
-    @MainActor
-    func testShareAudioOption_presentsActivitySheet() throws {
-        navigateToDetail()
-
-        let shareBtn = app.buttons["detail.shareButton"]
-        XCTAssertTrue(shareBtn.waitForExistence(timeout: 5))
-        shareBtn.tap()
-
-        let audioOption = app.buttons["音声ファイル"].firstMatch
-        XCTAssertTrue(audioOption.waitForExistence(timeout: 5))
-        audioOption.tap()
 
         // UIActivityViewController should appear after audio export & merge
         let activityList = app.otherElements["ActivityListView"]
@@ -95,7 +66,7 @@ final class EntryDetailUITests: XCTestCase {
     }
 
     @MainActor
-    func testSwipeToDelete_removesRecordingAndHidesSection() throws {
+    func testSwipeToDelete_removesRecording() throws {
         navigateToDetail()
 
         // Verify recording section and row exist
@@ -119,28 +90,4 @@ final class EntryDetailUITests: XCTestCase {
         XCTAssertFalse(sectionHeader.exists)
     }
 
-    @MainActor
-    func testEditText_updatesContent() throws {
-        navigateToDetail()
-
-        // Tap text to enter edit mode
-        let textContent = app.staticTexts["detail.textContent"]
-        XCTAssertTrue(textContent.waitForExistence(timeout: 5))
-        textContent.tap()
-
-        // TextEditor should appear (it has the same identifier in edit mode)
-        let editor = app.textViews["detail.textContent"]
-        XCTAssertTrue(editor.waitForExistence(timeout: 5))
-
-        // Type some text and save
-        editor.tap()
-        editor.typeText(" 追加テキスト")
-
-        // Tap save button
-        app.buttons["保存"].tap()
-
-        // Text should be displayed (static text mode)
-        let updatedText = app.staticTexts["detail.textContent"]
-        XCTAssertTrue(updatedText.waitForExistence(timeout: 5))
-    }
 }

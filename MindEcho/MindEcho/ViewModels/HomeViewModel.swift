@@ -135,23 +135,6 @@ class HomeViewModel {
         playbackProgress = 0
     }
 
-    // MARK: - Text
-
-    func saveText(_ text: String) {
-        let today = DateHelper.logicalDate()
-        let entry = getOrCreateTodayEntry(for: today)
-
-        if let existing = entry.sortedTextEntries.first {
-            existing.content = text
-            existing.updatedAt = Date()
-        } else {
-            let textEntry = TextEntry(sequenceNumber: 1, content: text)
-            entry.textEntries.append(textEntry)
-        }
-        entry.updatedAt = Date()
-        todayEntry = entry
-    }
-
     // MARK: - Data
 
     func fetchTodayEntry() {

@@ -6,7 +6,7 @@ MindEcho アプリにおけるディレクトリ構成、ファイル命名規�
 
 アプリ内部で管理するファイルは `Application Support/` ディレクトリに保存し、ファイルアプリから不可視にする。
 エクスポート（AI に共有）したファイルのみを `Documents/Exports/` に保存し、ファイルアプリから閲覧可能にする。
-**1日につき録音ファイルは複数（セッションごと）生成する。テキストは SwiftData で管理し、物理ファイルはエクスポート時にオンデマンド生成する。**
+**1日につき録音ファイルは複数（セッションごと）生成する。**
 
 ```
 Application Support/
@@ -21,7 +21,6 @@ Application Support/
 Documents/
 └── Exports/             # エクスポート済みファイル（ファイルアプリに公開）
     ├── 20250207_merged.m4a
-    ├── 20250207_journal.txt
     ├── 20250207_transcription.txt
     └── ...
 ```
@@ -30,7 +29,7 @@ Documents/
 
 iOS のファイルアプリ（「このiPhone内」→「（アプリ名）」）から
 **エクスポート済みファイル（AI に共有したファイル）だけ** を閲覧・共有できるようにする。
-アプリ内部で管理する録音ファイル・テキストファイルは `Application Support/` に保存され、ファイルアプリからは不可視となる。
+アプリ内部で管理する録音ファイルは `Application Support/` に保存され、ファイルアプリからは不可視となる。
 
 **Info.plist に以下を追加:**
 
@@ -79,19 +78,16 @@ Recordings/{datetime}.m4a
 
 | イベント | 更新されるファイル |
 |---------|-----------------|
-| テキスト入力を保存 | `TextEntry` を作成 or 更新（SwiftData のみ） |
 | 録音開始 | `Application Support/Recordings/{datetime}.m4a` を新規生成 |
 | 録音の一時停止・再開 | `isPaused` フラグで tap コールバック内の書き込みをスキップ/再開（同一 `.m4a` ファイル内、`AVAudioEngine` は停止しない） |
 | 録音停止 | `.m4a` ファイルを確定。リアルタイム文字起こしの確定テキストを `Recording.transcription` に保存 |
 | 音声共有時 | その日の全 Recording を連番順に結合 → `Application Support/Merged/` に一時生成 → `Documents/Exports/` にコピー |
-| テキスト共有時 | SwiftData の TextEntry からテキストを結合して `.txt` を生成 → `Documents/Exports/` に保存 |
 | 文字起こし共有時 | 全 Recording の `transcription` を結合して `.txt` を生成 → `Documents/Exports/` にコピー |
 | 録音削除（個別） | 対応する `Application Support/Recordings/` 内の `.m4a` を削除 + `Recording` エンティティを削除。**残りの Recording の `sequenceNumber` はリナンバーしない（欠番を許容）。** エクスポート時は実在する Recording を `sequenceNumber` 昇順で処理する。**次の録音の `sequenceNumber` は既存の最大値 + 1 で採番する**（例: #1, #3 が残っている場合、次は #4） |
-| エントリ削除 | 対応する全 `.m4a` ファイルを削除（cascade で `Recording` / `TextEntry` も削除） |
+| エントリ削除 | 対応する全 `.m4a` ファイルを削除（cascade で `Recording` も削除） |
 
 ## フォーマット
 
 - 音声: AAC（`.m4a`）
 - 録音の最大時間: 制限なし
-- テキスト: UTF-8（`.txt`）
 - 容量表示機能は将来的に追加を検討
