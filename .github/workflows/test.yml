@@ -3,7 +3,17 @@ name: Test
 on:
   push:
     branches: [develop]
+    paths:
+      - 'MindEcho/**'
+      - 'Packages/**'
+      - 'MindEcho.xcworkspace/**'
+      - '.github/workflows/test.yml'
   pull_request:
+    paths:
+      - 'MindEcho/**'
+      - 'Packages/**'
+      - 'MindEcho.xcworkspace/**'
+      - '.github/workflows/test.yml'
   workflow_dispatch:
 
 permissions:
