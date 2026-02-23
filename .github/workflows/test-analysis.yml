@@ -104,17 +104,18 @@ jobs:
             - NEEDS_HUMAN: 環境問題やアーキテクチャ変更が必要で自動修正が困難
 
             ## 出力
-            分析後、以下のBashコマンドを実行して分類結果を環境変数に書き出してください:
-            echo "classification=<結果>" >> "$GITHUB_OUTPUT"
-            <結果>は FIXABLE, FLAKY, NEEDS_HUMAN のいずれかのみ。
-          claude_args: '--max-turns 3 --allowedTools "Bash(echo *)"'
+            分析結果として FIXABLE, FLAKY, NEEDS_HUMAN のいずれか1つだけを回答してください。
+            ツールは使わず、テキストで回答してください。他の説明は不要です。
+          claude_args: '--max-turns 1'
 
       - name: Read classification
         id: classify
         if: steps.pr.outputs.number && !steps.loop-check.outputs.skip
         run: |
-          CLASS="${{ steps.analyze.outputs.classification }}"
-          CLASS=$(echo "$CLASS" | tr -d '[:space:]')
+          EXEC_FILE="${{ steps.analyze.outputs.execution_file }}"
+          CLASS=$(cat "$EXEC_FILE" 2>/dev/null \
+            | jq -r '.[].message.content // [] | .[]? | select(.type == "text") | .text' 2>/dev/null \
+            | grep -oE 'FIXABLE|FLAKY|NEEDS_HUMAN' | tail -1)
 
           # 有効な分類値かバリデーション
           if [ "$CLASS" != "FIXABLE" ] && [ "$CLASS" != "FLAKY" ] && [ "$CLASS" != "NEEDS_HUMAN" ]; then
