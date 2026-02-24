@@ -6,6 +6,7 @@ import SwiftUI
 struct EntryDetailView: View {
     @State private var viewModel: EntryDetailViewModel
     @State private var shareURL: URL?
+    @State private var transcriptionTargetRecording: Recording?
 
     init(entry: JournalEntry, modelContext: ModelContext, audioPlayer: any AudioPlaying = AudioPlayerService()) {
         _viewModel = State(initialValue: EntryDetailViewModel(
@@ -28,29 +29,47 @@ struct EntryDetailView: View {
             if !viewModel.entry.recordings.isEmpty {
                 Section("録音") {
                     ForEach(viewModel.entry.sortedRecordings) { recording in
-                        Button {
-                            if viewModel.playingRecordingId == recording.id && viewModel.isPlaying {
-                                viewModel.pausePlayback()
-                            } else {
-                                viewModel.playRecording(recording)
+                        VStack(alignment: .leading, spacing: 8) {
+                            Button {
+                                if viewModel.playingRecordingId == recording.id && viewModel.isPlaying {
+                                    viewModel.pausePlayback()
+                                } else {
+                                    viewModel.playRecording(recording)
+                                }
+                            } label: {
+                                HStack {
+                                    Text("#\(recording.sequenceNumber)")
+                                        .font(.headline)
+
+                                    Text(formatTime(recording.recordedAt))
+                                        .foregroundStyle(.secondary)
+
+                                    Text(formatDuration(recording.duration))
+                                        .foregroundStyle(.secondary)
+
+                                    Spacer()
+
+                                    Image(systemName: viewModel.playingRecordingId == recording.id && viewModel.isPlaying ? "pause.fill" : "play.fill")
+                                }
                             }
-                        } label: {
-                            HStack {
-                                Text("#\(recording.sequenceNumber)")
-                                    .font(.headline)
+                            .buttonStyle(.borderless)
 
-                                Text(formatTime(recording.recordedAt))
+                            if let transcription = recording.transcription {
+                                Text(transcription)
+                                    .font(.subheadline)
                                     .foregroundStyle(.secondary)
-
-                                Text(formatDuration(recording.duration))
-                                    .foregroundStyle(.secondary)
-
-                                Spacer()
-
-                                Image(systemName: viewModel.playingRecordingId == recording.id && viewModel.isPlaying ? "pause.fill" : "play.fill")
+                                    .accessibilityIdentifier("detail.transcription.\(recording.sequenceNumber)")
+                            } else {
+                                Button {
+                                    transcriptionTargetRecording = recording
+                                } label: {
+                                    Label("書き起こし", systemImage: "doc.text")
+                                        .font(.subheadline)
+                                }
+                                .buttonStyle(.borderless)
+                                .accessibilityIdentifier("detail.transcribeButton.\(recording.sequenceNumber)")
                             }
                         }
-                        .buttonStyle(.borderless)
                         .swipeActions(edge: .trailing) {
                             Button(role: .destructive) {
                                 viewModel.deleteRecording(recording)
@@ -67,8 +86,21 @@ struct EntryDetailView: View {
         .navigationTitle("詳細")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                Button {
-                    exportAndShare()
+                Menu {
+                    Button {
+                        exportAndShare()
+                    } label: {
+                        Label("音声", systemImage: "waveform")
+                    }
+                    .accessibilityIdentifier("detail.shareAudioButton")
+
+                    Button {
+                        exportTranscriptionAndShare()
+                    } label: {
+                        Label("書き起こしテキスト", systemImage: "doc.text")
+                    }
+                    .disabled(!viewModel.allRecordingsTranscribed)
+                    .accessibilityIdentifier("detail.shareTranscriptionButton")
                 } label: {
                     Image(systemName: "square.and.arrow.up")
                 }
@@ -77,6 +109,9 @@ struct EntryDetailView: View {
         }
         .sheet(item: $shareURL) { url in
             ShareSheet(activityItems: [url])
+        }
+        .sheet(item: $transcriptionTargetRecording) { recording in
+            TranscriptionView(recording: recording)
         }
     }
 
@@ -88,6 +123,15 @@ struct EntryDetailView: View {
             } catch {
                 // Handle error silently for now
             }
+        }
+    }
+
+    private func exportTranscriptionAndShare() {
+        do {
+            let url = try viewModel.exportTranscriptionForSharing()
+            shareURL = url
+        } catch {
+            // Handle error silently for now
         }
     }
 

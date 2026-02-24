@@ -75,4 +75,14 @@ class EntryDetailViewModel {
         let exportDir = FilePathManager.exportsDirectory
         return try await exportService.exportMergedAudio(entry: entry, to: exportDir)
     }
+
+    func exportTranscriptionForSharing() throws -> URL {
+        let exportDir = FilePathManager.exportsDirectory
+        return try exportService.exportTranscription(entry: entry, to: exportDir)
+    }
+
+    /// 全ての録音に書き起こしが保存済みかどうか
+    var allRecordingsTranscribed: Bool {
+        !entry.recordings.isEmpty && entry.recordings.allSatisfy { $0.transcription != nil }
+    }
 }

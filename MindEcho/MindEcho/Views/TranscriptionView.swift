@@ -33,6 +33,10 @@ struct TranscriptionView: View {
             .navigationBarTitleDisplayMode(.inline)
         }
         .task {
+            if let saved = recording.transcription {
+                viewModel.state = .success(saved)
+                return
+            }
             if ProcessInfo.processInfo.arguments.contains("--mock-transcription") {
                 viewModel.transcribe = { _, _ in
                     try await Task.sleep(for: .milliseconds(500))

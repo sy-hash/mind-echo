@@ -134,9 +134,21 @@ class HomeViewModel {
         transcriptionState = .loading
         do {
             let text = try await transcribe(url, Locale(identifier: "ja-JP"))
-            transcriptionState = text.isEmpty ? .failure("書き起こし結果が空でした。") : .success(text)
+            if text.isEmpty {
+                transcriptionState = .failure("書き起こし結果が空でした。")
+            } else {
+                transcriptionState = .success(text)
+                saveTranscription(text, for: fileName)
+            }
         } catch {
             transcriptionState = .failure("書き起こしに失敗しました: \(error.localizedDescription)")
+        }
+    }
+
+    private func saveTranscription(_ text: String, for fileName: String) {
+        guard let entry = todayEntry else { return }
+        if let recording = entry.recordings.first(where: { $0.audioFileName == fileName }) {
+            recording.transcription = text
         }
     }
 

@@ -28,19 +28,30 @@ struct HomeView: View {
                     if let entry = viewModel.todayEntry, !entry.recordings.isEmpty {
                         VStack(spacing: 0) {
                             ForEach(entry.sortedRecordings) { recording in
-                                HStack {
-                                    Text("#\(recording.sequenceNumber)")
-                                        .font(.headline)
-                                    Text(formatDuration(recording.duration))
-                                        .foregroundStyle(.secondary)
-                                    Spacer()
-                                    Button {
-                                        transcriptionTargetRecording = recording
-                                    } label: {
-                                        Image(systemName: "doc.text")
+                                VStack(alignment: .leading, spacing: 4) {
+                                    HStack {
+                                        Text("#\(recording.sequenceNumber)")
+                                            .font(.headline)
+                                        Text(formatDuration(recording.duration))
+                                            .foregroundStyle(.secondary)
+                                        Spacer()
+                                        if recording.transcription == nil {
+                                            Button {
+                                                transcriptionTargetRecording = recording
+                                            } label: {
+                                                Image(systemName: "doc.text")
+                                            }
+                                            .accessibilityIdentifier("home.transcribeButton.\(recording.sequenceNumber)")
+                                        }
+                                        Image(systemName: viewModel.playingRecordingId == recording.id && viewModel.isPlaying ? "pause.fill" : "play.fill")
                                     }
-                                    .accessibilityIdentifier("home.transcribeButton.\(recording.sequenceNumber)")
-                                    Image(systemName: viewModel.playingRecordingId == recording.id && viewModel.isPlaying ? "pause.fill" : "play.fill")
+                                    if let transcription = recording.transcription {
+                                        Text(transcription)
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                            .lineLimit(1)
+                                            .accessibilityIdentifier("home.transcriptionPreview.\(recording.sequenceNumber)")
+                                    }
                                 }
                                 .padding(.vertical, 12)
                                 .contentShape(Rectangle())

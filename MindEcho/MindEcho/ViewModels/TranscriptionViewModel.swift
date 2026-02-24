@@ -12,7 +12,7 @@ final class TranscriptionViewModel {
         case failure(String)
     }
 
-    private(set) var state: State = .idle
+    var state: State = .idle
 
     @ObservationIgnored
     var transcribe: (URL, Locale) async throws -> String = TranscriptionService().transcribe
@@ -49,7 +49,12 @@ final class TranscriptionViewModel {
 
         do {
             let text = try await transcribe(fileURL, Locale(identifier: "ja-JP"))
-            state = text.isEmpty ? .failure("書き起こし結果が空でした。") : .success(text)
+            if text.isEmpty {
+                state = .failure("書き起こし結果が空でした。")
+            } else {
+                state = .success(text)
+                recording.transcription = text
+            }
         } catch {
             state = .failure("書き起こしに失敗しました: \(error.localizedDescription)")
         }
