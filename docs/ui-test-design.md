@@ -81,7 +81,7 @@ UIテストは **UI状態遷移**（ボタンの表示/非表示、有効/無効
 - `detail.shareAudioButton` — 共有メニュー内の「音声を共有」ボタン
 - `detail.shareTranscriptButton` — 共有メニュー内の「テキストを共有」ボタン
 
-## テストケース（5カテゴリ・20テスト）
+## テストケース（5カテゴリ・16テスト）
 
 ### 1. NavigationUITests（3テスト）
 

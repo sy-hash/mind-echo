@@ -590,7 +590,7 @@ Speech framework で書き起こし実行
 ## テスト方針
 
 - **非UIテスト**: Swift Testing フレームワークを使用してユニットテスト・ロジックテストを記述する
-- **UIテスト**: メインシナリオを選定し XCTest で記述する（22テストケース）。詳細は [ui-test-design.md](./ui-test-design.md) を参照
+- **UIテスト**: メインシナリオを選定し XCTest で記述する（16テストケース）。詳細は [ui-test-design.md](./ui-test-design.md) を参照
 
 各モジュール（MindEchoCore, AudioService, AudioMerger, ExportService）に対して、公開インターフェースのロジックを検証する非UIテストを作成する。
 UIテストはユーザーの主要な操作フローに焦点を当て、5カテゴリでテストする。
