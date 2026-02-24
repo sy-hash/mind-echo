@@ -2,6 +2,7 @@ import AVFoundation
 import Foundation
 import MindEchoAudio
 import MindEchoCore
+import UIKit
 
 struct ExportServiceImpl: Exporting {
     func exportMergedAudio(entry: JournalEntry, to directory: URL) async throws -> URL {
@@ -50,18 +51,73 @@ struct ExportServiceImpl: Exporting {
         headerFormatter.dateFormat = "yyyy-MM-dd E"
         let header = headerFormatter.string(from: entry.date)
 
-        // Combine transcriptions in sequence order
-        var lines = [header, ""]
-        for recording in entry.sortedRecordings {
-            guard let transcription = recording.transcription else { continue }
-            lines.append("#\(recording.sequenceNumber)")
-            lines.append(transcription)
-            lines.append("")
+        // PDF layout constants
+        let pageSize = CGSize(width: 612, height: 792) // US Letter
+        let margin: CGFloat = 50
+        let contentWidth = pageSize.width - margin * 2
+
+        let headerFont = UIFont.systemFont(ofSize: 18, weight: .bold)
+        let labelFont = UIFont.systemFont(ofSize: 14, weight: .semibold)
+        let bodyFont = UIFont.systemFont(ofSize: 12, weight: .regular)
+        let bodyColor = UIColor.darkGray
+
+        let headerAttributes: [NSAttributedString.Key: Any] = [.font: headerFont]
+        let labelAttributes: [NSAttributedString.Key: Any] = [.font: labelFont]
+        let bodyAttributes: [NSAttributedString.Key: Any] = [.font: bodyFont, .foregroundColor: bodyColor]
+
+        let pdfRenderer = UIGraphicsPDFRenderer(bounds: CGRect(origin: .zero, size: pageSize))
+
+        let data = pdfRenderer.pdfData { context in
+            context.beginPage()
+            var y = margin
+
+            // Draw header
+            let headerRect = CGRect(x: margin, y: y, width: contentWidth, height: .greatestFiniteMagnitude)
+            let headerDrawn = (header as NSString).boundingRect(
+                with: headerRect.size, options: .usesLineFragmentOrigin,
+                attributes: headerAttributes, context: nil
+            )
+            (header as NSString).draw(in: CGRect(x: margin, y: y, width: contentWidth, height: headerDrawn.height),
+                                      withAttributes: headerAttributes)
+            y += headerDrawn.height + 20
+
+            // Draw each transcription
+            for recording in entry.sortedRecordings {
+                guard let transcription = recording.transcription else { continue }
+
+                let label = "#\(recording.sequenceNumber)"
+                let labelSize = (label as NSString).boundingRect(
+                    with: CGSize(width: contentWidth, height: .greatestFiniteMagnitude),
+                    options: .usesLineFragmentOrigin, attributes: labelAttributes, context: nil
+                )
+                let bodySize = (transcription as NSString).boundingRect(
+                    with: CGSize(width: contentWidth, height: .greatestFiniteMagnitude),
+                    options: .usesLineFragmentOrigin, attributes: bodyAttributes, context: nil
+                )
+                let blockHeight = labelSize.height + 4 + bodySize.height + 16
+
+                // New page if needed
+                if y + blockHeight > pageSize.height - margin {
+                    context.beginPage()
+                    y = margin
+                }
+
+                (label as NSString).draw(
+                    in: CGRect(x: margin, y: y, width: contentWidth, height: labelSize.height),
+                    withAttributes: labelAttributes
+                )
+                y += labelSize.height + 4
+
+                (transcription as NSString).draw(
+                    in: CGRect(x: margin, y: y, width: contentWidth, height: bodySize.height),
+                    withAttributes: bodyAttributes
+                )
+                y += bodySize.height + 16
+            }
         }
 
-        let content = lines.joined(separator: "\n")
-        let exportURL = directory.appendingPathComponent("\(dateStr)_transcription.md")
-        try content.write(to: exportURL, atomically: true, encoding: .utf8)
+        let exportURL = directory.appendingPathComponent("\(dateStr)_transcription.pdf")
+        try data.write(to: exportURL)
 
         return exportURL
     }
