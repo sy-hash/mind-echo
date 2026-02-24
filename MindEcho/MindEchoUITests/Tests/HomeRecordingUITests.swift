@@ -58,14 +58,22 @@ final class HomeRecordingUITests: XCTestCase {
         let transcriptionResult = app.staticTexts["recording.transcriptionResult"]
         XCTAssertTrue(transcriptionResult.waitForExistence(timeout: 10))
 
-        // 8. Dismiss modal by swiping down
-        app.swipeDown()
+        // 8. Dismiss modal via "閉じる" button (more reliable than swipeDown
+        //    since the modal contains a ScrollView that can intercept the gesture)
+        let closeButton = app.buttons["閉じる"]
+        XCTAssertTrue(closeButton.waitForExistence(timeout: 5))
+        closeButton.tap()
 
-        // 9. Assert first recording row exists in home list
+        // 9. Wait for modal to fully dismiss (transcription result disappears)
+        let modalDismissed = NSPredicate(format: "exists == false")
+        expectation(for: modalDismissed, evaluatedWith: transcriptionResult)
+        waitForExpectations(timeout: 5)
+
+        // 10. Assert first recording row exists in home list
         let recordingRow1 = app.descendants(matching: .any)["home.recordingRow.1"]
         XCTAssertTrue(recordingRow1.waitForExistence(timeout: 5))
 
-        // 10. Second recording - wait for button to be hittable after layout update from recording row being added
+        // 11. Second recording - wait for button to be hittable after layout settles
         XCTAssertTrue(recordBtn.waitForExistence(timeout: 5))
         let hittableExpectation = XCTNSPredicateExpectation(
             predicate: NSPredicate(format: "isHittable == true"),
@@ -79,10 +87,12 @@ final class HomeRecordingUITests: XCTestCase {
 
         XCTAssertTrue(app.staticTexts["recording.transcriptionResult"].waitForExistence(timeout: 10))
 
-        // 11. Dismiss second modal
-        app.swipeDown()
+        // 12. Dismiss second modal via "閉じる" button
+        let closeButton2 = app.buttons["閉じる"]
+        XCTAssertTrue(closeButton2.waitForExistence(timeout: 5))
+        closeButton2.tap()
 
-        // 12. Assert both recording rows exist
+        // 13. Assert both recording rows exist
         XCTAssertTrue(app.descendants(matching: .any)["home.recordingRow.1"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.descendants(matching: .any)["home.recordingRow.2"].waitForExistence(timeout: 5))
     }
