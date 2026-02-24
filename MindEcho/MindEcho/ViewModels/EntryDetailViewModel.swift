@@ -81,6 +81,22 @@ class EntryDetailViewModel {
         return try exportService.exportTranscription(entry: entry, to: exportDir)
     }
 
+    func transcriptionTextForSharing() -> String {
+        let headerFormatter = DateFormatter()
+        headerFormatter.locale = Locale(identifier: "en_US_POSIX")
+        headerFormatter.dateFormat = "yyyy-MM-dd E"
+        let header = headerFormatter.string(from: entry.date)
+
+        var lines = [header, ""]
+        for recording in entry.sortedRecordings {
+            guard let transcription = recording.transcription else { continue }
+            lines.append("#\(recording.sequenceNumber)")
+            lines.append(transcription)
+            lines.append("")
+        }
+        return lines.joined(separator: "\n")
+    }
+
     /// 全ての録音に書き起こしが保存済みかどうか
     var allRecordingsTranscribed: Bool {
         !entry.recordings.isEmpty && entry.recordings.allSatisfy { $0.transcription != nil }

@@ -3,9 +3,28 @@ import MindEchoCore
 import SwiftData
 import SwiftUI
 
+private enum ShareContent: Identifiable {
+    case file(URL)
+    case text(String)
+
+    var id: String {
+        switch self {
+        case .file(let url): return url.absoluteString
+        case .text(let text): return "text:\(text.hashValue)"
+        }
+    }
+
+    var activityItems: [Any] {
+        switch self {
+        case .file(let url): return [url]
+        case .text(let text): return [text]
+        }
+    }
+}
+
 struct EntryDetailView: View {
     @State private var viewModel: EntryDetailViewModel
-    @State private var shareURL: URL?
+    @State private var shareContent: ShareContent?
     @State private var transcriptionTargetRecording: Recording?
 
     init(entry: JournalEntry, modelContext: ModelContext, audioPlayer: any AudioPlaying = AudioPlayerService()) {
@@ -107,8 +126,8 @@ struct EntryDetailView: View {
                 .accessibilityIdentifier("detail.shareButton")
             }
         }
-        .sheet(item: $shareURL) { url in
-            ShareSheet(activityItems: [url])
+        .sheet(item: $shareContent) { content in
+            ShareSheet(activityItems: content.activityItems)
         }
         .sheet(item: $transcriptionTargetRecording) { recording in
             TranscriptionView(recording: recording)
@@ -119,7 +138,7 @@ struct EntryDetailView: View {
         Task {
             do {
                 let url = try await viewModel.exportForSharing()
-                shareURL = url
+                shareContent = .file(url)
             } catch {
                 // Handle error silently for now
             }
@@ -127,12 +146,9 @@ struct EntryDetailView: View {
     }
 
     private func exportTranscriptionAndShare() {
-        do {
-            let url = try viewModel.exportTranscriptionForSharing()
-            shareURL = url
-        } catch {
-            // Handle error silently for now
-        }
+        let text = viewModel.transcriptionTextForSharing()
+        guard !text.isEmpty else { return }
+        shareContent = .text(text)
     }
 
     private func formatTime(_ date: Date) -> String {
@@ -146,11 +162,6 @@ struct EntryDetailView: View {
         let seconds = Int(duration) % 60
         return String(format: "%d:%02d", minutes, seconds)
     }
-}
-
-// Make URL conform to Identifiable for sheet(item:)
-extension URL: @retroactive Identifiable {
-    public var id: String { absoluteString }
 }
 
 // UIKit ShareSheet wrapper
