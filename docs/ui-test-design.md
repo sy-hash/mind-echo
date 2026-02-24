@@ -39,7 +39,8 @@ UIテストは **UI状態遷移**（ボタンの表示/非表示、有効/無効
 - `home.recordButton`
 - `home.recordingsList`
 - `home.recordingRow.{n}`
-- `home.transcribeButton.{n}`
+- `home.transcribeButton.{n}` — 書き起こし未実施の録音にのみ表示
+- `home.transcriptionPreview.{n}` — 書き起こし済みの録音に表示（1行プレビュー）
 - `home.transcriptionSheet`
 
 ### RecordingModalView
@@ -76,10 +77,14 @@ UIテストは **UI状態遷移**（ボタンの表示/非表示、有効/無効
 - `detail.dateHeader`
 - `detail.recordingsList`
 - `detail.recordingRow.{n}`
+- `detail.transcription.{n}` — 書き起こし済みの録音に表示
+- `detail.transcribeButton.{n}` — 書き起こし未実施の録音にのみ表示
 - `detail.deleteButton.{n}`
-- `detail.shareButton`
+- `detail.shareButton` — メニューを開く（音声 / 書き起こしテキスト）
+- `detail.shareAudioButton` — メニュー内: 音声エクスポート
+- `detail.shareTranscriptionButton` — メニュー内: 書き起こしテキストエクスポート（全録音が書き起こし済みの場合のみ有効）
 
-## テストケース（5カテゴリ・19テスト）
+## テストケース（5カテゴリ・16テスト）
 
 ### 1. NavigationUITests（3テスト）
 
@@ -121,14 +126,15 @@ UIテストは **UI状態遷移**（ボタンの表示/非表示、有効/無効
 | `testEntryRow_showsDateAndRecordingInfo` | セルに日付・録音情報 |
 | `testTapEntry_navigatesToDetail` | セルタップで詳細画面へ遷移 |
 
-### 4. EntryDetailUITests（4テスト）
+### 4. EntryDetailUITests（5テスト）
 
 | テスト | 検証内容 |
 |-------|---------|
 | `testDetailView_showsDateAndRecordingsList` | 日付と録音リストの表示 |
 | `testPlayButton_togglesPlaybackState` | 音声セルタップで再生状態に遷移し、再度タップで停止 |
-| `testShareButton_presentsActivitySheet` | 共有ボタンで Activity Sheet 表示 |
+| `testShareButton_presentsActivitySheet` | 共有メニューから「音声」を選択して Activity Sheet 表示 |
 | `testSwipeToDelete_removesRecording` | スワイプ削除で録音が削除される |
+| `testTranscribeButton_opensTranscriptionSheet` | 書き起こしボタンタップでモーダル表示・結果テキスト表示 |
 
 ### 5. TranscriptionUITests（3テスト）
 
@@ -136,7 +142,7 @@ UIテストは **UI状態遷移**（ボタンの表示/非表示、有効/無効
 |-------|---------|
 | `testTranscribeButton_opensTranscriptionSheet` | 書き起こしボタンタップでモーダル表示・結果テキスト表示 |
 | `testTranscription_showsResultText` | 書き起こし完了後にモックテキストが表示される |
-| `testTranscription_dismissSheet` | シートをスワイプで閉じてホーム画面に戻る |
+| `testTranscription_dismissSheet` | シートをスワイプで閉じ、書き起こし結果が永続化されてプレビュー表示される |
 
 ## テスト対象外（明示的に除外）
 

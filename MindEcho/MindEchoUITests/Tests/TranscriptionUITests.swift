@@ -49,7 +49,9 @@ final class TranscriptionUITests: XCTestCase {
         // Swipe down on the result text to dismiss the sheet
         resultText.swipeDown(velocity: .fast)
 
-        // Verify we're back on the home screen
-        XCTAssertTrue(transcribeButton.waitForExistence(timeout: 5))
+        // After transcription completes, the text is persisted to the Recording model.
+        // The transcribe button should be replaced by a transcription preview.
+        let transcriptionPreview = app.staticTexts["home.transcriptionPreview.1"]
+        XCTAssertTrue(transcriptionPreview.waitForExistence(timeout: 5))
     }
 }

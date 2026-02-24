@@ -77,4 +77,38 @@ struct TranscriptionViewModelTests {
         await vm.startTranscription(recording: recording)
         #expect(vm.state == .failure("書き起こし結果が空でした。"))
     }
+
+    @Test func startTranscription_persistsToRecording() async {
+        let vm = makeAuthorizedViewModel()
+        vm.transcribe = { _, _ in "保存されるテキスト" }
+
+        let recording = makeRecording()
+        #expect(recording.transcription == nil)
+
+        await vm.startTranscription(recording: recording)
+
+        #expect(recording.transcription == "保存されるテキスト")
+    }
+
+    @Test func startTranscription_failure_doesNotPersist() async {
+        let vm = makeAuthorizedViewModel()
+        vm.transcribe = { _, _ in
+            throw NSError(domain: "test", code: 1)
+        }
+
+        let recording = makeRecording()
+        await vm.startTranscription(recording: recording)
+
+        #expect(recording.transcription == nil)
+    }
+
+    @Test func startTranscription_emptyResult_doesNotPersist() async {
+        let vm = makeAuthorizedViewModel()
+        vm.transcribe = { _, _ in "" }
+
+        let recording = makeRecording()
+        await vm.startTranscription(recording: recording)
+
+        #expect(recording.transcription == nil)
+    }
 }

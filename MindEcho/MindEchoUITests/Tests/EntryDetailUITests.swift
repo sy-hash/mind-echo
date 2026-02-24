@@ -6,7 +6,7 @@ final class EntryDetailUITests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
         app = XCUIApplication()
-        app.launchArguments = ["--uitesting", "--seed-history"]
+        app.launchArguments = ["--uitesting", "--seed-history", "--mock-transcription"]
     }
 
     private func navigateToDetail() {
@@ -60,9 +60,28 @@ final class EntryDetailUITests: XCTestCase {
         XCTAssertTrue(shareBtn.waitForExistence(timeout: 5))
         shareBtn.tap()
 
+        // Menu should appear with audio option
+        let audioBtn = app.buttons["detail.shareAudioButton"]
+        XCTAssertTrue(audioBtn.waitForExistence(timeout: 5))
+        audioBtn.tap()
+
         // UIActivityViewController should appear after audio export & merge
         let activityList = app.otherElements["ActivityListView"]
         XCTAssertTrue(activityList.waitForExistence(timeout: 15))
+    }
+
+    @MainActor
+    func testTranscribeButton_opensTranscriptionSheet() throws {
+        navigateToDetail()
+
+        // Seed data has no transcription, so transcribe button should exist
+        let transcribeBtn = app.buttons["detail.transcribeButton.1"]
+        XCTAssertTrue(transcribeBtn.waitForExistence(timeout: 5))
+        transcribeBtn.tap()
+
+        // TranscriptionView sheet should appear and show mock result
+        let resultText = app.staticTexts["transcription.resultText"]
+        XCTAssertTrue(resultText.waitForExistence(timeout: 10))
     }
 
     @MainActor
