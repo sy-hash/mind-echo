@@ -42,7 +42,7 @@ jobs:
             --repo "${{ github.repository }}" \
             --json comments --jq '.comments[].body' \
             | grep -c 'test-analysis-auto' || true)
-          if [ "$EXISTING" -gt "0" ]; then
+          if [ "$EXISTING" -ge "2" ]; then
             echo "skip=true" >> "$GITHUB_OUTPUT"
           fi
 
