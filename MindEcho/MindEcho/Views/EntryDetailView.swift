@@ -53,6 +53,7 @@ struct EntryDetailView: View {
                                 }
                             }
                             .buttonStyle(.borderless)
+                            .accessibilityIdentifier("detail.recordingRow.\(recording.sequenceNumber)")
 
                             if let transcription = recording.transcription {
                                 Text(transcription)
@@ -78,7 +79,6 @@ struct EntryDetailView: View {
                             }
                             .accessibilityIdentifier("detail.deleteButton.\(recording.sequenceNumber)")
                         }
-                        .accessibilityIdentifier("detail.recordingRow.\(recording.sequenceNumber)")
                     }
                 }
             }
