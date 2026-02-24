@@ -133,7 +133,15 @@ xcodebuild test \
 ```
 JournalEntry (1日1エントリ)
 └── recordings: [Recording]      (音声記録、連番管理)
+    └── transcription: String?   (書き起こしテキスト、SwiftData で永続化)
 ```
+
+### Voice Transcription Persistence (書き起こし永続化)
+
+- 書き起こし結果は `Recording.transcription` に SwiftData で永続化される
+- 録音停止後に自動で書き起こしを実行し、成功すれば `Recording.transcription` に保存
+- 一覧から書き起こしボタンをタップした際、既に保存済みであれば即表示（再実行しない）
+- `Recording.hasTranscription` で書き起こし済みかどうかを判定可能
 
 ## Important Notes for Claude
 

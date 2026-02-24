@@ -81,4 +81,28 @@ struct HomeViewModelTests {
         #expect(vm.todayEntry != nil)
         #expect(vm.todayEntry?.recordings.count == 1)
     }
+
+    @Test func startTranscription_savesTranscriptionToRecording() async throws {
+        let (vm, _, _, _container) = try makeViewModel()
+        vm.transcribe = { _, _ in "書き起こしテスト結果" }
+        vm.startRecording()
+        vm.stopRecording()
+
+        await vm.startTranscription()
+
+        let recording = vm.todayEntry?.sortedRecordings.first
+        #expect(recording?.transcription == "書き起こしテスト結果")
+    }
+
+    @Test func startTranscription_emptyResult_doesNotSave() async throws {
+        let (vm, _, _, _container) = try makeViewModel()
+        vm.transcribe = { _, _ in "" }
+        vm.startRecording()
+        vm.stopRecording()
+
+        await vm.startTranscription()
+
+        let recording = vm.todayEntry?.sortedRecordings.first
+        #expect(recording?.transcription == nil)
+    }
 }
