@@ -1,6 +1,6 @@
 # UIテスト設計
 
-メインシナリオを選定し XCTest で UIテストを記述する（5カテゴリ・15テストケース）。
+メインシナリオを選定し XCTest で UIテストを記述する（5カテゴリ・16テストケース）。
 
 ## テストデータセットアップ（Launch Arguments）
 
@@ -78,8 +78,10 @@ UIテストは **UI状態遷移**（ボタンの表示/非表示、有効/無効
 - `detail.recordingRow.{n}`
 - `detail.deleteButton.{n}`
 - `detail.shareButton`
+- `detail.shareAudioButton` — 共有メニュー内の「音声を共有」ボタン
+- `detail.shareTranscriptButton` — 共有メニュー内の「テキストを共有」ボタン
 
-## テストケース（5カテゴリ・19テスト）
+## テストケース（5カテゴリ・20テスト）
 
 ### 1. NavigationUITests（3テスト）
 
@@ -121,13 +123,14 @@ UIテストは **UI状態遷移**（ボタンの表示/非表示、有効/無効
 | `testEntryRow_showsDateAndRecordingInfo` | セルに日付・録音情報 |
 | `testTapEntry_navigatesToDetail` | セルタップで詳細画面へ遷移 |
 
-### 4. EntryDetailUITests（4テスト）
+### 4. EntryDetailUITests（5テスト）
 
 | テスト | 検証内容 |
 |-------|---------|
 | `testDetailView_showsDateAndRecordingsList` | 日付と録音リストの表示 |
 | `testPlayButton_togglesPlaybackState` | 音声セルタップで再生状態に遷移し、再度タップで停止 |
-| `testShareButton_presentsActivitySheet` | 共有ボタンで Activity Sheet 表示 |
+| `testShareButton_presentsActivitySheet` | 共有ボタンタップで共有タイプ選択メニュー表示 → 「音声を共有」選択で Activity Sheet 表示 |
+| `testShareTranscriptButton_presentsActivitySheet` | 共有ボタンタップで共有タイプ選択メニュー表示 → 「テキストを共有」選択で Activity Sheet 表示 |
 | `testSwipeToDelete_removesRecording` | スワイプ削除で録音が削除される |
 
 ### 5. TranscriptionUITests（3テスト）
