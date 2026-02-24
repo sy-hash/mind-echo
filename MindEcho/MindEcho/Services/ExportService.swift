@@ -60,7 +60,7 @@ struct ExportServiceImpl: Exporting {
         }
 
         let content = lines.joined(separator: "\n")
-        let exportURL = directory.appendingPathComponent("\(dateStr)_transcription.txt")
+        let exportURL = directory.appendingPathComponent("\(dateStr)_transcription.md")
         try content.write(to: exportURL, atomically: true, encoding: .utf8)
 
         return exportURL

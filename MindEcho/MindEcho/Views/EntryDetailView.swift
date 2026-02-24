@@ -146,9 +146,12 @@ struct EntryDetailView: View {
     }
 
     private func exportTranscriptionAndShare() {
-        let text = viewModel.transcriptionTextForSharing()
-        guard !text.isEmpty else { return }
-        shareContent = .text(text)
+        do {
+            let url = try viewModel.exportTranscriptionForSharing()
+            shareContent = .file(url)
+        } catch {
+            // Handle error silently for now
+        }
     }
 
     private func formatTime(_ date: Date) -> String {
