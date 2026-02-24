@@ -46,6 +46,8 @@ jobs:
               pull_number: context.issue.number
             });
             core.setOutput('ref', pr.data.head.ref);
+            core.setOutput('number', pr.data.number);
+            core.setOutput('title', pr.data.title);
 
       - uses: actions/checkout@v5
         with:
@@ -93,6 +95,8 @@ jobs:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           ASC_KEY_PATH: ${{ runner.temp }}/AuthKey.p8
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+          PR_TITLE: ${{ steps.pr.outputs.title }}
         run: bundle exec fastlane beta
 
       - name: Comment on PR (success)
