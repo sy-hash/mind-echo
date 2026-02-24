@@ -74,13 +74,29 @@ Recordings/{datetime}.m4a
 - 一時停止→再開は tap コールバック内の `isPaused` フラグで制御。`true` の間はバッファの書き込みをスキップし、`false` に戻すと同一 `AVAudioFile` への追記を再開する（`AVAudioEngine` は停止しない）
 - 停止すると `AVAudioEngine` を停止し、`AVAudioFile` をクローズして録音が確定。次の録音は新しいファイルになる
 
+**書き起こしテキストファイル（エクスポート時に生成）:**
+
+```
+Exports/{YYYYMMDD}_transcription.txt
+```
+
+| 要素 | 内容 | 例 |
+|------|------|-----|
+| `{YYYYMMDD}` | エントリの論理日付 | `20250207` |
+
+例: `20250207_transcription.txt`（`Documents/Exports/` に保存）
+
+- 書き起こしテキスト共有時にのみ生成される
+- 全 Recording の `transcription` を `sequenceNumber` 順に結合し、`#N` 区切りで連結
+- 書き起こし未実行の Recording がある場合は共有不可（ユーザーに通知）
+
 ## イベントごとのファイル操作
 
 | イベント | 更新されるファイル |
 |---------|-----------------|
 | 録音開始 | `Application Support/Recordings/{datetime}.m4a` を新規生成 |
 | 録音の一時停止・再開 | `isPaused` フラグで tap コールバック内の書き込みをスキップ/再開（同一 `.m4a` ファイル内、`AVAudioEngine` は停止しない） |
-| 録音停止 | `.m4a` ファイルを確定。リアルタイム文字起こしの確定テキストを `Recording.transcription` に保存 |
+| 録音停止 | `.m4a` ファイルを確定。書き起こしを非同期で実行し、完了後に `Recording.transcription` に保存 |
 | 音声共有時 | その日の全 Recording を連番順に結合 → `Application Support/Merged/` に一時生成 → `Documents/Exports/` にコピー |
 | 文字起こし共有時 | 全 Recording の `transcription` を結合して `.txt` を生成 → `Documents/Exports/` にコピー |
 | 録音削除（個別） | 対応する `Application Support/Recordings/` 内の `.m4a` を削除 + `Recording` エンティティを削除。**残りの Recording の `sequenceNumber` はリナンバーしない（欠番を許容）。** エクスポート時は実在する Recording を `sequenceNumber` 昇順で処理する。**次の録音の `sequenceNumber` は既存の最大値 + 1 で採番する**（例: #1, #3 が残っている場合、次は #4） |
