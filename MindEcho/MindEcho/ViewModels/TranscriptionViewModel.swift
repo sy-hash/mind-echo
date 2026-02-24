@@ -26,6 +26,12 @@ final class TranscriptionViewModel {
     }
 
     func startTranscription(recording: Recording) async {
+        // 保存済みの書き起こしがあれば即表示
+        if let existing = recording.transcription {
+            state = .success(existing)
+            return
+        }
+
         state = .loading
 
         let status = checkAuthorization()
@@ -49,7 +55,12 @@ final class TranscriptionViewModel {
 
         do {
             let text = try await transcribe(fileURL, Locale(identifier: "ja-JP"))
-            state = text.isEmpty ? .failure("書き起こし結果が空でした。") : .success(text)
+            if text.isEmpty {
+                state = .failure("書き起こし結果が空でした。")
+            } else {
+                recording.transcription = text
+                state = .success(text)
+            }
         } catch {
             state = .failure("書き起こしに失敗しました: \(error.localizedDescription)")
         }

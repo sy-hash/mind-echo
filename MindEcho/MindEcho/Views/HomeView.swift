@@ -37,7 +37,7 @@ struct HomeView: View {
                                     Button {
                                         transcriptionTargetRecording = recording
                                     } label: {
-                                        Image(systemName: "doc.text")
+                                        Image(systemName: recording.hasTranscription ? "doc.text.fill" : "doc.text")
                                     }
                                     .accessibilityIdentifier("home.transcribeButton.\(recording.sequenceNumber)")
                                     Image(systemName: viewModel.playingRecordingId == recording.id && viewModel.isPlaying ? "pause.fill" : "play.fill")

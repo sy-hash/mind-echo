@@ -133,6 +133,7 @@ xcodebuild test \
 ```
 JournalEntry (1日1エントリ)
 └── recordings: [Recording]      (音声記録、連番管理)
+    └── transcription: String?   (書き起こしテキスト、SwiftData で永続化)
 ```
 
 ## Important Notes for Claude

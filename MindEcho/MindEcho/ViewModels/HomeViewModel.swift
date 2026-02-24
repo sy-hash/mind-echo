@@ -35,6 +35,7 @@ class HomeViewModel {
     private var currentRecordingFileName: String?
     private var currentRecordingStartedAt: Date?
     private var lastRecordedFileName: String?
+    private var lastRecordedRecording: Recording?
 
     init(
         modelContext: ModelContext,
@@ -62,6 +63,7 @@ class HomeViewModel {
     func startRecording() {
         transcriptionState = .idle
         lastRecordedFileName = nil
+        lastRecordedRecording = nil
         do {
             try FilePathManager.ensureDirectoryExists(FilePathManager.recordingsDirectory)
             let url = FilePathManager.newRecordingURL()
@@ -118,6 +120,7 @@ class HomeViewModel {
         entry.recordings.append(recording)
         entry.updatedAt = Date()
         todayEntry = entry
+        lastRecordedRecording = recording
 
         currentRecordingFileName = nil
         currentRecordingStartedAt = nil
@@ -134,7 +137,12 @@ class HomeViewModel {
         transcriptionState = .loading
         do {
             let text = try await transcribe(url, Locale(identifier: "ja-JP"))
-            transcriptionState = text.isEmpty ? .failure("書き起こし結果が空でした。") : .success(text)
+            if text.isEmpty {
+                transcriptionState = .failure("書き起こし結果が空でした。")
+            } else {
+                lastRecordedRecording?.transcription = text
+                transcriptionState = .success(text)
+            }
         } catch {
             transcriptionState = .failure("書き起こしに失敗しました: \(error.localizedDescription)")
         }
@@ -143,6 +151,7 @@ class HomeViewModel {
     func resetTranscriptionState() {
         transcriptionState = .idle
         lastRecordedFileName = nil
+        lastRecordedRecording = nil
     }
 
     // MARK: - Playback

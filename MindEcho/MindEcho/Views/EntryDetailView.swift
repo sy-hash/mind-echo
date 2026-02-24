@@ -28,29 +28,39 @@ struct EntryDetailView: View {
             if !viewModel.entry.recordings.isEmpty {
                 Section("録音") {
                     ForEach(viewModel.entry.sortedRecordings) { recording in
-                        Button {
-                            if viewModel.playingRecordingId == recording.id && viewModel.isPlaying {
-                                viewModel.pausePlayback()
-                            } else {
-                                viewModel.playRecording(recording)
+                        VStack(alignment: .leading, spacing: 6) {
+                            Button {
+                                if viewModel.playingRecordingId == recording.id && viewModel.isPlaying {
+                                    viewModel.pausePlayback()
+                                } else {
+                                    viewModel.playRecording(recording)
+                                }
+                            } label: {
+                                HStack {
+                                    Text("#\(recording.sequenceNumber)")
+                                        .font(.headline)
+
+                                    Text(formatTime(recording.recordedAt))
+                                        .foregroundStyle(.secondary)
+
+                                    Text(formatDuration(recording.duration))
+                                        .foregroundStyle(.secondary)
+
+                                    Spacer()
+
+                                    Image(systemName: viewModel.playingRecordingId == recording.id && viewModel.isPlaying ? "pause.fill" : "play.fill")
+                                }
                             }
-                        } label: {
-                            HStack {
-                                Text("#\(recording.sequenceNumber)")
-                                    .font(.headline)
+                            .buttonStyle(.borderless)
 
-                                Text(formatTime(recording.recordedAt))
+                            if let transcription = recording.transcription {
+                                Text(transcription)
+                                    .font(.subheadline)
                                     .foregroundStyle(.secondary)
-
-                                Text(formatDuration(recording.duration))
-                                    .foregroundStyle(.secondary)
-
-                                Spacer()
-
-                                Image(systemName: viewModel.playingRecordingId == recording.id && viewModel.isPlaying ? "pause.fill" : "play.fill")
+                                    .lineLimit(2)
+                                    .accessibilityIdentifier("detail.transcription.\(recording.sequenceNumber)")
                             }
                         }
-                        .buttonStyle(.borderless)
                         .swipeActions(edge: .trailing) {
                             Button(role: .destructive) {
                                 viewModel.deleteRecording(recording)
