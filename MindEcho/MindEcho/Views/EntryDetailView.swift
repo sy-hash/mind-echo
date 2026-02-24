@@ -25,13 +25,16 @@ private enum ShareContent: Identifiable {
     }
 }
 
-/// UIActivityItemSource that explicitly declares the UTType as plain text,
-/// preventing the receiving app from interpreting the file URL as a web URL to fetch.
+/// UIActivityItemSource that passes text content directly while using file URL as placeholder.
+/// The placeholder URL ensures NotebookLM appears in the share sheet,
+/// but itemForActivityType returns the String content so it doesn't try to fetch a file:// URL.
 private class TextFileActivityItemSource: NSObject, UIActivityItemSource {
     let url: URL
+    private let textContent: String
 
     init(url: URL) {
         self.url = url
+        self.textContent = (try? String(contentsOf: url, encoding: .utf8)) ?? ""
     }
 
     func activityViewControllerPlaceholderItem(_ activityViewController: UIActivityViewController) -> Any {
@@ -39,7 +42,7 @@ private class TextFileActivityItemSource: NSObject, UIActivityItemSource {
     }
 
     func activityViewController(_ activityViewController: UIActivityViewController, itemForActivityType activityType: UIActivity.ActivityType?) -> Any? {
-        return url
+        return textContent
     }
 
     func activityViewController(_ activityViewController: UIActivityViewController, dataTypeIdentifierForActivityType activityType: UIActivity.ActivityType?) -> String {
