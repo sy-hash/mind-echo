@@ -21,7 +21,7 @@ Application Support/
 Documents/
 └── Exports/             # エクスポート済みファイル（ファイルアプリに公開）
     ├── 20250207_merged.m4a
-    ├── 20250207_transcription.txt
+    ├── 20250207_transcription.md
     └── ...
 ```
 
@@ -77,14 +77,14 @@ Recordings/{datetime}.m4a
 **書き起こしテキストファイル（エクスポート時に生成）:**
 
 ```
-Exports/{YYYYMMDD}_transcription.txt
+Exports/{YYYYMMDD}_transcription.md
 ```
 
 | 要素 | 内容 | 例 |
 |------|------|-----|
 | `{YYYYMMDD}` | エントリの論理日付 | `20250207` |
 
-例: `20250207_transcription.txt`（`Documents/Exports/` に保存）
+例: `20250207_transcription.md`（`Documents/Exports/` に保存）
 
 - 書き起こしテキスト共有時にのみ生成される
 - 全 Recording の `transcription` を `sequenceNumber` 順に結合し、`#N` 区切りで連結
@@ -98,7 +98,7 @@ Exports/{YYYYMMDD}_transcription.txt
 | 録音の一時停止・再開 | `isPaused` フラグで tap コールバック内の書き込みをスキップ/再開（同一 `.m4a` ファイル内、`AVAudioEngine` は停止しない） |
 | 録音停止 | `.m4a` ファイルを確定。書き起こしを非同期で実行し、完了後に `Recording.transcription` に保存 |
 | 音声共有時 | その日の全 Recording を連番順に結合 → `Application Support/Merged/` に一時生成 → `Documents/Exports/` にコピー |
-| 文字起こし共有時 | 全 Recording の `transcription` を結合して `.txt` を生成 → `Documents/Exports/` にコピー |
+| 文字起こし共有時 | 全 Recording の `transcription` を結合して `.md` を生成 → `Documents/Exports/` にコピー |
 | 録音削除（個別） | 対応する `Application Support/Recordings/` 内の `.m4a` を削除 + `Recording` エンティティを削除。**残りの Recording の `sequenceNumber` はリナンバーしない（欠番を許容）。** エクスポート時は実在する Recording を `sequenceNumber` 昇順で処理する。**次の録音の `sequenceNumber` は既存の最大値 + 1 で採番する**（例: #1, #3 が残っている場合、次は #4） |
 | エントリ削除 | 対応する全 `.m4a` ファイルを削除（cascade で `Recording` も削除） |
 

@@ -2,23 +2,48 @@ import MindEchoAudio
 import MindEchoCore
 import SwiftData
 import SwiftUI
+import UniformTypeIdentifiers
 
 private enum ShareContent: Identifiable {
-    case file(URL)
-    case text(String)
+    case audioFile(URL)
+    case textFile(URL)
 
     var id: String {
         switch self {
-        case .file(let url): return url.absoluteString
-        case .text(let text): return "text:\(text.hashValue)"
+        case .audioFile(let url): return url.absoluteString
+        case .textFile(let url): return url.absoluteString
         }
     }
 
     var activityItems: [Any] {
         switch self {
-        case .file(let url): return [url]
-        case .text(let text): return [text]
+        case .audioFile(let url):
+            return [url]
+        case .textFile(let url):
+            return [TextFileActivityItemSource(url: url)]
         }
+    }
+}
+
+/// UIActivityItemSource that explicitly declares the UTType as plain text,
+/// preventing the receiving app from interpreting the file URL as a web URL to fetch.
+private class TextFileActivityItemSource: NSObject, UIActivityItemSource {
+    let url: URL
+
+    init(url: URL) {
+        self.url = url
+    }
+
+    func activityViewControllerPlaceholderItem(_ activityViewController: UIActivityViewController) -> Any {
+        return url
+    }
+
+    func activityViewController(_ activityViewController: UIActivityViewController, itemForActivityType activityType: UIActivity.ActivityType?) -> Any? {
+        return url
+    }
+
+    func activityViewController(_ activityViewController: UIActivityViewController, dataTypeIdentifierForActivityType activityType: UIActivity.ActivityType?) -> String {
+        return UTType.utf8PlainText.identifier
     }
 }
 
@@ -138,7 +163,7 @@ struct EntryDetailView: View {
         Task {
             do {
                 let url = try await viewModel.exportForSharing()
-                shareContent = .file(url)
+                shareContent = .audioFile(url)
             } catch {
                 // Handle error silently for now
             }
@@ -148,7 +173,7 @@ struct EntryDetailView: View {
     private func exportTranscriptionAndShare() {
         do {
             let url = try viewModel.exportTranscriptionForSharing()
-            shareContent = .file(url)
+            shareContent = .textFile(url)
         } catch {
             // Handle error silently for now
         }
