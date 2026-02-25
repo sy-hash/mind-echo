@@ -136,6 +136,32 @@ JournalEntry (1日1エントリ)
     └── transcription: String?   (書き起こしテキスト、SwiftData で永続化)
 ```
 
+## Definition of Done
+
+Claude がタスクを「完了」と判断する前に、以下の全項目を満たしていることを確認すること。
+
+### 1. ビルド成功
+
+- `xcodebuild build` がエラーなしで通ること
+
+### 2. テスト通過
+
+- 変更に関連する既存テスト（Unit / UI）が全て通ること
+- 新機能を追加した場合は、対応するテストを追加すること
+
+### 3. ドキュメントの更新
+
+- 新しい型・プロトコル・モジュールを追加した場合は、CLAUDE.md の該当セクション（Architecture, File Structure 等）を更新すること
+- 設計上の重要な判断を行った場合は、`docs/` 配下のドキュメントに反映すること
+
+### 4. UI 変更時の追加要件
+
+UI に変更を加えた場合は、以下も必須:
+
+- `docs/ui-test-design.md` の更新（Accessibility Identifier 一覧、テストケース一覧）
+- 対応する UITest の実装追加・更新（`MindEchoUITests/`）
+- 新規 UI 要素には `.accessibilityIdentifier()` を付与すること
+
 ## Important Notes for Claude
 
 - **設計ドキュメント**: `/docs/design-prompt.md` に詳細仕様あり
