@@ -28,32 +28,70 @@ env:
   WORKSPACE: MindEcho.xcworkspace
 
 jobs:
-  unit-tests:
-    name: Unit Tests
+  build:
+    name: Build
     runs-on: macos-26
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v6
 
-      - name: Run Unit Tests (MindEchoTests)
+      - name: Build for Testing
         run: |
-          xcodebuild test \
+          xcodebuild build-for-testing \
             -workspace $WORKSPACE \
             -scheme MindEcho \
             -destination "$DESTINATION" \
+            -derivedDataPath DerivedData
+
+      - name: Upload Build Products
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-products
+          path: DerivedData/Build/Products
+          retention-days: 1
+
+  unit-tests:
+    name: Unit Tests
+    needs: build
+    runs-on: macos-26
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Download Build Products
+        uses: actions/download-artifact@v4
+        with:
+          name: build-products
+          path: DerivedData/Build/Products
+
+      - name: Run Unit Tests (MindEchoTests)
+        run: |
+          xcodebuild test-without-building \
+            -workspace $WORKSPACE \
+            -scheme MindEcho \
+            -destination "$DESTINATION" \
+            -derivedDataPath DerivedData \
             -only-testing:MindEchoTests
 
   ui-tests:
     name: UI Tests
+    needs: build
     runs-on: macos-26
-    timeout-minutes: 20
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v6
 
+      - name: Download Build Products
+        uses: actions/download-artifact@v4
+        with:
+          name: build-products
+          path: DerivedData/Build/Products
+
       - name: Run UI Tests (MindEchoUITests)
         run: |
-          xcodebuild test \
+          xcodebuild test-without-building \
             -workspace $WORKSPACE \
             -scheme MindEcho \
             -destination "$DESTINATION" \
+            -derivedDataPath DerivedData \
             -only-testing:MindEchoUITests
