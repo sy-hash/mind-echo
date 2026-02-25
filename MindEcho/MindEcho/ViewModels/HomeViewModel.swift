@@ -29,6 +29,7 @@ class HomeViewModel {
     private let modelContext: ModelContext
     private var audioRecorder: any AudioRecording
     private var audioPlayer: any AudioPlaying
+    private let exportService: any Exporting
     private var durationTimer: Timer?
     private var recordingStartTime: Date?
     private var accumulatedDuration: TimeInterval = 0
@@ -40,11 +41,13 @@ class HomeViewModel {
     init(
         modelContext: ModelContext,
         audioRecorder: any AudioRecording,
-        audioPlayer: any AudioPlaying = AudioPlayerService()
+        audioPlayer: any AudioPlaying = AudioPlayerService(),
+        exportService: any Exporting = ExportServiceImpl()
     ) {
         self.modelContext = modelContext
         self.audioRecorder = audioRecorder
         self.audioPlayer = audioPlayer
+        self.exportService = exportService
         self.audioPlayer.onPlaybackFinished = { [weak self] in
             self?.isPlaying = false
             self?.playingRecordingId = nil
@@ -178,6 +181,29 @@ class HomeViewModel {
         isPlaying = false
         playingRecordingId = nil
         playbackProgress = 0
+    }
+
+    // MARK: - Export
+
+    func exportForSharing() async throws -> URL {
+        guard let entry = todayEntry else {
+            throw ExportError.noEntry
+        }
+        let exportDir = FilePathManager.exportsDirectory
+        return try await exportService.exportMergedAudio(entry: entry, to: exportDir)
+    }
+
+    func exportTranscriptForSharing() throws -> String {
+        guard let entry = todayEntry else {
+            throw ExportError.noEntry
+        }
+        let exportDir = FilePathManager.exportsDirectory
+        let url = try exportService.exportCombinedTranscript(entry: entry, to: exportDir)
+        return try String(contentsOf: url, encoding: .utf8)
+    }
+
+    enum ExportError: Error {
+        case noEntry
     }
 
     // MARK: - Data

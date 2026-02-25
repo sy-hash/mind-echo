@@ -40,7 +40,11 @@ UIテストは **UI状態遷移**（ボタンの表示/非表示、有効/無効
 - `home.recordingsList`
 - `home.recordingRow.{n}`
 - `home.transcribeButton.{n}`
+- `home.transcription.{n}` — 録音セル内の書き起こしテキストプレビュー
 - `home.transcriptionSheet`
+- `home.shareButton` — 共有メニューボタン（録音が存在する場合のみ表示）
+- `home.shareAudioButton` — 共有メニュー内の「音声を共有」ボタン
+- `home.shareTranscriptButton` — 共有メニュー内の「テキストを共有」ボタン
 
 ### RecordingModalView
 

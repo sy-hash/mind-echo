@@ -7,6 +7,7 @@ struct HomeView: View {
     @State private var viewModel: HomeViewModel
     @State private var transcriptionTargetRecording: Recording?
     @State private var isRecordingModalPresented = false
+    @State private var shareItems: [Any]?
 
     init(modelContext: ModelContext, audioRecorder: any AudioRecording) {
         _viewModel = State(initialValue: HomeViewModel(
@@ -28,29 +29,41 @@ struct HomeView: View {
                     if let entry = viewModel.todayEntry, !entry.recordings.isEmpty {
                         VStack(spacing: 0) {
                             ForEach(entry.sortedRecordings) { recording in
-                                HStack {
-                                    Text("#\(recording.sequenceNumber)")
-                                        .font(.headline)
-                                    Text(formatDuration(recording.duration))
-                                        .foregroundStyle(.secondary)
-                                    Spacer()
-                                    Button {
-                                        transcriptionTargetRecording = recording
-                                    } label: {
-                                        Image(systemName: recording.hasTranscription ? "doc.text.fill" : "doc.text")
+                                VStack(alignment: .leading, spacing: 6) {
+                                    HStack {
+                                        Text("#\(recording.sequenceNumber)")
+                                            .font(.headline)
+                                        Text(formatTime(recording.recordedAt))
+                                            .foregroundStyle(.secondary)
+                                        Text(formatDuration(recording.duration))
+                                            .foregroundStyle(.secondary)
+                                        Spacer()
+                                        Button {
+                                            transcriptionTargetRecording = recording
+                                        } label: {
+                                            Image(systemName: recording.hasTranscription ? "doc.text.fill" : "doc.text")
+                                        }
+                                        .accessibilityIdentifier("home.transcribeButton.\(recording.sequenceNumber)")
+                                        Image(systemName: viewModel.playingRecordingId == recording.id && viewModel.isPlaying ? "pause.fill" : "play.fill")
                                     }
-                                    .accessibilityIdentifier("home.transcribeButton.\(recording.sequenceNumber)")
-                                    Image(systemName: viewModel.playingRecordingId == recording.id && viewModel.isPlaying ? "pause.fill" : "play.fill")
+                                    .contentShape(Rectangle())
+                                    .onTapGesture {
+                                        if viewModel.playingRecordingId == recording.id && viewModel.isPlaying {
+                                            viewModel.pausePlayback()
+                                        } else {
+                                            viewModel.playRecording(recording)
+                                        }
+                                    }
+
+                                    if let transcription = recording.transcription {
+                                        Text(transcription)
+                                            .font(.subheadline)
+                                            .foregroundStyle(.secondary)
+                                            .lineLimit(2)
+                                            .accessibilityIdentifier("home.transcription.\(recording.sequenceNumber)")
+                                    }
                                 }
                                 .padding(.vertical, 12)
-                                .contentShape(Rectangle())
-                                .onTapGesture {
-                                    if viewModel.playingRecordingId == recording.id && viewModel.isPlaying {
-                                        viewModel.pausePlayback()
-                                    } else {
-                                        viewModel.playRecording(recording)
-                                    }
-                                }
                                 .accessibilityElement(children: .combine)
                                 .accessibilityAddTraits(.isButton)
                                 .accessibilityIdentifier("home.recordingRow.\(recording.sequenceNumber)")
@@ -78,6 +91,38 @@ struct HomeView: View {
                 .padding(.vertical)
             }
             .navigationTitle("今日")
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    if viewModel.todayEntry != nil && !(viewModel.todayEntry?.recordings.isEmpty ?? true) {
+                        Menu {
+                            Button {
+                                exportAndShareAudio()
+                            } label: {
+                                Label("音声を共有", systemImage: "waveform")
+                            }
+                            .accessibilityIdentifier("home.shareAudioButton")
+
+                            Button {
+                                exportAndShareTranscript()
+                            } label: {
+                                Label("テキストを共有", systemImage: "doc.text")
+                            }
+                            .accessibilityIdentifier("home.shareTranscriptButton")
+                        } label: {
+                            Image(systemName: "square.and.arrow.up")
+                        }
+                        .accessibilityIdentifier("home.shareButton")
+                    }
+                }
+            }
+            .sheet(isPresented: Binding(
+                get: { shareItems != nil },
+                set: { if !$0 { shareItems = nil } }
+            )) {
+                if let items = shareItems {
+                    ShareSheet(activityItems: items)
+                }
+            }
             .onAppear {
                 viewModel.fetchTodayEntry()
             }
@@ -95,6 +140,32 @@ struct HomeView: View {
                     .accessibilityIdentifier("home.transcriptionSheet")
             }
         }
+    }
+
+    private func exportAndShareAudio() {
+        Task {
+            do {
+                let url = try await viewModel.exportForSharing()
+                shareItems = [url]
+            } catch {
+                // Handle error silently for now
+            }
+        }
+    }
+
+    private func exportAndShareTranscript() {
+        do {
+            let text = try viewModel.exportTranscriptForSharing()
+            shareItems = [text]
+        } catch {
+            // Handle error silently for now
+        }
+    }
+
+    private func formatTime(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm"
+        return formatter.string(from: date)
     }
 
     private func formatDuration(_ duration: TimeInterval) -> String {
