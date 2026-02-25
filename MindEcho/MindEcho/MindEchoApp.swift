@@ -98,6 +98,7 @@ struct MindEchoApp: App {
                 audioFileName: fileName,
                 duration: duration
             )
+            recording.transcription = "サンプル書き起こしテキスト \(dayOffset)日前"
             entry.recordings.append(recording)
             context.insert(entry)
         }

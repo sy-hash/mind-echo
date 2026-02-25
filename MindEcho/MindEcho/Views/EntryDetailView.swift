@@ -5,7 +5,7 @@ import SwiftUI
 
 struct EntryDetailView: View {
     @State private var viewModel: EntryDetailViewModel
-    @State private var shareURL: URL?
+    @State private var shareItems: [Any]?
 
     init(entry: JournalEntry, modelContext: ModelContext, audioPlayer: any AudioPlaying = AudioPlayerService()) {
         _viewModel = State(initialValue: EntryDetailViewModel(
@@ -77,27 +77,53 @@ struct EntryDetailView: View {
         .navigationTitle("詳細")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                Button {
-                    exportAndShare()
+                Menu {
+                    Button {
+                        exportAndShareAudio()
+                    } label: {
+                        Label("音声を共有", systemImage: "waveform")
+                    }
+                    .accessibilityIdentifier("detail.shareAudioButton")
+
+                    Button {
+                        exportAndShareTranscript()
+                    } label: {
+                        Label("テキストを共有", systemImage: "doc.text")
+                    }
+                    .accessibilityIdentifier("detail.shareTranscriptButton")
                 } label: {
                     Image(systemName: "square.and.arrow.up")
                 }
                 .accessibilityIdentifier("detail.shareButton")
             }
         }
-        .sheet(item: $shareURL) { url in
-            ShareSheet(activityItems: [url])
+        .sheet(isPresented: Binding(
+            get: { shareItems != nil },
+            set: { if !$0 { shareItems = nil } }
+        )) {
+            if let items = shareItems {
+                ShareSheet(activityItems: items)
+            }
         }
     }
 
-    private func exportAndShare() {
+    private func exportAndShareAudio() {
         Task {
             do {
                 let url = try await viewModel.exportForSharing()
-                shareURL = url
+                shareItems = [url]
             } catch {
                 // Handle error silently for now
             }
+        }
+    }
+
+    private func exportAndShareTranscript() {
+        do {
+            let text = try viewModel.exportTranscriptForSharing()
+            shareItems = [text]
+        } catch {
+            // Handle error silently for now
         }
     }
 
@@ -112,11 +138,6 @@ struct EntryDetailView: View {
         let seconds = Int(duration) % 60
         return String(format: "%d:%02d", minutes, seconds)
     }
-}
-
-// Make URL conform to Identifiable for sheet(item:)
-extension URL: @retroactive Identifiable {
-    public var id: String { absoluteString }
 }
 
 // UIKit ShareSheet wrapper
