@@ -43,11 +43,11 @@ jobs:
             -destination "$DESTINATION" \
             -derivedDataPath DerivedData
 
-      - name: Upload DerivedData
+      - name: Upload Build Products
         uses: actions/upload-artifact@v4
         with:
-          name: derived-data
-          path: DerivedData
+          name: build-products
+          path: DerivedData/Build/Products
           retention-days: 1
 
   unit-tests:
@@ -58,11 +58,11 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Download DerivedData
+      - name: Download Build Products
         uses: actions/download-artifact@v4
         with:
-          name: derived-data
-          path: DerivedData
+          name: build-products
+          path: DerivedData/Build/Products
 
       - name: Run Unit Tests (MindEchoTests)
         run: |
@@ -81,11 +81,11 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Download DerivedData
+      - name: Download Build Products
         uses: actions/download-artifact@v4
         with:
-          name: derived-data
-          path: DerivedData
+          name: build-products
+          path: DerivedData/Build/Products
 
       - name: Run UI Tests (MindEchoUITests)
         run: |
