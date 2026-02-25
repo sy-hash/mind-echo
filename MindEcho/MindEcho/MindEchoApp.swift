@@ -98,14 +98,7 @@ struct MindEchoApp: App {
                 audioFileName: fileName,
                 duration: duration
             )
-            let transcriptions = [
-                "朝から天気が良かったので、近所の公園を散歩した。桜がもう少しで咲きそうだった。",
-                "今日はカレーを作った。スパイスを多めに入れたら結構辛くなったけど美味しかった。",
-                "仕事帰りに本屋に寄って、前から気になっていた小説を買った。電車の中で少し読み始めた。",
-                "久しぶりに友達とカフェでランチした。お互いの近況を話して楽しい時間だった。",
-                "夜、録りためていたドラマを一気に見た。最終回が予想外の展開で驚いた。",
-            ]
-            recording.transcription = transcriptions[dayOffset - 1]
+            recording.transcription = "サンプル書き起こしテキスト \(dayOffset)日前"
             entry.recordings.append(recording)
             context.insert(entry)
         }
