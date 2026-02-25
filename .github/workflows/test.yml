@@ -64,14 +64,15 @@ jobs:
           name: build-products
           path: DerivedData/Build/Products
 
-      - name: Run Unit Tests (MindEchoTests)
+      - name: Run Unit Tests (MindEchoTests + Module Tests)
         run: |
           xcodebuild test-without-building \
             -workspace $WORKSPACE \
             -scheme MindEcho \
             -destination "$DESTINATION" \
             -derivedDataPath DerivedData \
-            -only-testing:MindEchoTests
+            -only-testing:MindEchoTests \
+            -only-testing:MindEchoCoreTests
 
   ui-tests:
     name: UI Tests
