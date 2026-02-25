@@ -192,13 +192,16 @@ class HomeViewModel {
     private let modelContext: ModelContext
     private let audioRecorder: any AudioRecording
     private let audioPlayer: any AudioPlaying
+    private let exportService: any Exporting
 
     init(modelContext: ModelContext,
          audioRecorder: any AudioRecording,
-         audioPlayer: any AudioPlaying = AudioPlayerService()) {
+         audioPlayer: any AudioPlaying = AudioPlayerService(),
+         exportService: any Exporting = ExportServiceImpl()) {
         self.modelContext = modelContext
         self.audioRecorder = audioRecorder
         self.audioPlayer = audioPlayer
+        self.exportService = exportService
     }
 
     func startRecording() { /* 新しい録音セッションを開始 */ }
@@ -208,6 +211,8 @@ class HomeViewModel {
     func playRecording(_ recording: Recording) { /* 個別の録音を再生 */ }
     func pausePlayback() { /* 再生を一時停止 */ }
     func stopPlayback() { /* 再生を停止 */ }
+    func exportForSharing() async throws -> URL { /* 全録音を結合した .m4a を生成 */ }
+    func exportTranscriptForSharing() throws -> String { /* 全書き起こしを結合したテキストを返す */ }
     func fetchTodayEntry() { /* ... */ }
 }
 
@@ -319,8 +324,10 @@ struct HomeView: View {
   - **停止ボタン** — 録音中 or 一時停止中に表示。タップで録音を確定し、新しい `Recording` として保存
 - **今日の録音リスト（下部）** — 今日既に録音がある場合、各録音を連番で一覧表示:
   - 連番（#1, #2, ...）
+  - 録音時刻（HH:mm）
   - 録音時間
   - セルタップで再生 / 停止（個別再生）
+  - 書き起こしテキストのプレビュー（2行、書き起こし済みの場合のみ表示）
 
 **動作フロー（録音）:**
 
@@ -438,7 +445,9 @@ NotebookLM が受け取れる形式でデータをエクスポートする。
 
 ### 共有ボタンの配置
 
-1. **エントリ詳細画面** — ナビゲーションバーに共有ボタン（`square.and.arrow.up`）
+1. **ホーム画面（今日タブ）** — ナビゲーションバーに共有ボタン（`square.and.arrow.up`）。録音が存在する場合のみ表示
+   - タップすると共有タイプ選択メニューを表示（音声 / 書き起こしテキスト）
+2. **エントリ詳細画面** — ナビゲーションバーに共有ボタン（`square.and.arrow.up`）
    - タップすると共有タイプ選択メニューを表示（音声 / 書き起こしテキスト）
 
 ### 共有フロー
@@ -578,7 +587,7 @@ Speech framework で書き起こし実行
 
 ### UI での表示
 
-- **HomeView の録音リスト**: 書き起こし済みの録音はアイコンで識別可能（`doc.text.fill` / `doc.text`）
+- **HomeView の録音リスト**: 書き起こし済みの録音はアイコンで識別可能（`doc.text.fill` / `doc.text`）。書き起こしテキストの2行プレビューをセル内にインライン表示
 - **TranscriptionView**: 保存済みの書き起こしがあれば即表示。なければ書き起こしを実行して保存
 - **EntryDetailView**: 各録音に書き起こしテキストのプレビューを表示
 
@@ -623,7 +632,8 @@ protocol AudioPlaying {
 class HomeViewModel {
     init(modelContext: ModelContext,
          audioRecorder: any AudioRecording,
-         audioPlayer: any AudioPlaying = AudioPlayerService()) { ... }
+         audioPlayer: any AudioPlaying = AudioPlayerService(),
+         exportService: any Exporting = ExportServiceImpl()) { ... }
 }
 
 @Observable
