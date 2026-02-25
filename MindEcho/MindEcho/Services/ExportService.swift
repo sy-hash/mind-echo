@@ -35,4 +35,25 @@ struct ExportServiceImpl: Exporting {
 
         return exportURL
     }
+
+    func exportCombinedTranscript(entry: JournalEntry, to directory: URL) throws -> URL {
+        try FilePathManager.ensureDirectoryExists(directory)
+
+        // Build transcript text with date header
+        let dateHeader = DateHelper.displayString(for: entry.date)
+        let transcriptions = entry.sortedRecordings.compactMap(\.transcription)
+        let body = transcriptions.joined(separator: "\n\n")
+        let content = dateHeader + "\n\n" + body
+
+        // Write to export directory
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyyMMdd"
+        let dateStr = formatter.string(from: entry.date)
+        let exportURL = directory.appendingPathComponent("\(dateStr)_transcript.txt")
+
+        try content.write(to: exportURL, atomically: true, encoding: .utf8)
+
+        return exportURL
+    }
 }

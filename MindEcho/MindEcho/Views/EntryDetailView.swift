@@ -77,8 +77,20 @@ struct EntryDetailView: View {
         .navigationTitle("詳細")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                Button {
-                    exportAndShare()
+                Menu {
+                    Button {
+                        exportAndShareAudio()
+                    } label: {
+                        Label("音声を共有", systemImage: "waveform")
+                    }
+                    .accessibilityIdentifier("detail.shareAudioButton")
+
+                    Button {
+                        exportAndShareTranscript()
+                    } label: {
+                        Label("テキストを共有", systemImage: "doc.text")
+                    }
+                    .accessibilityIdentifier("detail.shareTranscriptButton")
                 } label: {
                     Image(systemName: "square.and.arrow.up")
                 }
@@ -90,7 +102,7 @@ struct EntryDetailView: View {
         }
     }
 
-    private func exportAndShare() {
+    private func exportAndShareAudio() {
         Task {
             do {
                 let url = try await viewModel.exportForSharing()
@@ -98,6 +110,15 @@ struct EntryDetailView: View {
             } catch {
                 // Handle error silently for now
             }
+        }
+    }
+
+    private func exportAndShareTranscript() {
+        do {
+            let url = try viewModel.exportTranscriptForSharing()
+            shareURL = url
+        } catch {
+            // Handle error silently for now
         }
     }
 

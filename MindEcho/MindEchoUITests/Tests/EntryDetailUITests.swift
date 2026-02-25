@@ -60,7 +60,30 @@ final class EntryDetailUITests: XCTestCase {
         XCTAssertTrue(shareBtn.waitForExistence(timeout: 5))
         shareBtn.tap()
 
+        // Share type menu should appear — tap "音声を共有"
+        let audioBtn = app.buttons["音声を共有"]
+        XCTAssertTrue(audioBtn.waitForExistence(timeout: 5))
+        audioBtn.tap()
+
         // UIActivityViewController should appear after audio export & merge
+        let activityList = app.otherElements["ActivityListView"]
+        XCTAssertTrue(activityList.waitForExistence(timeout: 15))
+    }
+
+    @MainActor
+    func testShareTranscriptButton_presentsActivitySheet() throws {
+        navigateToDetail()
+
+        let shareBtn = app.buttons["detail.shareButton"]
+        XCTAssertTrue(shareBtn.waitForExistence(timeout: 5))
+        shareBtn.tap()
+
+        // Share type menu should appear — tap "テキストを共有"
+        let transcriptBtn = app.buttons["テキストを共有"]
+        XCTAssertTrue(transcriptBtn.waitForExistence(timeout: 5))
+        transcriptBtn.tap()
+
+        // UIActivityViewController should appear after transcript export
         let activityList = app.otherElements["ActivityListView"]
         XCTAssertTrue(activityList.waitForExistence(timeout: 15))
     }

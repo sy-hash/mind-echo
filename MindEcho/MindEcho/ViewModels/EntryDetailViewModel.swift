@@ -75,4 +75,9 @@ class EntryDetailViewModel {
         let exportDir = FilePathManager.exportsDirectory
         return try await exportService.exportMergedAudio(entry: entry, to: exportDir)
     }
+
+    func exportTranscriptForSharing() throws -> URL {
+        let exportDir = FilePathManager.exportsDirectory
+        return try exportService.exportCombinedTranscript(entry: entry, to: exportDir)
+    }
 }
