@@ -28,8 +28,8 @@ env:
   WORKSPACE: MindEcho.xcworkspace
 
 jobs:
-  tests:
-    name: Tests
+  build:
+    name: Build
     runs-on: macos-26
     timeout-minutes: 20
     steps:
@@ -43,6 +43,27 @@ jobs:
             -destination "$DESTINATION" \
             -derivedDataPath DerivedData
 
+      - name: Upload DerivedData
+        uses: actions/upload-artifact@v4
+        with:
+          name: derived-data
+          path: DerivedData
+          retention-days: 1
+
+  unit-tests:
+    name: Unit Tests
+    needs: build
+    runs-on: macos-26
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Download DerivedData
+        uses: actions/download-artifact@v4
+        with:
+          name: derived-data
+          path: DerivedData
+
       - name: Run Unit Tests (MindEchoTests)
         run: |
           xcodebuild test-without-building \
@@ -51,6 +72,20 @@ jobs:
             -destination "$DESTINATION" \
             -derivedDataPath DerivedData \
             -only-testing:MindEchoTests
+
+  ui-tests:
+    name: UI Tests
+    needs: build
+    runs-on: macos-26
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Download DerivedData
+        uses: actions/download-artifact@v4
+        with:
+          name: derived-data
+          path: DerivedData
 
       - name: Run UI Tests (MindEchoUITests)
         run: |
