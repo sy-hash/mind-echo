@@ -47,6 +47,17 @@
             </BuildableReference>
          </TestableReference>
          <TestableReference
+            skipped = "NO"
+            parallelizable = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "MindEchoCoreTests"
+               BuildableName = "MindEchoCoreTests.xctest"
+               BlueprintName = "MindEchoCoreTests"
+               ReferencedContainer = "container:../Packages/MindEchoCore">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
