@@ -5,7 +5,7 @@ import SwiftUI
 
 struct EntryDetailView: View {
     @State private var viewModel: EntryDetailViewModel
-    @State private var shareURL: URL?
+    @State private var shareItems: [Any]?
 
     init(entry: JournalEntry, modelContext: ModelContext, audioPlayer: any AudioPlaying = AudioPlayerService()) {
         _viewModel = State(initialValue: EntryDetailViewModel(
@@ -97,8 +97,13 @@ struct EntryDetailView: View {
                 .accessibilityIdentifier("detail.shareButton")
             }
         }
-        .sheet(item: $shareURL) { url in
-            ShareSheet(activityItems: [url])
+        .sheet(isPresented: Binding(
+            get: { shareItems != nil },
+            set: { if !$0 { shareItems = nil } }
+        )) {
+            if let items = shareItems {
+                ShareSheet(activityItems: items)
+            }
         }
     }
 
@@ -106,7 +111,7 @@ struct EntryDetailView: View {
         Task {
             do {
                 let url = try await viewModel.exportForSharing()
-                shareURL = url
+                shareItems = [url]
             } catch {
                 // Handle error silently for now
             }
@@ -115,8 +120,8 @@ struct EntryDetailView: View {
 
     private func exportAndShareTranscript() {
         do {
-            let url = try viewModel.exportTranscriptForSharing()
-            shareURL = url
+            let text = try viewModel.exportTranscriptForSharing()
+            shareItems = [text]
         } catch {
             // Handle error silently for now
         }
@@ -133,11 +138,6 @@ struct EntryDetailView: View {
         let seconds = Int(duration) % 60
         return String(format: "%d:%02d", minutes, seconds)
     }
-}
-
-// Make URL conform to Identifiable for sheet(item:)
-extension URL: @retroactive Identifiable {
-    public var id: String { absoluteString }
 }
 
 // UIKit ShareSheet wrapper
