@@ -28,32 +28,35 @@ env:
   WORKSPACE: MindEcho.xcworkspace
 
 jobs:
-  unit-tests:
-    name: Unit Tests
+  tests:
+    name: Tests
     runs-on: macos-26
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v6
+
+      - name: Build for Testing
+        run: |
+          xcodebuild build-for-testing \
+            -workspace $WORKSPACE \
+            -scheme MindEcho \
+            -destination "$DESTINATION" \
+            -derivedDataPath DerivedData
 
       - name: Run Unit Tests (MindEchoTests)
         run: |
-          xcodebuild test \
+          xcodebuild test-without-building \
             -workspace $WORKSPACE \
             -scheme MindEcho \
             -destination "$DESTINATION" \
+            -derivedDataPath DerivedData \
             -only-testing:MindEchoTests
-
-  ui-tests:
-    name: UI Tests
-    runs-on: macos-26
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@v6
 
       - name: Run UI Tests (MindEchoUITests)
         run: |
-          xcodebuild test \
+          xcodebuild test-without-building \
             -workspace $WORKSPACE \
             -scheme MindEcho \
             -destination "$DESTINATION" \
+            -derivedDataPath DerivedData \
             -only-testing:MindEchoUITests
