@@ -51,10 +51,10 @@
             parallelizable = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "MindEchoCoreTests"
+               BlueprintIdentifier = "0BD6D8282F3856E000D7656F"
                BuildableName = "MindEchoCoreTests.xctest"
                BlueprintName = "MindEchoCoreTests"
-               ReferencedContainer = "container:../Packages/MindEchoCore">
+               ReferencedContainer = "container:MindEcho.xcodeproj">
             </BuildableReference>
          </TestableReference>
          <TestableReference

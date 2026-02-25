@@ -11,6 +11,7 @@
 		0BA1C00100000002000000A2 /* MindEchoAudio in Frameworks */ = {isa = PBXBuildFile; productRef = 0BA1C00100000004000000A4 /* MindEchoAudio */; };
 		0BA1C00100000010000000B1 /* DSWaveformImage in Frameworks */ = {isa = PBXBuildFile; productRef = 0BA1C00100000008000000A8 /* DSWaveformImage */; };
 		0BA1C00100000011000000B2 /* DSWaveformImageViews in Frameworks */ = {isa = PBXBuildFile; productRef = 0BA1C00100000009000000A9 /* DSWaveformImageViews */; };
+		0BA1C0010000000C000000AC /* MindEchoCore in Frameworks */ = {isa = PBXBuildFile; productRef = 0BA1C0010000000B000000AB /* MindEchoCore */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -34,6 +35,7 @@
 		0BD6D7FA2F3856DE00D7656F /* MindEcho.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MindEcho.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0BD6D8092F3856E000D7656F /* MindEchoTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MindEchoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		0BD6D8132F3856E000D7656F /* MindEchoUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MindEchoUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		0BD6D8262F3856E000D7656F /* MindEchoCoreTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MindEchoCoreTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -65,6 +67,11 @@
 			path = MindEchoUITests;
 			sourceTree = "<group>";
 		};
+		0BD6D8272F3856E000D7656F /* MindEchoCoreTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = ../Packages/MindEchoCore/Tests/MindEchoCoreTests;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -93,6 +100,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		0BD6D82A2F3856E000D7656F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0BA1C0010000000C000000AC /* MindEchoCore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -102,6 +117,7 @@
 				0BD6D7FC2F3856DE00D7656F /* MindEcho */,
 				0BD6D80C2F3856E000D7656F /* MindEchoTests */,
 				0BD6D8162F3856E000D7656F /* MindEchoUITests */,
+				0BD6D8272F3856E000D7656F /* MindEchoCoreTests */,
 				0BD6D7FB2F3856DE00D7656F /* Products */,
 			);
 			sourceTree = "<group>";
@@ -112,6 +128,7 @@
 				0BD6D7FA2F3856DE00D7656F /* MindEcho.app */,
 				0BD6D8092F3856E000D7656F /* MindEchoTests.xctest */,
 				0BD6D8132F3856E000D7656F /* MindEchoUITests.xctest */,
+				0BD6D8262F3856E000D7656F /* MindEchoCoreTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -191,6 +208,29 @@
 			productReference = 0BD6D8132F3856E000D7656F /* MindEchoUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		0BD6D8282F3856E000D7656F /* MindEchoCoreTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0BD6D82C2F3856E000D7656F /* Build configuration list for PBXNativeTarget "MindEchoCoreTests" */;
+			buildPhases = (
+				0BD6D8292F3856E000D7656F /* Sources */,
+				0BD6D82A2F3856E000D7656F /* Frameworks */,
+				0BD6D82B2F3856E000D7656F /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				0BD6D8272F3856E000D7656F /* MindEchoCoreTests */,
+			);
+			name = MindEchoCoreTests;
+			packageProductDependencies = (
+				0BA1C0010000000B000000AB /* MindEchoCore */,
+			);
+			productName = MindEchoCoreTests;
+			productReference = 0BD6D8262F3856E000D7656F /* MindEchoCoreTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -211,6 +251,9 @@
 					0BD6D8122F3856E000D7656F = {
 						CreatedOnToolsVersion = 26.2;
 						TestTargetID = 0BD6D7F92F3856DE00D7656F;
+					};
+					0BD6D8282F3856E000D7656F = {
+						CreatedOnToolsVersion = 26.2;
 					};
 				};
 			};
@@ -236,6 +279,7 @@
 				0BD6D7F92F3856DE00D7656F /* MindEcho */,
 				0BD6D8082F3856E000D7656F /* MindEchoTests */,
 				0BD6D8122F3856E000D7656F /* MindEchoUITests */,
+				0BD6D8282F3856E000D7656F /* MindEchoCoreTests */,
 			);
 		};
 /* End PBXProject section */
@@ -262,6 +306,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		0BD6D82B2F3856E000D7656F /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -280,6 +331,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		0BD6D80F2F3856E000D7656F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0BD6D8292F3856E000D7656F /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -589,6 +647,46 @@
 			};
 			name = Release;
 		};
+		0BD6D82D2F3856E000D7656F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 7;
+				DEVELOPMENT_TEAM = LYMDWEXP2V;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.syhash.MindEchoCoreTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		0BD6D82E2F3856E000D7656F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 7;
+				DEVELOPMENT_TEAM = LYMDWEXP2V;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.syhash.MindEchoCoreTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -624,6 +722,15 @@
 			buildConfigurations = (
 				0BD6D8242F3856E000D7656F /* Debug */,
 				0BD6D8252F3856E000D7656F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		0BD6D82C2F3856E000D7656F /* Build configuration list for PBXNativeTarget "MindEchoCoreTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0BD6D82D2F3856E000D7656F /* Debug */,
+				0BD6D82E2F3856E000D7656F /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -670,6 +777,10 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 0BA1C00100000007000000A7 /* XCRemoteSwiftPackageReference "DSWaveformImage" */;
 			productName = DSWaveformImageViews;
+		};
+		0BA1C0010000000B000000AB /* MindEchoCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = MindEchoCore;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

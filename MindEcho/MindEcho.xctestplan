@@ -28,8 +28,8 @@
     {
       "parallelizable" : true,
       "target" : {
-        "containerPath" : "container:..\/Packages\/MindEchoCore",
-        "identifier" : "MindEchoCoreTests",
+        "containerPath" : "container:MindEcho.xcodeproj",
+        "identifier" : "0BD6D8282F3856E000D7656F",
         "name" : "MindEchoCoreTests"
       }
     },
