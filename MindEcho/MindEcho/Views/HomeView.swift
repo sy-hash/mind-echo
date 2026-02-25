@@ -55,7 +55,13 @@ struct HomeView: View {
                                         }
                                     }
 
-                                    if let transcription = recording.transcription {
+                                    if let summary = recording.summary {
+                                        Text(summary)
+                                            .font(.subheadline)
+                                            .foregroundStyle(.secondary)
+                                            .lineLimit(2)
+                                            .accessibilityIdentifier("home.summary.\(recording.sequenceNumber)")
+                                    } else if let transcription = recording.transcription {
                                         Text(transcription)
                                             .font(.subheadline)
                                             .foregroundStyle(.secondary)

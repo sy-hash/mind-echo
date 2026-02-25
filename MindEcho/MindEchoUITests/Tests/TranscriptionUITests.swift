@@ -6,7 +6,7 @@ final class TranscriptionUITests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
         app = XCUIApplication()
-        app.launchArguments = ["--uitesting", "--seed-today-with-recordings", "--mock-transcription"]
+        app.launchArguments = ["--uitesting", "--seed-today-with-recordings", "--mock-transcription", "--mock-summarization"]
     }
 
     @MainActor
@@ -33,6 +33,24 @@ final class TranscriptionUITests: XCTestCase {
         let resultText = app.staticTexts["transcription.resultText"]
         XCTAssertTrue(resultText.waitForExistence(timeout: 10))
         XCTAssertTrue(resultText.label.contains("モックの書き起こし結果"))
+    }
+
+    @MainActor
+    func testTranscription_showsSummaryAboveResultText() throws {
+        app.launch()
+
+        let transcribeButton = app.buttons["home.transcribeButton.1"]
+        XCTAssertTrue(transcribeButton.waitForExistence(timeout: 5))
+        transcribeButton.tap()
+
+        // Summary text should appear above the transcription result
+        let summaryText = app.staticTexts["transcription.summaryText"]
+        XCTAssertTrue(summaryText.waitForExistence(timeout: 10))
+        XCTAssertTrue(summaryText.label.contains("モックの要約結果"))
+
+        // Result text should also be visible
+        let resultText = app.staticTexts["transcription.resultText"]
+        XCTAssertTrue(resultText.waitForExistence(timeout: 5))
     }
 
     @MainActor

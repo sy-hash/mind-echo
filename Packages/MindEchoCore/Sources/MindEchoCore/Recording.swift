@@ -9,6 +9,7 @@ public class Recording {
     public var duration: TimeInterval
     public var recordedAt: Date
     public var transcription: String?
+    public var summary: String?
 
     @Relationship(inverse: \JournalEntry.recordings)
     public var entry: JournalEntry?
@@ -17,13 +18,19 @@ public class Recording {
         transcription != nil
     }
 
+    public var hasSummary: Bool {
+        summary != nil
+    }
+
     public init(id: UUID = UUID(), sequenceNumber: Int, audioFileName: String,
-         duration: TimeInterval, recordedAt: Date = Date(), transcription: String? = nil) {
+         duration: TimeInterval, recordedAt: Date = Date(), transcription: String? = nil,
+         summary: String? = nil) {
         self.id = id
         self.sequenceNumber = sequenceNumber
         self.audioFileName = audioFileName
         self.duration = duration
         self.recordedAt = recordedAt
         self.transcription = transcription
+        self.summary = summary
     }
 }

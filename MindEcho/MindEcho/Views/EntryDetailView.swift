@@ -53,7 +53,13 @@ struct EntryDetailView: View {
                             }
                             .buttonStyle(.borderless)
 
-                            if let transcription = recording.transcription {
+                            if let summary = recording.summary {
+                                Text(summary)
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(2)
+                                    .accessibilityIdentifier("detail.summary.\(recording.sequenceNumber)")
+                            } else if let transcription = recording.transcription {
                                 Text(transcription)
                                     .font(.subheadline)
                                     .foregroundStyle(.secondary)
