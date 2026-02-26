@@ -10,6 +10,9 @@ struct SummarizationService {
     }
 
     static var isAvailable: Bool {
-        LanguageModelSession.isAvailable
+        if case .available = SystemLanguageModel.default.availability {
+            return true
+        }
+        return false
     }
 }
