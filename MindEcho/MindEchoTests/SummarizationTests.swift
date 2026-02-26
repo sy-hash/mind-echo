@@ -1,5 +1,6 @@
 import Testing
 import Foundation
+import Speech
 import MindEchoCore
 @testable import MindEcho
 
