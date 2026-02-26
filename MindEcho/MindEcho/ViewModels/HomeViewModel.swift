@@ -17,7 +17,7 @@ class HomeViewModel {
     var playingRecordingId: UUID?
     var isPlaying = false
     var playbackProgress: Double = 0
-    var todayEntry: JournalEntry?
+    var allEntries: [JournalEntry] = []
     var errorMessage: String?
     private(set) var transcriptionState: TranscriptionState = .idle
 
@@ -60,6 +60,28 @@ class HomeViewModel {
     var isRecording: Bool { audioRecorder.isRecording }
     var isRecordingPaused: Bool { audioRecorder.isPaused }
     var audioLevels: [Float] { audioRecorder.audioLevels }
+
+    var todayEntry: JournalEntry? {
+        let today = DateHelper.today()
+        return allEntries.first { $0.date == today }
+    }
+
+    // MARK: - Section helpers
+
+    func sectionTitle(for entry: JournalEntry) -> String {
+        let today = DateHelper.today()
+        let cal = Calendar.current
+        if entry.date == today {
+            return "今日"
+        }
+        if let yesterdayRef = cal.date(byAdding: .day, value: -1, to: Date()) {
+            let yesterday = DateHelper.logicalDate(for: yesterdayRef)
+            if entry.date == yesterday {
+                return "昨日"
+            }
+        }
+        return DateHelper.displayString(for: entry.date)
+    }
 
     // MARK: - Recording
 
@@ -122,7 +144,6 @@ class HomeViewModel {
         )
         entry.recordings.append(recording)
         entry.updatedAt = Date()
-        todayEntry = entry
         lastRecordedRecording = recording
 
         currentRecordingFileName = nil
@@ -130,6 +151,8 @@ class HomeViewModel {
         recordingDuration = 0
         accumulatedDuration = 0
         recordingStartTime = nil
+
+        fetchAllEntries()
     }
 
     // MARK: - Transcription
@@ -183,20 +206,38 @@ class HomeViewModel {
         playbackProgress = 0
     }
 
+    // MARK: - Delete
+
+    func deleteEntry(_ entry: JournalEntry) {
+        for recording in entry.recordings {
+            let url = FilePathManager.recordingsDirectory
+                .appendingPathComponent(recording.audioFileName)
+            try? FileManager.default.removeItem(at: url)
+        }
+        modelContext.delete(entry)
+        fetchAllEntries()
+    }
+
+    func deleteRecording(_ recording: Recording, from entry: JournalEntry) {
+        let url = FilePathManager.recordingsDirectory
+            .appendingPathComponent(recording.audioFileName)
+        try? FileManager.default.removeItem(at: url)
+        entry.recordings.removeAll { $0.id == recording.id }
+        entry.updatedAt = Date()
+        if entry.recordings.isEmpty {
+            modelContext.delete(entry)
+        }
+        fetchAllEntries()
+    }
+
     // MARK: - Export
 
-    func exportForSharing() async throws -> URL {
-        guard let entry = todayEntry else {
-            throw ExportError.noEntry
-        }
+    func exportForSharing(entry: JournalEntry) async throws -> URL {
         let exportDir = FilePathManager.exportsDirectory
         return try await exportService.exportMergedAudio(entry: entry, to: exportDir)
     }
 
-    func exportTranscriptForSharing() throws -> String {
-        guard let entry = todayEntry else {
-            throw ExportError.noEntry
-        }
+    func exportTranscriptForSharing(entry: JournalEntry) throws -> String {
         let exportDir = FilePathManager.exportsDirectory
         let url = try exportService.exportCombinedTranscript(entry: entry, to: exportDir)
         return try String(contentsOf: url, encoding: .utf8)
@@ -208,12 +249,11 @@ class HomeViewModel {
 
     // MARK: - Data
 
-    func fetchTodayEntry() {
-        let today = DateHelper.logicalDate()
+    func fetchAllEntries() {
         let descriptor = FetchDescriptor<JournalEntry>(
-            predicate: #Predicate { $0.date == today }
+            sortBy: [SortDescriptor(\.date, order: .reverse)]
         )
-        todayEntry = try? modelContext.fetch(descriptor).first
+        allEntries = (try? modelContext.fetch(descriptor)) ?? []
     }
 
     // MARK: - Private

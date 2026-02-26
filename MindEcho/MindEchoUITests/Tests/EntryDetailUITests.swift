@@ -6,39 +6,30 @@ final class EntryDetailUITests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
         app = XCUIApplication()
-        app.launchArguments = ["--uitesting", "--seed-history"]
-    }
-
-    private func navigateToDetail() {
-        app.launch()
-        app.buttons["履歴"].tap()
-        let historyList = app.collectionViews["history.entryList"]
-        XCTAssertTrue(historyList.waitForExistence(timeout: 5))
-        let firstCell = historyList.cells.firstMatch
-        XCTAssertTrue(firstCell.waitForExistence(timeout: 5))
-        firstCell.tap()
+        app.launchArguments = ["--uitesting", "--seed-today-with-recordings", "--mock-player"]
     }
 
     @MainActor
-    func testDetailView_showsDateAndRecordingsList() throws {
-        navigateToDetail()
+    func testHomeView_showsDateAndRecordingsList() throws {
+        app.launch()
 
-        let dateHeader = app.staticTexts["detail.dateHeader"]
-        XCTAssertTrue(dateHeader.waitForExistence(timeout: 5))
+        let dateLabel = app.staticTexts["home.dateLabel"]
+        XCTAssertTrue(dateLabel.waitForExistence(timeout: 5))
 
-        // Verify recording section and content exist
-        let sectionHeader = app.staticTexts["録音"]
-        XCTAssertTrue(sectionHeader.waitForExistence(timeout: 5))
+        // Seeded today has 3 recordings
+        let recordingRow1 = app.descendants(matching: .any)["home.recordingRow.1"]
+        XCTAssertTrue(recordingRow1.waitForExistence(timeout: 5))
+
         let recordingNumber = app.staticTexts["#1"]
         XCTAssertTrue(recordingNumber.exists)
     }
 
     @MainActor
     func testPlayButton_togglesPlaybackState() throws {
-        navigateToDetail()
+        app.launch()
 
         // Verify recording row exists
-        let recordingRow = app.buttons["detail.recordingRow.1"]
+        let recordingRow = app.descendants(matching: .any)["home.recordingRow.1"]
         XCTAssertTrue(recordingRow.waitForExistence(timeout: 5))
 
         // Tap the recording cell to start playback — icon should change to pause
@@ -54,9 +45,9 @@ final class EntryDetailUITests: XCTestCase {
 
     @MainActor
     func testShareButton_presentsActivitySheet() throws {
-        navigateToDetail()
+        app.launch()
 
-        let shareBtn = app.buttons["detail.shareButton"]
+        let shareBtn = app.buttons["home.shareButton"]
         XCTAssertTrue(shareBtn.waitForExistence(timeout: 5))
         shareBtn.tap()
 
@@ -72,9 +63,9 @@ final class EntryDetailUITests: XCTestCase {
 
     @MainActor
     func testShareTranscriptButton_presentsActivitySheet() throws {
-        navigateToDetail()
+        app.launch()
 
-        let shareBtn = app.buttons["detail.shareButton"]
+        let shareBtn = app.buttons["home.shareButton"]
         XCTAssertTrue(shareBtn.waitForExistence(timeout: 5))
         shareBtn.tap()
 
@@ -90,12 +81,10 @@ final class EntryDetailUITests: XCTestCase {
 
     @MainActor
     func testSwipeToDelete_removesRecording() throws {
-        navigateToDetail()
+        app.launch()
 
-        // Verify recording section and row exist
-        let sectionHeader = app.staticTexts["録音"]
-        XCTAssertTrue(sectionHeader.waitForExistence(timeout: 5))
-        let recordingRow = app.buttons["detail.recordingRow.1"]
+        // Verify recording row exists
+        let recordingRow = app.descendants(matching: .any)["home.recordingRow.1"]
         XCTAssertTrue(recordingRow.waitForExistence(timeout: 5))
 
         // Swipe left to reveal delete action
@@ -108,9 +97,5 @@ final class EntryDetailUITests: XCTestCase {
         let rowGone = NSPredicate(format: "exists == false")
         expectation(for: rowGone, evaluatedWith: recordingRow)
         waitForExpectations(timeout: 5)
-
-        // Section header should also disappear since this was the only recording
-        XCTAssertFalse(sectionHeader.exists)
     }
-
 }

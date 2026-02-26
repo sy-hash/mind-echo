@@ -181,12 +181,15 @@ class HomeViewModel {
     // 録音状態 — isRecording / isPaused は audioRecorder から直接参照する（単一情報源）
     var recordingDuration: TimeInterval = 0  // 一時停止中を除いた実録音時間。isPaused 切り替え時に積算方式で更新する
 
-    // 再生（録音直後の再生用）
+    // 再生
     var playingRecordingId: UUID?     // 現在再生中の Recording の ID（nil = 再生なし）
     var isPlaying = false
     var playbackProgress: Double = 0  // 0.0〜1.0
 
-    var todayEntry: JournalEntry?
+    // 全エントリ（日付降順）
+    var allEntries: [JournalEntry] = []
+    // todayEntry は allEntries から算出
+    var todayEntry: JournalEntry? { /* allEntries から今日のエントリを返す */ }
     var errorMessage: String?
 
     private let modelContext: ModelContext
@@ -197,36 +200,32 @@ class HomeViewModel {
     init(modelContext: ModelContext,
          audioRecorder: any AudioRecording,
          audioPlayer: any AudioPlaying = AudioPlayerService(),
-         exportService: any Exporting = ExportServiceImpl()) {
-        self.modelContext = modelContext
-        self.audioRecorder = audioRecorder
-        self.audioPlayer = audioPlayer
-        self.exportService = exportService
-    }
+         exportService: any Exporting = ExportServiceImpl()) { ... }
 
+    // 録音
     func startRecording() { /* 新しい録音セッションを開始 */ }
     func pauseRecording() { /* 録音を一時停止（isPaused フラグ制御） */ }
     func resumeRecording() { /* 一時停止中の録音を再開 */ }
-    func stopRecording() async { /* 録音を停止・確定 */ }
+    func stopRecording() { /* 録音を停止・確定 */ }
+
+    // 再生
     func playRecording(_ recording: Recording) { /* 個別の録音を再生 */ }
     func pausePlayback() { /* 再生を一時停止 */ }
     func stopPlayback() { /* 再生を停止 */ }
-    func exportForSharing() async throws -> URL { /* 全録音を結合した .m4a を生成 */ }
-    func exportTranscriptForSharing() throws -> String { /* 全書き起こしを結合したテキストを返す */ }
-    func fetchTodayEntry() { /* ... */ }
-}
 
-@Observable
-class HistoryViewModel {
-    var entries: [JournalEntry] = []
-    private let modelContext: ModelContext
+    // 削除
+    func deleteEntry(_ entry: JournalEntry) { /* エントリ全体を削除（ファイルも削除） */ }
+    func deleteRecording(_ recording: Recording, from entry: JournalEntry) { /* 個別録音を削除 */ }
 
-    init(modelContext: ModelContext) {
-        self.modelContext = modelContext
-    }
+    // エクスポート
+    func exportForSharing(entry: JournalEntry) async throws -> URL { /* 全録音を結合した .m4a を生成 */ }
+    func exportTranscriptForSharing(entry: JournalEntry) throws -> String { /* 全書き起こしを結合したテキストを返す */ }
 
-    func fetchEntries() { /* ... */ }
-    func deleteEntry(_ entry: JournalEntry) { /* ... */ }
+    // データ取得
+    func fetchAllEntries() { /* 全エントリを日付降順で取得 */ }
+
+    // セクションタイトル
+    func sectionTitle(for entry: JournalEntry) -> String { /* 今日/昨日/日付文字列 */ }
 }
 
 /// 共有タイプ
@@ -234,40 +233,6 @@ class HistoryViewModel {
 enum ShareType {
     case audio              // 音声ファイル（全録音を結合した .m4a）
     case transcript         // 書き起こしテキスト（全録音の書き起こしを結合した .txt）
-}
-
-@Observable
-class EntryDetailViewModel {
-    var entry: JournalEntry
-    var isEditing = false
-
-    // 再生状態
-    var playingRecordingId: UUID?     // 現在再生中の Recording の ID
-    var isPlaying = false
-    var playbackProgress: Double = 0
-    private let modelContext: ModelContext
-    private let audioPlayer: any AudioPlaying
-    private let exportService: any Exporting
-
-    init(entry: JournalEntry, modelContext: ModelContext,
-         audioPlayer: any AudioPlaying = AudioPlayerService(),
-         exportService: any Exporting = ExportService()) {
-        self.entry = entry
-        self.modelContext = modelContext
-        self.audioPlayer = audioPlayer
-        self.exportService = exportService
-    }
-
-    func playRecording(_ recording: Recording) { /* 個別の録音を再生 */ }
-    func pausePlayback() { /* 再生を一時停止 */ }
-    func stopPlayback() { /* 再生を停止 */ }
-    func deleteRecording(_ recording: Recording) { /* 個別の録音を削除（ファイルも削除） */ }
-    func exportForSharing() async throws -> URL {
-        /* 全録音を連番順に結合した1つの .m4a を生成 */
-    }
-    func exportTranscriptForSharing() throws -> URL {
-        /* 全録音の書き起こしを結合した1つの .txt を生成 */
-    }
 }
 ```
 
@@ -297,9 +262,7 @@ struct HomeView: View {
 - **複雑なロジックを伴う操作**: `@Observable` な ViewModel 経由で `ModelContext` を操作
 
 本アプリでは以下の割り当てとする:
-- **HomeView** → `HomeViewModel`（録音/再生の複雑な状態管理）
-- **HistoryListView** → `HistoryViewModel`（検索・フィルタロジックを含むため ViewModel を使用）
-- **EntryDetailView** → `EntryDetailViewModel`（再生/エクスポートの操作を含むため）
+- **HomeView** → `HomeViewModel`（録音/再生/削除/エクスポートの複雑な状態管理。全エントリの取得・セクション表示も担当）
 
 ```swift
 // ViewModel を使うパターン（本アプリの全画面で採用）
@@ -311,72 +274,42 @@ struct HomeView: View {
 
 ## 画面構成
 
-### 画面 1: ホーム画面（メイン入力画面）
+### メイン画面（単一画面構成）
 
-アプリ起動時に表示される画面。今日の記録を素早く開始できることを最優先にする。
+アプリ起動時に表示される唯一の画面。全エントリを日付セクションで一覧表示し、録音・再生・削除・共有の全操作をこの画面で完結する。
 
 **レイアウト要素:**
 
-- **日付表示（上部）** — 論理日付を「2025年2月7日（金）」のようなフォーマットで表示。午前3時より前は前日の日付を表示する
-- **録音コントロール（中央・目立つ配置）** — 以下の操作ボタンを持つ:
-  - **録音開始ボタン** — タップで新しい録音セッションを開始
-  - **一時停止 / 再開ボタン** — 録音中に表示。タップで一時停止 ↔ 再開を切り替え（同一ファイル内）
-  - **停止ボタン** — 録音中 or 一時停止中に表示。タップで録音を確定し、新しい `Recording` として保存
-- **今日の録音リスト（下部）** — 今日既に録音がある場合、各録音を連番で一覧表示:
+- **日付セクションリスト** — 全エントリを日付降順でセクション表示:
+  - **今日セクション**（常時表示）— セクションヘッダーに「今日」+ 日付（例: 2025年2月7日（金））。今日の録音を連番でインライン表示
+  - **昨日セクション** — セクションヘッダーに「昨日」
+  - **それ以前のセクション** — セクションヘッダーに日付（例: 2025年2月5日（水））
+- **各セクション内の録音リスト** — 各録音を連番で一覧表示:
   - 連番（#1, #2, ...）
   - 録音時刻（HH:mm）
   - 録音時間
   - セルタップで再生 / 停止（個別再生）
+  - 書き起こしボタン
   - 書き起こしテキストのプレビュー（2行、書き起こし済みの場合のみ表示）
+  - スワイプ削除（個別の録音を削除）
+- **セクションヘッダーの共有メニュー** — 録音が存在するセクションに共有ボタンを表示
+- **録音ボタン（下部固定）** — 大きな赤いマイクボタン。タップでモーダル表示
 
 **動作フロー（録音）:**
 
-1. 録音開始ボタンをタップ → `AVAudioEngine` を起動し、input node tap から音声バッファを取得開始。バッファは `AVAudioFile` への書き出し（録音）に使用される
+1. 録音開始ボタンをタップ → モーダルが表示され、`AVAudioEngine` を起動し、input node tap から音声バッファを取得開始。バッファは `AVAudioFile` への書き出し（録音）に使用される
 2. 一時停止ボタンをタップ → 一時停止フラグ（`isPaused`）を `true` に設定。tap コールバック内でフラグをチェックし、`AVAudioFile` への書き込みをスキップする。`AVAudioEngine` 自体は稼働し続ける（tap の remove/reinstall は不要）。一時停止中はバッファが破棄されるため、再開後の音声はシームレスに繋がる（無音区間は挿入されない）
 3. 再開ボタンをタップ → `isPaused` を `false` に戻し、同一の `AVAudioFile` への追記を再開
 4. 手順 2〜3 を何度でも繰り返し可能
 5. 停止ボタンをタップ → `AVAudioEngine` を停止し、`AVAudioFile` をクローズして録音を確定
-6. 新しい `Recording` が今日の録音リストに追加される
+6. 新しい `Recording` が今日セクションの録音リストに追加される
 7. 再度録音開始ボタンを押すと → 新しいファイル・新しい `Recording` として別セッションで録音開始
-
-
-### 画面 2: 履歴一覧画面
-
-過去の日記エントリを日付ごとに一覧表示する画面。
-
-**レイアウト要素:**
-
-- **日付ごとのリスト** — 新しい日付が上に来る降順表示。各セルに以下を表示:
-  - 日付（例: 2月6日 木）
-  - 録音件数と合計時間の表示（例: 🎤 3件 / 12m30s）、録音なしの場合は非表示
-**タップ時の遷移:**
-
-- セルをタップ → エントリ詳細画面へ遷移
-
-### 画面 3: エントリ詳細画面（履歴からの遷移先）
-
-特定の日のエントリを閲覧・編集する画面。
-
-**表示要素:**
-
-- 日付ヘッダー
-- 録音セクション — 各 Recording を連番順にリスト表示:
-  - 連番と録音時刻（例: #1 14:30）
-  - セルタップで再生 / 停止（個別再生）
-  - 録音時間の表示
-  - 個別の録音削除ボタン（スワイプ or ボタン）
 
 ## ナビゲーション構成
 
 ```
-TabView {
-    Tab("今日", systemImage: "mic.circle.fill") {
-        HomeView()           // 画面 1
-    }
-    Tab("履歴", systemImage: "calendar") {
-        HistoryListView()    // 画面 2
-            → EntryDetailView()  // 画面 3（NavigationStack で push）
-    }
+NavigationStack {
+    HomeView()  // メイン画面（全エントリを日付セクションで表示）
 }
 ```
 
@@ -445,10 +378,8 @@ NotebookLM が受け取れる形式でデータをエクスポートする。
 
 ### 共有ボタンの配置
 
-1. **ホーム画面（今日タブ）** — ナビゲーションバーに共有ボタン（`square.and.arrow.up`）。録音が存在する場合のみ表示
-   - タップすると共有タイプ選択メニューを表示（音声 / 書き起こしテキスト）
-2. **エントリ詳細画面** — ナビゲーションバーに共有ボタン（`square.and.arrow.up`）
-   - タップすると共有タイプ選択メニューを表示（音声 / 書き起こしテキスト）
+- **メイン画面の各日付セクションヘッダー** — 録音が存在するセクションに共有ボタン（`square.and.arrow.up`）を表示
+  - タップすると共有タイプ選択メニューを表示（音声 / 書き起こしテキスト）
 
 ### 共有フロー
 
@@ -589,7 +520,7 @@ Speech framework で書き起こし実行
 
 - **HomeView の録音リスト**: 書き起こし済みの録音はアイコンで識別可能（`doc.text.fill` / `doc.text`）。書き起こしテキストの2行プレビューをセル内にインライン表示
 - **TranscriptionView**: 保存済みの書き起こしがあれば即表示。なければ書き起こしを実行して保存
-- **EntryDetailView**: 各録音に書き起こしテキストのプレビューを表示
+- **HomeView**: 各録音に書き起こしテキストのプレビューを表示（全日付セクション共通）
 
 ## 実装時の注意事項
 
@@ -634,13 +565,6 @@ class HomeViewModel {
          audioRecorder: any AudioRecording,
          audioPlayer: any AudioPlaying = AudioPlayerService(),
          exportService: any Exporting = ExportServiceImpl()) { ... }
-}
-
-@Observable
-class EntryDetailViewModel {
-    init(entry: JournalEntry, modelContext: ModelContext,
-         audioPlayer: any AudioPlaying = AudioPlayerService(),
-         exportService: any Exporting = ExportService()) { ... }
 }
 ```
 

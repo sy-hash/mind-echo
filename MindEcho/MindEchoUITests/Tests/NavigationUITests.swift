@@ -10,49 +10,26 @@ final class NavigationUITests: XCTestCase {
     }
 
     @MainActor
-    func testAppLaunch_showsHomeTab() throws {
+    func testAppLaunch_showsHomeScreen() throws {
         app.launch()
         let dateLabel = app.staticTexts["home.dateLabel"]
         XCTAssertTrue(dateLabel.waitForExistence(timeout: 5))
     }
 
     @MainActor
-    func testTabSwitching_navigatesBetweenTodayAndHistory() throws {
+    func testHomeScreen_showsPastEntrySections() throws {
         app.launchArguments.append("--seed-history")
         app.launch()
 
-        // Switch to history tab
-        app.buttons["履歴"].tap()
-        let historyList = app.collectionViews["history.entryList"]
-        XCTAssertTrue(historyList.waitForExistence(timeout: 5))
-
-        // Switch back to today tab
-        app.buttons["今日"].tap()
+        // Should show the today section header
         let dateLabel = app.staticTexts["home.dateLabel"]
         XCTAssertTrue(dateLabel.waitForExistence(timeout: 5))
-    }
 
-    @MainActor
-    func testHistoryToDetail_pushesAndPops() throws {
-        app.launchArguments.append("--seed-history")
-        app.launch()
-
-        // Go to history
-        app.buttons["履歴"].tap()
-        let historyList = app.collectionViews["history.entryList"]
-        XCTAssertTrue(historyList.waitForExistence(timeout: 5))
-
-        // Tap first entry to push detail
-        let firstCell = historyList.cells.firstMatch
-        XCTAssertTrue(firstCell.waitForExistence(timeout: 5))
-        firstCell.tap()
-
-        // Verify detail view
-        let dateHeader = app.staticTexts["detail.dateHeader"]
-        XCTAssertTrue(dateHeader.waitForExistence(timeout: 5))
-
-        // Pop back
-        app.navigationBars.buttons.firstMatch.tap()
-        XCTAssertTrue(historyList.waitForExistence(timeout: 5))
+        // Past entries should appear as sections in the same list
+        // Seeded history has 5 past entries with recordings
+        let list = app.collectionViews.firstMatch
+        XCTAssertTrue(list.waitForExistence(timeout: 5))
+        // At least one recording row from past entries should be visible
+        XCTAssertTrue(list.cells.count >= 1)
     }
 }

@@ -22,10 +22,11 @@ MindEchoApp (App Target)
 |-----------|------|--------|
 | **MindEchoCore** | ドメインモデル, 日付ロジック, ファイル管理, エクスポート protocol | `JournalEntry`, `Recording`, `DateHelper`, `FilePathManager`, `Exporting` |
 | **MindEchoAudio** | 録音・再生・音声結合・TTS 生成 | `AudioRecorderService`, `AudioPlayerService`, `AudioMerger`, `TTSGenerator` |
-| **MindEchoApp** | Views, ViewModels, ExportService 実装, Mocks | `HomeView`, `HomeViewModel`, `ExportServiceImpl` 等 |
+| **MindEchoApp** | Views, ViewModels, ExportService 実装, Mocks | `HomeView`, `HomeViewModel`, `RecordingModalView`, `TranscriptionView`, `ExportServiceImpl` 等 |
 
 ### Design Principles
 
+- **単一画面構成**: TabView を廃止し、HomeView に全エントリを日付セクションで表示。履歴画面・詳細画面は不要。
 - **MindEchoAudio は MindEchoCore に依存しない**: コンパイル時に強制。基本型のみで動作。
 - **ExportServiceImpl は App Target に配置**: 両パッケージに依存するブリッジ層。
 - **Observation チェーン**: `@Observable` マクロを活用。protocol には付与できないため、具体型で実装。

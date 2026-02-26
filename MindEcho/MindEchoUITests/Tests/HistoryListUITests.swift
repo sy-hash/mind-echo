@@ -10,56 +10,65 @@ final class HistoryListUITests: XCTestCase {
     }
 
     @MainActor
-    func testEmptyHistory_showsEmptyState() throws {
+    func testEmptyState_showsTodaySectionOnly() throws {
         app.launch()
-        app.buttons["履歴"].tap()
 
-        // Should show empty state (ContentUnavailableView)
-        let emptyText = app.staticTexts["履歴がありません"]
-        XCTAssertTrue(emptyText.waitForExistence(timeout: 5))
+        // Today section header should be visible
+        let dateLabel = app.staticTexts["home.dateLabel"]
+        XCTAssertTrue(dateLabel.waitForExistence(timeout: 5))
+
+        // Record button should be present
+        let recordBtn = app.buttons["home.recordButton"]
+        XCTAssertTrue(recordBtn.waitForExistence(timeout: 5))
     }
 
     @MainActor
-    func testSeededHistory_displaysEntries() throws {
+    func testSeededHistory_displaysPastRecordings() throws {
         app.launchArguments.append("--seed-history")
         app.launch()
-        app.buttons["履歴"].tap()
 
-        let historyList = app.collectionViews["history.entryList"]
-        XCTAssertTrue(historyList.waitForExistence(timeout: 5))
-        XCTAssertTrue(historyList.cells.count >= 1)
+        // Today section header should exist
+        let dateLabel = app.staticTexts["home.dateLabel"]
+        XCTAssertTrue(dateLabel.waitForExistence(timeout: 5))
+
+        // Past entries should be displayed as sections with recordings
+        // Seeded data has recordings with #1 sequence number
+        let recordingRow = app.descendants(matching: .any)["home.recordingRow.1"]
+        XCTAssertTrue(recordingRow.waitForExistence(timeout: 5))
     }
 
     @MainActor
-    func testEntryRow_showsDatePreviewAndRecordingInfo() throws {
+    func testSeededHistory_showsDateSectionHeaders() throws {
         app.launchArguments.append("--seed-history")
         app.launch()
-        app.buttons["履歴"].tap()
 
-        let historyList = app.collectionViews["history.entryList"]
-        XCTAssertTrue(historyList.waitForExistence(timeout: 5))
+        let dateLabel = app.staticTexts["home.dateLabel"]
+        XCTAssertTrue(dateLabel.waitForExistence(timeout: 5))
 
-        // Verify first cell has expected elements
-        let firstCell = historyList.cells.firstMatch
-        XCTAssertTrue(firstCell.waitForExistence(timeout: 5))
-        // The cell should contain text (date and preview are within it)
-        XCTAssertTrue(firstCell.staticTexts.count >= 1)
+        // The list should have cells from seeded past entries
+        let list = app.collectionViews.firstMatch
+        XCTAssertTrue(list.waitForExistence(timeout: 5))
+        XCTAssertTrue(list.cells.count >= 1)
     }
 
     @MainActor
-    func testTapEntry_navigatesToDetail() throws {
+    func testSwipeToDelete_removesRecording() throws {
         app.launchArguments.append("--seed-history")
         app.launch()
-        app.buttons["履歴"].tap()
 
-        let historyList = app.collectionViews["history.entryList"]
-        XCTAssertTrue(historyList.waitForExistence(timeout: 5))
+        // Find a recording row from the seeded data
+        let recordingRow = app.descendants(matching: .any)["home.recordingRow.1"]
+        XCTAssertTrue(recordingRow.waitForExistence(timeout: 5))
 
-        let firstCell = historyList.cells.firstMatch
-        XCTAssertTrue(firstCell.waitForExistence(timeout: 5))
-        firstCell.tap()
+        // Swipe left to reveal delete action
+        recordingRow.swipeLeft()
+        let deleteButton = app.buttons["削除"]
+        XCTAssertTrue(deleteButton.waitForExistence(timeout: 5))
+        deleteButton.tap()
 
-        let dateHeader = app.staticTexts["detail.dateHeader"]
-        XCTAssertTrue(dateHeader.waitForExistence(timeout: 5))
+        // Recording row should disappear
+        let rowGone = NSPredicate(format: "exists == false")
+        expectation(for: rowGone, evaluatedWith: recordingRow)
+        waitForExpectations(timeout: 5)
     }
 }

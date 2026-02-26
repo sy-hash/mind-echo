@@ -1,6 +1,6 @@
 # UIテスト設計
 
-メインシナリオを選定し XCTest で UIテストを記述する（5カテゴリ・16テストケース）。
+メインシナリオを選定し XCTest で UIテストを記述する（5カテゴリ・15テストケース）。
 
 ## テストデータセットアップ（Launch Arguments）
 
@@ -9,7 +9,7 @@ UIテストプロセスはアプリと別プロセスで動作するため、lau
 | Launch Argument | 用途 |
 |---|---|
 | `--uitesting` | SwiftData を in-memory ストアに切り替え、テスト毎にクリーンな状態を保証 |
-| `--seed-history` | サンプル JournalEntry データを事前投入（履歴テスト用） |
+| `--seed-history` | サンプル JournalEntry データを事前投入（過去エントリ表示テスト用） |
 | `--seed-today-with-recordings` | 今日のエントリ + モック録音データを事前投入 |
 | `--mock-recorder` | MockAudioRecorderService を注入（マイク不要で録音UI状態遷移をテスト） |
 | `--mock-player` | MockAudioPlayerService を注入（実音声ファイル不要で再生UI状態遷移をテスト） |
@@ -28,21 +28,17 @@ UIテストは **UI状態遷移**（ボタンの表示/非表示、有効/無効
 
 全テスト対象要素に `.accessibilityIdentifier()` を付与する:
 
-### TabView
+### HomeView（メイン画面 — 全エントリを日付セクションで表示）
 
-- `tab.today`
-- `tab.history`
-
-### HomeView
-
-- `home.dateLabel`
-- `home.recordButton`
-- `home.recordingsList`
-- `home.recordingRow.{n}`
-- `home.transcribeButton.{n}`
+- `home.dateLabel` — セクションヘッダー（日付ラベル）
+- `home.todaySection` — 今日セクション
+- `home.recordButton` — 録音開始ボタン（常時表示）
+- `home.recordingRow.{n}` — 録音セル（連番）
+- `home.transcribeButton.{n}` — 書き起こしボタン
 - `home.transcription.{n}` — 録音セル内の書き起こしテキストプレビュー
-- `home.transcriptionSheet`
-- `home.shareButton` — 共有メニューボタン（録音が存在する場合のみ表示）
+- `home.transcriptionSheet` — 書き起こしモーダルシート
+- `home.deleteButton.{n}` — スワイプ削除ボタン
+- `home.shareButton` — セクションヘッダーの共有メニューボタン（録音が存在する場合のみ表示）
 - `home.shareAudioButton` — 共有メニュー内の「音声を共有」ボタン
 - `home.shareTranscriptButton` — 共有メニュー内の「テキストを共有」ボタン
 
@@ -62,40 +58,45 @@ UIテストは **UI状態遷移**（ボタンの表示/非表示、有効/無効
 
 - `recording.transcriptionResult` — 書き起こし結果テキスト（成功・失敗どちらも同じ識別子）
 
-### HistoryListView
-
-- `history.entryList`
-- `history.entryRow.{date}`
-- `history.entryDate.{date}`
-- `history.entryRecordingInfo.{date}`
-
 ### TranscriptionView
 
 - `transcription.loading`
 - `transcription.resultText`
 - `transcription.error`
 
-### EntryDetailView
+## テストケース（5カテゴリ・15テスト）
 
-- `detail.dateHeader`
-- `detail.recordingsList`
-- `detail.recordingRow.{n}`
-- `detail.deleteButton.{n}`
-- `detail.shareButton`
-- `detail.shareAudioButton` — 共有メニュー内の「音声を共有」ボタン
-- `detail.shareTranscriptButton` — 共有メニュー内の「テキストを共有」ボタン
-
-## テストケース（5カテゴリ・16テスト）
-
-### 1. NavigationUITests（3テスト）
+### 1. NavigationUITests（2テスト）
 
 | テスト | 検証内容 |
 |-------|---------|
-| `testAppLaunch_showsHomeTab` | 起動時にホームタブが表示される |
-| `testTabSwitching_navigatesBetweenTodayAndHistory` | タブ切り替えで画面が遷移する |
-| `testHistoryToDetail_pushesAndPops` | 履歴→詳細への push/pop ナビゲーション |
+| `testAppLaunch_showsHomeScreen` | 起動時にメイン画面が表示される |
+| `testHomeScreen_showsPastEntrySections` | シードデータの過去エントリがセクションとして表示される |
 
-### 2. HomeRecordingUITests（1テスト）
+### 2. HistoryListUITests（4テスト）
+
+メイン画面の日付セクション表示・操作をテストする。
+
+| テスト | 検証内容 |
+|-------|---------|
+| `testEmptyState_showsTodaySectionOnly` | データなしで今日セクションのみ表示 |
+| `testSeededHistory_displaysPastRecordings` | シードデータの過去録音が表示される |
+| `testSeededHistory_showsDateSectionHeaders` | 日付セクションヘッダーが表示される |
+| `testSwipeToDelete_removesRecording` | スワイプ削除で録音が削除される |
+
+### 3. EntryDetailUITests（5テスト）
+
+メイン画面での録音操作（再生・共有・削除）をテストする。
+
+| テスト | 検証内容 |
+|-------|---------|
+| `testHomeView_showsDateAndRecordingsList` | 日付と録音リストの表示 |
+| `testPlayButton_togglesPlaybackState` | 録音セルタップで再生状態に遷移し、再度タップで停止 |
+| `testShareButton_presentsActivitySheet` | 共有ボタンタップで共有タイプ選択メニュー表示 → 「音声を共有」選択で Activity Sheet 表示 |
+| `testShareTranscriptButton_presentsActivitySheet` | 共有ボタンタップで共有タイプ選択メニュー表示 → 「テキストを共有」選択で Activity Sheet 表示 |
+| `testSwipeToDelete_removesRecording` | スワイプ削除で録音が削除される |
+
+### 4. HomeRecordingUITests（1テスト）
 
 録音UIをモーダルに移行したことで、複数の独立したテストケースを1つの統合フローテストに統合した。
 
@@ -112,30 +113,11 @@ UIテストは **UI状態遷移**（ボタンの表示/非表示、有効/無効
 5. 再開ボタンタップ → `recording.pauseButton` に戻ることを確認
 6. 停止ボタンタップ → 書き起こし開始
 7. `recording.transcriptionResult` が表示されることを確認
-8. スワイプダウンでモーダルを閉じる
+8. 「閉じる」ボタンでモーダルを閉じる
 9. `home.recordingRow.1` がリストに追加されることを確認
 10. 2回目の録音開始（`isHittable` predicate で安定待機）
-11. 停止 → 書き起こし結果を確認 → スワイプで閉じる
+11. 停止 → 書き起こし結果を確認 → 閉じる
 12. `home.recordingRow.1` と `home.recordingRow.2` が両方存在することを確認
-
-### 3. HistoryListUITests（4テスト）
-
-| テスト | 検証内容 |
-|-------|---------|
-| `testEmptyHistory_showsEmptyState` | データなしで空状態表示 |
-| `testSeededHistory_displaysEntries` | シードデータがリスト表示される |
-| `testEntryRow_showsDateAndRecordingInfo` | セルに日付・録音情報 |
-| `testTapEntry_navigatesToDetail` | セルタップで詳細画面へ遷移 |
-
-### 4. EntryDetailUITests（5テスト）
-
-| テスト | 検証内容 |
-|-------|---------|
-| `testDetailView_showsDateAndRecordingsList` | 日付と録音リストの表示 |
-| `testPlayButton_togglesPlaybackState` | 音声セルタップで再生状態に遷移し、再度タップで停止 |
-| `testShareButton_presentsActivitySheet` | 共有ボタンタップで共有タイプ選択メニュー表示 → 「音声を共有」選択で Activity Sheet 表示 |
-| `testShareTranscriptButton_presentsActivitySheet` | 共有ボタンタップで共有タイプ選択メニュー表示 → 「テキストを共有」選択で Activity Sheet 表示 |
-| `testSwipeToDelete_removesRecording` | スワイプ削除で録音が削除される |
 
 ### 5. TranscriptionUITests（3テスト）
 
@@ -159,16 +141,17 @@ UIテストは **UI状態遷移**（ボタンの表示/非表示、有効/無効
 機能実装との依存関係を考慮し、以下の順序で進める:
 
 1. **テストヘルパー作成** — 即時実行可能
-2. **NavigationUITests** — TabView + 画面スタブ実装後
-3. **HistoryListUITests + EntryDetailUITests** — 履歴画面・詳細画面実装後
-4. **HomeRecordingUITests** — ホーム画面 + MockRecorder 実装後
-5. **TranscriptionUITests** — 書き起こし機能実装後
+2. **NavigationUITests** — メイン画面実装後
+3. **HistoryListUITests** — 日付セクション表示実装後
+4. **EntryDetailUITests** — 録音操作（再生・共有・削除）実装後
+5. **HomeRecordingUITests** — 録音モーダル + MockRecorder 実装後
+6. **TranscriptionUITests** — 書き起こし機能実装後
 
 ## 検証方法
 
 ```bash
 xcodebuild test \
-  -workspace MindEcho.xcworkspace \
+  -project MindEcho/MindEcho.xcodeproj \
   -scheme MindEcho \
   -destination 'platform=iOS Simulator,name=iPhone 17' \
   -only-testing:MindEchoUITests
