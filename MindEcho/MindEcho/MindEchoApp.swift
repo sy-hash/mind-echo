@@ -99,6 +99,7 @@ struct MindEchoApp: App {
                 duration: duration
             )
             recording.transcription = "サンプル書き起こしテキスト \(dayOffset)日前"
+            recording.summary = "サンプル要約 \(dayOffset)日前"
             entry.recordings.append(recording)
             context.insert(entry)
         }

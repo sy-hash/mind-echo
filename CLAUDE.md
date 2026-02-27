@@ -22,7 +22,7 @@ MindEchoApp (App Target)
 |-----------|------|--------|
 | **MindEchoCore** | ドメインモデル, 日付ロジック, ファイル管理, エクスポート protocol | `JournalEntry`, `Recording`, `DateHelper`, `FilePathManager`, `Exporting` |
 | **MindEchoAudio** | 録音・再生・音声結合・TTS 生成 | `AudioRecorderService`, `AudioPlayerService`, `AudioMerger`, `TTSGenerator` |
-| **MindEchoApp** | Views, ViewModels, ExportService 実装, Mocks | `HomeView`, `HomeViewModel`, `ExportServiceImpl` 等 |
+| **MindEchoApp** | Views, ViewModels, ExportService 実装, SummarizationService, Mocks | `HomeView`, `HomeViewModel`, `ExportServiceImpl`, `SummarizationService` 等 |
 
 ### Design Principles
 
@@ -133,7 +133,8 @@ xcodebuild test \
 ```
 JournalEntry (1日1エントリ)
 └── recordings: [Recording]      (音声記録、連番管理)
-    └── transcription: String?   (書き起こしテキスト、SwiftData で永続化)
+    ├── transcription: String?   (書き起こしテキスト、SwiftData で永続化)
+    └── summary: String?         (要約テキスト、Apple Foundation Models で生成、SwiftData で永続化)
 ```
 
 ## Definition of Done

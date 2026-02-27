@@ -14,6 +14,7 @@ UIテストプロセスはアプリと別プロセスで動作するため、lau
 | `--mock-recorder` | MockAudioRecorderService を注入（マイク不要で録音UI状態遷移をテスト） |
 | `--mock-player` | MockAudioPlayerService を注入（実音声ファイル不要で再生UI状態遷移をテスト） |
 | `--mock-transcription` | TranscriptionView 内の書き起こしクロージャを mock に差し替え（Speech フレームワーク不要でテスト） |
+| `--mock-summarization` | TranscriptionView 内の要約クロージャを mock に差し替え（FoundationModels 不要でテスト） |
 
 ## マイク非依存のテスト方式
 
@@ -41,6 +42,7 @@ UIテストは **UI状態遷移**（ボタンの表示/非表示、有効/無効
 - `home.recordingRow.{n}`
 - `home.transcribeButton.{n}`
 - `home.transcription.{n}` — 録音セル内の書き起こしテキストプレビュー
+- `home.summary.{n}` — 録音セル内の要約テキストプレビュー（要約がある場合、書き起こしプレビューより優先表示）
 - `home.transcriptionSheet`
 - `home.shareButton` — 共有メニューボタン（録音が存在する場合のみ表示）
 - `home.shareAudioButton` — 共有メニュー内の「音声を共有」ボタン
@@ -74,6 +76,9 @@ UIテストは **UI状態遷移**（ボタンの表示/非表示、有効/無効
 - `transcription.loading`
 - `transcription.resultText`
 - `transcription.error`
+- `transcription.summaryLoading` — 要約生成中のプログレス表示
+- `transcription.summaryText` — 要約結果テキスト
+- `transcription.summaryError` — 要約エラーメッセージ
 
 ### EntryDetailView
 
@@ -82,10 +87,11 @@ UIテストは **UI状態遷移**（ボタンの表示/非表示、有効/無効
 - `detail.recordingRow.{n}`
 - `detail.deleteButton.{n}`
 - `detail.shareButton`
+- `detail.summary.{n}` — 録音セル内の要約テキストプレビュー
 - `detail.shareAudioButton` — 共有メニュー内の「音声を共有」ボタン
 - `detail.shareTranscriptButton` — 共有メニュー内の「テキストを共有」ボタン
 
-## テストケース（5カテゴリ・16テスト）
+## テストケース（5カテゴリ・17テスト）
 
 ### 1. NavigationUITests（3テスト）
 
@@ -137,12 +143,13 @@ UIテストは **UI状態遷移**（ボタンの表示/非表示、有効/無効
 | `testShareTranscriptButton_presentsActivitySheet` | 共有ボタンタップで共有タイプ選択メニュー表示 → 「テキストを共有」選択で Activity Sheet 表示 |
 | `testSwipeToDelete_removesRecording` | スワイプ削除で録音が削除される |
 
-### 5. TranscriptionUITests（3テスト）
+### 5. TranscriptionUITests（4テスト）
 
 | テスト | 検証内容 |
 |-------|---------|
 | `testTranscribeButton_opensTranscriptionSheet` | 書き起こしボタンタップでモーダル表示・結果テキスト表示 |
 | `testTranscription_showsResultText` | 書き起こし完了後にモックテキストが表示される |
+| `testTranscription_showsSummaryAboveResultText` | 要約テキストが書き起こしテキストの上に表示される |
 | `testTranscription_dismissSheet` | シートをスワイプで閉じてホーム画面に戻る |
 
 ## テスト対象外（明示的に除外）
@@ -153,6 +160,7 @@ UIテストは **UI状態遷移**（ボタンの表示/非表示、有効/無効
 - iOS Share Sheet 操作 → システムUI
 - バックグラウンド録音 → 実機テスト
 - 実音声の書き起こし精度 → Speech フレームワーク依存、実機テスト
+- Apple Foundation Models の要約精度 → FoundationModels 依存、対応デバイスでの実機テスト
 
 ## 実装順序
 

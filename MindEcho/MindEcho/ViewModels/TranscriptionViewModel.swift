@@ -12,7 +12,16 @@ final class TranscriptionViewModel {
         case failure(String)
     }
 
+    enum SummaryState: Equatable {
+        case idle
+        case loading
+        case success(String)
+        case failure(String)
+        case unavailable
+    }
+
     private(set) var state: State = .idle
+    private(set) var summaryState: SummaryState = .idle
 
     @ObservationIgnored
     var transcribe: (URL, Locale) async throws -> String = TranscriptionService().transcribe
@@ -24,11 +33,16 @@ final class TranscriptionViewModel {
     var requestAuthorization: (@escaping (SFSpeechRecognizerAuthorizationStatus) -> Void) -> Void = {
         SFSpeechRecognizer.requestAuthorization($0)
     }
+    @ObservationIgnored
+    var summarize: (String) async throws -> String = SummarizationService().summarize
+    @ObservationIgnored
+    var isSummarizationAvailable: () -> Bool = { SummarizationService.isAvailable }
 
     func startTranscription(recording: Recording) async {
         // 保存済みの書き起こしがあれば即表示
         if let existing = recording.transcription {
             state = .success(existing)
+            await startSummarization(recording: recording, text: existing)
             return
         }
 
@@ -60,9 +74,37 @@ final class TranscriptionViewModel {
             } else {
                 recording.transcription = text
                 state = .success(text)
+                await startSummarization(recording: recording, text: text)
             }
         } catch {
             state = .failure("書き起こしに失敗しました: \(error.localizedDescription)")
+        }
+    }
+
+    func startSummarization(recording: Recording, text: String) async {
+        // 保存済みの要約があれば即表示
+        if let existing = recording.summary {
+            summaryState = .success(existing)
+            return
+        }
+
+        guard isSummarizationAvailable() else {
+            summaryState = .unavailable
+            return
+        }
+
+        summaryState = .loading
+
+        do {
+            let summary = try await summarize(text)
+            if summary.isEmpty {
+                summaryState = .failure("要約結果が空でした。")
+            } else {
+                recording.summary = summary
+                summaryState = .success(summary)
+            }
+        } catch {
+            summaryState = .failure("要約に失敗しました: \(error.localizedDescription)")
         }
     }
 }

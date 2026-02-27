@@ -15,10 +15,14 @@ struct TranscriptionView: View {
                         .accessibilityIdentifier("transcription.loading")
                 case .success(let text):
                     ScrollView {
-                        Text(text)
-                            .padding()
-                            .textSelection(.enabled)
-                            .accessibilityIdentifier("transcription.resultText")
+                        VStack(alignment: .leading, spacing: 16) {
+                            summarySection
+                            Text(text)
+                                .padding(.horizontal)
+                                .textSelection(.enabled)
+                                .accessibilityIdentifier("transcription.resultText")
+                        }
+                        .padding(.vertical)
                     }
                 case .failure(let message):
                     ContentUnavailableView {
@@ -40,7 +44,56 @@ struct TranscriptionView: View {
                 }
                 viewModel.checkAuthorization = { .authorized }
             }
+            if ProcessInfo.processInfo.arguments.contains("--mock-summarization") {
+                viewModel.summarize = { text in
+                    try await Task.sleep(for: .milliseconds(300))
+                    return "これはモックの要約結果です。"
+                }
+                viewModel.isSummarizationAvailable = { true }
+            }
             await viewModel.startTranscription(recording: recording)
+        }
+    }
+
+    @ViewBuilder
+    private var summarySection: some View {
+        switch viewModel.summaryState {
+        case .idle:
+            EmptyView()
+        case .loading:
+            VStack(alignment: .leading, spacing: 8) {
+                Label("要約", systemImage: "text.document")
+                    .font(.headline)
+                ProgressView("要約を生成中...")
+                    .accessibilityIdentifier("transcription.summaryLoading")
+            }
+            .padding(.horizontal)
+        case .success(let summary):
+            VStack(alignment: .leading, spacing: 8) {
+                Label("要約", systemImage: "text.document")
+                    .font(.headline)
+                Text(summary)
+                    .textSelection(.enabled)
+                    .accessibilityIdentifier("transcription.summaryText")
+            }
+            .padding(.horizontal)
+            .padding(.bottom, 8)
+            Divider()
+                .padding(.horizontal)
+        case .failure(let message):
+            VStack(alignment: .leading, spacing: 8) {
+                Label("要約", systemImage: "text.document")
+                    .font(.headline)
+                Text(message)
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("transcription.summaryError")
+            }
+            .padding(.horizontal)
+            .padding(.bottom, 8)
+            Divider()
+                .padding(.horizontal)
+        case .unavailable:
+            EmptyView()
         }
     }
 }
