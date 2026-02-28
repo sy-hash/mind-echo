@@ -120,14 +120,32 @@ struct HomeView: View {
         let identifier = isToday
             ? "home.recordingRow.\(recording.sequenceNumber)"
             : "past.recordingRow.\(dateTag(entry!.date)).\(recording.sequenceNumber)"
+        let isCurrentlyPlaying = viewModel.playingRecordingId == recording.id && viewModel.isPlaying
 
         Button {
             transcriptionTargetRecording = recording
         } label: {
-            recordingRowContent(
-                recording: recording, isToday: isToday,
-                entry: entry)
-            .contentShape(Rectangle())
+            HStack(alignment: .center, spacing: 0) {
+                Button {
+                    if isCurrentlyPlaying {
+                        viewModel.pausePlayback()
+                    } else {
+                        viewModel.playRecording(recording)
+                    }
+                } label: {
+                    Image(systemName: isCurrentlyPlaying ? "pause.fill" : "play.fill")
+                        .frame(width: 44, height: 44)
+                }
+                .accessibilityIdentifier(
+                    isToday
+                        ? "home.playButton.\(recording.sequenceNumber)"
+                        : "past.playButton.\(dateTag(entry!.date)).\(recording.sequenceNumber)"
+                )
+                recordingRowContent(
+                    recording: recording, isToday: isToday,
+                    entry: entry)
+                .contentShape(Rectangle())
+            }
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier(identifier)

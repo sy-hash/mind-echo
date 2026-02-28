@@ -43,6 +43,7 @@ TabView を廃止し、今日のセクションと過去の履歴セクション
 - `home.emptyState` — 録音がない場合の空状態テキスト
 - `home.recordButton` — 録音開始ボタン（画面下部固定）
 - `home.recordingRow.{n}` — 今日の録音行（n = sequenceNumber）。セル全体がタップ領域で、タップすると書き起こし詳細画面を表示
+- `home.playButton.{n}` — 今日の録音の再生/一時停止ボタン（セル左端）
 - `home.transcription.{n}` — 今日の録音セル内の書き起こしテキストプレビュー
 - `home.summary.{n}` — 今日の録音セル内の要約テキストプレビュー（要約がある場合、書き起こしプレビューより優先表示）
 - `home.deleteButton.{n}` — 今日の録音のスワイプ削除ボタン
@@ -58,6 +59,7 @@ TabView を廃止し、今日のセクションと過去の履歴セクション
 - `past.shareAudioButton.{date}` — 過去の共有メニュー内の「音声を共有」ボタン
 - `past.shareTranscriptButton.{date}` — 過去の共有メニュー内の「テキストを共有」ボタン
 - `past.recordingRow.{date}.{n}` — 過去の録音行。セル全体がタップ領域で、タップすると書き起こし詳細画面を表示
+- `past.playButton.{date}.{n}` — 過去の録音の再生/一時停止ボタン（セル左端）
 - `past.transcription.{date}.{n}` — 過去の録音セル内の書き起こしテキストプレビュー
 - `past.summary.{date}.{n}` — 過去の録音セル内の要約テキストプレビュー
 - `past.deleteButton.{date}.{n}` — 過去の録音のスワイプ削除ボタン
