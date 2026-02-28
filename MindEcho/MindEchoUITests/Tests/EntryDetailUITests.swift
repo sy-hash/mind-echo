@@ -16,7 +16,7 @@ final class EntryDetailUITests: XCTestCase {
         let dateLabel = app.staticTexts["home.dateLabel"]
         XCTAssertTrue(dateLabel.waitForExistence(timeout: 5))
 
-        let recordingRow = app.descendants(matching: .any)["home.recordingRow.1"]
+        let recordingRow = app.cells["home.recordingRow.1"]
         XCTAssertTrue(recordingRow.waitForExistence(timeout: 5))
 
         // Verify recording info exists
@@ -29,7 +29,7 @@ final class EntryDetailUITests: XCTestCase {
         app.launch()
 
         // Verify recording row exists and tap to play
-        let recordingRow = app.descendants(matching: .any)["home.recordingRow.1"]
+        let recordingRow = app.cells["home.recordingRow.1"]
         XCTAssertTrue(recordingRow.waitForExistence(timeout: 5))
         recordingRow.tap()
 
@@ -83,7 +83,7 @@ final class EntryDetailUITests: XCTestCase {
     func testSwipeToDelete_removesRecording() throws {
         app.launch()
 
-        let recordingRow = app.descendants(matching: .any)["home.recordingRow.1"]
+        let recordingRow = app.cells["home.recordingRow.1"]
         XCTAssertTrue(recordingRow.waitForExistence(timeout: 5))
 
         // Swipe left to reveal delete action
