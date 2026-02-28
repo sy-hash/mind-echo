@@ -216,8 +216,8 @@ class HomeViewModel {
         if entry.recordings.isEmpty {
             // Delete associated audio files and the entry itself
             modelContext.delete(entry)
-            fetchAllEntries()
         }
+        fetchAllEntries()
     }
 
     func exportForSharing(entry: JournalEntry) async throws -> URL {

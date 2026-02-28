@@ -122,49 +122,33 @@ struct HomeView: View {
             : "past.recordingRow.\(dateTag(entry!.date)).\(recording.sequenceNumber)"
         let isCurrentlyPlaying = viewModel.playingRecordingId == recording.id && viewModel.isPlaying
 
-        HStack(alignment: .top, spacing: 8) {
-            // Use if/else with distinct .id() modifiers so SwiftUI fully recreates
-            // the element when play state changes. XCTest reliably detects new
-            // elements appearing/disappearing in the accessibility tree, whereas
-            // dynamic property changes (accessibilityValue, identifier updates on
-            // the same element) may not propagate reliably on iOS 26 SwiftUI List.
-            if isCurrentlyPlaying {
+        Button {
+            transcriptionTargetRecording = recording
+        } label: {
+            HStack(alignment: .center, spacing: 0) {
                 Button {
-                    viewModel.pausePlayback()
+                    if isCurrentlyPlaying {
+                        viewModel.pausePlayback()
+                    } else {
+                        viewModel.playRecording(recording)
+                    }
                 } label: {
-                    recordingRowContent(
-                        recording: recording, isToday: isToday,
-                        entry: entry, isPlaying: true)
+                    Image(systemName: isCurrentlyPlaying ? "pause.fill" : "play.fill")
+                        .frame(width: 44, height: 44)
                 }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("\(identifier).pause")
-                .id("\(identifier).pause")
-            } else {
-                Button {
-                    viewModel.playRecording(recording)
-                } label: {
-                    recordingRowContent(
-                        recording: recording, isToday: isToday,
-                        entry: entry, isPlaying: false)
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier(identifier)
-                .id(identifier)
+                .accessibilityIdentifier(
+                    isToday
+                        ? "home.playButton.\(recording.sequenceNumber)"
+                        : "past.playButton.\(dateTag(entry!.date)).\(recording.sequenceNumber)"
+                )
+                recordingRowContent(
+                    recording: recording, isToday: isToday,
+                    entry: entry)
+                .contentShape(Rectangle())
             }
-
-            // Transcribe button alongside the play button so XCTest can locate
-            // it as an independent accessible element.
-            Button {
-                transcriptionTargetRecording = recording
-            } label: {
-                Image(systemName: recording.hasTranscription ? "doc.text.fill" : "doc.text")
-            }
-            .accessibilityIdentifier(
-                isToday
-                    ? "home.transcribeButton.\(recording.sequenceNumber)"
-                    : "past.transcribeButton.\(dateTag(entry!.date)).\(recording.sequenceNumber)"
-            )
         }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier(identifier)
         .swipeActions(edge: .trailing) {
             if let targetEntry = isToday ? viewModel.todayEntry : entry {
                 Button(role: .destructive) {
@@ -184,7 +168,7 @@ struct HomeView: View {
     @ViewBuilder
     private func recordingRowContent(
         recording: Recording, isToday: Bool,
-        entry: JournalEntry?, isPlaying: Bool
+        entry: JournalEntry?
     ) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
@@ -195,7 +179,8 @@ struct HomeView: View {
                 Text(formatDuration(recording.duration))
                     .foregroundStyle(.secondary)
                 Spacer()
-                Image(systemName: isPlaying ? "pause.fill" : "play.fill")
+                Image(systemName: "chevron.right")
+                    .foregroundStyle(.secondary)
             }
             if let summary = recording.summary {
                 Text(summary)
