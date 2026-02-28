@@ -1,6 +1,6 @@
 # UIテスト設計
 
-メインシナリオを選定し XCTest で UIテストを記述する（5カテゴリ・16テストケース）。
+メインシナリオを選定し XCTest で UIテストを記述する（5カテゴリ・14テストケース）。
 
 ## テストデータセットアップ（Launch Arguments）
 
@@ -119,23 +119,21 @@ TabView を廃止し、今日のセクションと過去の履歴セクション
 11. 停止 → 書き起こし結果を確認 → 閉じる
 12. `home.recordingRow.1` と `home.recordingRow.2` が両方存在することを確認
 
-### 3. HistoryListUITests（4テスト）
+### 3. HistoryListUITests（3テスト）
 
 | テスト | 検証内容 |
 |-------|---------|
 | `testEmptyHistory_showsEmptyState` | データなしで今日のセクションに空状態表示 |
 | `testSeededHistory_displaysEntries` | シードデータが統合リストに表示される |
 | `testEntryRow_showsDatePreviewAndRecordingInfo` | セルに録音情報が表示される |
-| `testPastRecording_playToggle` | 過去の録音行タップで再生状態に遷移 |
 
-### 4. EntryDetailUITests（5テスト）
+### 4. EntryDetailUITests（4テスト）
 
 統合ビュー上で今日の録音に対するテストを実施（旧 EntryDetailView のテストを HomeView に移行）。
 
 | テスト | 検証内容 |
 |-------|---------|
 | `testHomeView_showsDateAndRecordingsList` | 日付と録音リストの表示 |
-| `testPlayButton_togglesPlaybackState` | 音声セルタップで再生状態に遷移し、再度タップで停止 |
 | `testShareButton_presentsActivitySheet` | 共有ボタンタップで共有タイプ選択メニュー表示 → 「音声を共有」選択で Activity Sheet 表示 |
 | `testShareTranscriptButton_presentsActivitySheet` | 共有ボタンタップで共有タイプ選択メニュー表示 → 「テキストを共有」選択で Activity Sheet 表示 |
 | `testSwipeToDelete_removesRecording` | スワイプ削除で録音が削除される |

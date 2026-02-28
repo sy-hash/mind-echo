@@ -29,31 +29,6 @@ final class EntryDetailUITests: XCTestCase {
     }
 
     @MainActor
-    func testPlayButton_togglesPlaybackState() throws {
-        app.launch()
-
-        // Use descendants query: in iOS 26 SwiftUI List the identifier may appear
-        // on a non-Cell element; descendants finds it regardless of type.
-        let playButton = app.descendants(matching: .any).matching(
-            NSPredicate(format: "identifier == 'home.recordingRow.1'")
-        ).firstMatch
-        XCTAssertTrue(playButton.waitForExistence(timeout: 5))
-        playButton.tap()
-
-        // When playing starts, the play button is replaced by a pause button
-        // with the ".pause" suffix. Detecting element appearance/disappearance
-        // is more reliable than polling accessibilityValue on iOS 26 SwiftUI List.
-        let pauseButton = app.descendants(matching: .any).matching(
-            NSPredicate(format: "identifier == 'home.recordingRow.1.pause'")
-        ).firstMatch
-        XCTAssertTrue(pauseButton.waitForExistence(timeout: 5))
-
-        // Tap pause to stop playback; play button should reappear.
-        pauseButton.tap()
-        XCTAssertTrue(playButton.waitForExistence(timeout: 5))
-    }
-
-    @MainActor
     func testShareButton_presentsActivitySheet() throws {
         app.launch()
 

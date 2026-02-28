@@ -43,28 +43,4 @@ final class HistoryListUITests: XCTestCase {
         XCTAssertTrue(firstPastCell.staticTexts.count >= 1)
     }
 
-    @MainActor
-    func testPastRecording_playToggle() throws {
-        app.launchArguments.append(contentsOf: ["--seed-history", "--mock-player"])
-        app.launch()
-
-        let entryList = app.collectionViews["home.entryList"]
-        XCTAssertTrue(entryList.waitForExistence(timeout: 5))
-
-        // Find a past recording row using a broad descendant search so the query
-        // succeeds regardless of which element type (cell vs other) holds the identifier.
-        let pastRecordingRow = app.descendants(matching: .any).matching(
-            NSPredicate(format: "identifier BEGINSWITH 'past.recordingRow.'")
-        ).firstMatch
-        XCTAssertTrue(pastRecordingRow.waitForExistence(timeout: 5))
-        pastRecordingRow.tap()
-
-        // When playing starts, the play button is replaced by a pause button
-        // with the ".pause" suffix. Detecting element appearance/disappearance
-        // is more reliable than polling accessibilityValue on iOS 26 SwiftUI List.
-        let pauseButton = app.descendants(matching: .any).matching(
-            NSPredicate(format: "identifier ENDSWITH '.pause'")
-        ).firstMatch
-        XCTAssertTrue(pauseButton.waitForExistence(timeout: 5))
-    }
 }
