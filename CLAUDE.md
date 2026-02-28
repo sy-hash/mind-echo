@@ -170,3 +170,4 @@ UI に変更を加えた場合は、以下も必須:
 - **モジュール境界**: MindEchoAudio は MindEchoCore に依存しないこと
 - **Observation**: protocol は `@Observable` にできない。具体型で実装する
 - **日付処理**: 必ず `DateHelper` を使用。午前3時境界を考慮
+- **gh コマンド**: `gh` コマンド利用時はリポジトリを明示的に指定すること。例: `gh pr list --repo sy-hash/mind-echo`
