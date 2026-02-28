@@ -42,8 +42,7 @@ TabView を廃止し、今日のセクションと過去の履歴セクション
 - `home.dateLabel` — 今日の日付表示（セクションヘッダー）
 - `home.emptyState` — 録音がない場合の空状態テキスト
 - `home.recordButton` — 録音開始ボタン（画面下部固定）
-- `home.recordingRow.{n}` — 今日の録音行（n = sequenceNumber）
-- `home.transcribeButton.{n}` — 今日の録音の書き起こしボタン
+- `home.recordingRow.{n}` — 今日の録音行（n = sequenceNumber）。セル全体がタップ領域で、タップすると書き起こし詳細画面を表示
 - `home.transcription.{n}` — 今日の録音セル内の書き起こしテキストプレビュー
 - `home.summary.{n}` — 今日の録音セル内の要約テキストプレビュー（要約がある場合、書き起こしプレビューより優先表示）
 - `home.deleteButton.{n}` — 今日の録音のスワイプ削除ボタン
@@ -58,8 +57,7 @@ TabView を廃止し、今日のセクションと過去の履歴セクション
 - `past.shareButton.{date}` — 過去のセクションヘッダー内の共有メニューボタン
 - `past.shareAudioButton.{date}` — 過去の共有メニュー内の「音声を共有」ボタン
 - `past.shareTranscriptButton.{date}` — 過去の共有メニュー内の「テキストを共有」ボタン
-- `past.recordingRow.{date}.{n}` — 過去の録音行
-- `past.transcribeButton.{date}.{n}` — 過去の録音の書き起こしボタン
+- `past.recordingRow.{date}.{n}` — 過去の録音行。セル全体がタップ領域で、タップすると書き起こし詳細画面を表示
 - `past.transcription.{date}.{n}` — 過去の録音セル内の書き起こしテキストプレビュー
 - `past.summary.{date}.{n}` — 過去の録音セル内の要約テキストプレビュー
 - `past.deleteButton.{date}.{n}` — 過去の録音のスワイプ削除ボタン
@@ -145,7 +143,7 @@ TabView を廃止し、今日のセクションと過去の履歴セクション
 
 | テスト | 検証内容 |
 |-------|---------|
-| `testTranscribeButton_opensTranscriptionSheet` | 書き起こしボタンタップでモーダル表示・結果テキスト表示 |
+| `testRecordingRowTap_opensTranscriptionSheet` | 録音セルタップでモーダル表示・結果テキスト表示 |
 | `testTranscription_showsResultText` | 書き起こし完了後にモックテキストが表示される |
 | `testTranscription_showsSummaryAboveResultText` | 要約テキストが書き起こしテキストの上に表示される |
 | `testTranscription_dismissSheet` | シートをスワイプで閉じてホーム画面に戻る |
