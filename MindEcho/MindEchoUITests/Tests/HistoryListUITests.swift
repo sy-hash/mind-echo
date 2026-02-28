@@ -51,10 +51,12 @@ final class HistoryListUITests: XCTestCase {
         let entryList = app.collectionViews["home.entryList"]
         XCTAssertTrue(entryList.waitForExistence(timeout: 5))
 
-        // Find a past recording row and tap to play
-        let firstPastCell = entryList.cells.firstMatch
-        XCTAssertTrue(firstPastCell.waitForExistence(timeout: 5))
-        firstPastCell.tap()
+        // Find a past recording row (not the today empty-state cell) and tap to play
+        let pastRecordingRow = app.cells.matching(
+            NSPredicate(format: "identifier BEGINSWITH 'past.recordingRow.'")
+        ).firstMatch
+        XCTAssertTrue(pastRecordingRow.waitForExistence(timeout: 5))
+        pastRecordingRow.tap()
 
         // Should show pause icon
         let pauseImage = app.images["pause.fill"]

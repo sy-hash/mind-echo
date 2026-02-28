@@ -9,10 +9,11 @@ struct HomeView: View {
     @State private var isRecordingModalPresented = false
     @State private var shareItems: [Any]?
 
-    init(modelContext: ModelContext, audioRecorder: any AudioRecording) {
+    init(modelContext: ModelContext, audioRecorder: any AudioRecording, audioPlayer: any AudioPlaying = AudioPlayerService()) {
         _viewModel = State(initialValue: HomeViewModel(
             modelContext: modelContext,
-            audioRecorder: audioRecorder
+            audioRecorder: audioRecorder,
+            audioPlayer: audioPlayer
         ))
     }
 
@@ -183,8 +184,6 @@ struct HomeView: View {
                 )
             }
         }
-        .accessibilityElement(children: .combine)
-        .accessibilityAddTraits(.isButton)
         .accessibilityIdentifier(identifier)
     }
 

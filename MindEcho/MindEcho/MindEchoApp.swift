@@ -8,11 +8,13 @@ import SwiftUI
 struct MindEchoApp: App {
     private let modelContainer: ModelContainer
     private let audioRecorder: any AudioRecording
+    private let audioPlayer: any AudioPlaying
 
     init() {
         let args = ProcessInfo.processInfo.arguments
         let isUITesting = args.contains("--uitesting")
         let useMockRecorder = args.contains("--mock-recorder")
+        let useMockPlayer = args.contains("--mock-player")
         let schema = Schema([
             JournalEntry.self,
             Recording.self,
@@ -33,6 +35,12 @@ struct MindEchoApp: App {
             audioRecorder = AudioRecorderService()
         }
 
+        if useMockPlayer {
+            audioPlayer = MockAudioPlayerService()
+        } else {
+            audioPlayer = AudioPlayerService()
+        }
+
         // Seed data for UI testing
         if isUITesting {
             let context = modelContainer.mainContext
@@ -49,7 +57,8 @@ struct MindEchoApp: App {
         WindowGroup {
             HomeView(
                 modelContext: modelContainer.mainContext,
-                audioRecorder: audioRecorder
+                audioRecorder: audioRecorder,
+                audioPlayer: audioPlayer
             )
         }
         .modelContainer(modelContainer)
