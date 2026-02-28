@@ -42,13 +42,6 @@ struct HomeView: View {
                 .padding(.vertical)
             }
             .navigationTitle("MindEcho")
-            .toolbar {
-                ToolbarItem(placement: .primaryAction) {
-                    if viewModel.todayEntry != nil && !(viewModel.todayEntry?.recordings.isEmpty ?? true) {
-                        shareMenu(for: viewModel.todayEntry!)
-                    }
-                }
-            }
             .sheet(isPresented: Binding(
                 get: { shareItems != nil },
                 set: { if !$0 { shareItems = nil } }
@@ -91,8 +84,14 @@ struct HomeView: View {
                     .accessibilityIdentifier("home.emptyState")
             }
         } header: {
-            Text(DateHelper.displayString(for: DateHelper.today()))
-                .accessibilityIdentifier("home.dateLabel")
+            HStack {
+                Text(DateHelper.displayString(for: DateHelper.today()))
+                    .accessibilityIdentifier("home.dateLabel")
+                Spacer()
+                if let entry = viewModel.todayEntry, !entry.recordings.isEmpty {
+                    shareMenu(for: entry, prefix: "home")
+                }
+            }
         }
     }
 
@@ -105,8 +104,12 @@ struct HomeView: View {
                 recordingRow(recording, isToday: false, entry: entry)
             }
         } header: {
-            Text(DateHelper.displayString(for: entry.date))
-                .accessibilityIdentifier("home.sectionHeader.\(dateTag(entry.date))")
+            HStack {
+                Text(DateHelper.displayString(for: entry.date))
+                    .accessibilityIdentifier("home.sectionHeader.\(dateTag(entry.date))")
+                Spacer()
+                shareMenu(for: entry, prefix: "past", dateTag: dateTag(entry.date))
+            }
         }
     }
 
@@ -221,25 +224,26 @@ struct HomeView: View {
 
     // MARK: - Share Menu
 
-    private func shareMenu(for entry: JournalEntry) -> some View {
-        Menu {
+    private func shareMenu(for entry: JournalEntry, prefix: String, dateTag: String? = nil) -> some View {
+        let suffix = dateTag.map { ".\($0)" } ?? ""
+        return Menu {
             Button {
                 exportAndShareAudio(entry: entry)
             } label: {
                 Label("音声を共有", systemImage: "waveform")
             }
-            .accessibilityIdentifier("home.shareAudioButton")
+            .accessibilityIdentifier("\(prefix).shareAudioButton\(suffix)")
 
             Button {
                 exportAndShareTranscript(entry: entry)
             } label: {
                 Label("テキストを共有", systemImage: "doc.text")
             }
-            .accessibilityIdentifier("home.shareTranscriptButton")
+            .accessibilityIdentifier("\(prefix).shareTranscriptButton\(suffix)")
         } label: {
             Image(systemName: "square.and.arrow.up")
         }
-        .accessibilityIdentifier("home.shareButton")
+        .accessibilityIdentifier("\(prefix).shareButton\(suffix)")
     }
 
     // MARK: - Export
