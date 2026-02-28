@@ -1,6 +1,6 @@
 # UIテスト設計
 
-メインシナリオを選定し XCTest で UIテストを記述する（5カテゴリ・17テストケース）。
+メインシナリオを選定し XCTest で UIテストを記述する（5カテゴリ・16テストケース）。
 
 ## テストデータセットアップ（Launch Arguments）
 
@@ -93,7 +93,7 @@ TabView を廃止し、今日のセクションと過去の履歴セクション
 - `transcription.summaryText` — 要約結果テキスト
 - `transcription.summaryError` — 要約エラーメッセージ
 
-## テストケース（5カテゴリ・17テスト）
+## テストケース（5カテゴリ・16テスト）
 
 ### 1. NavigationUITests（3テスト）
 
