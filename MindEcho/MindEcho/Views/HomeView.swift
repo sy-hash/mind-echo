@@ -123,7 +123,7 @@ struct HomeView: View {
             : "\(dateTag(entry!.date)).\(recording.sequenceNumber)"
         let isCurrentlyPlaying = viewModel.playingRecordingId == recording.id && viewModel.isPlaying
 
-        HStack(alignment: .top, spacing: 8) {
+        HStack(alignment: .center, spacing: 4) {
             // Main content area — tap navigates to TranscriptionView
             Button {
                 transcriptionTargetRecording = recording
@@ -140,7 +140,10 @@ struct HomeView: View {
                     viewModel.pausePlayback()
                 } label: {
                     Image(systemName: "pause.fill")
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
                 }
+                .buttonStyle(.plain)
                 .accessibilityIdentifier("\(prefix).pauseButton.\(suffix)")
                 .id("\(prefix).pauseButton.\(suffix)")
             } else {
@@ -148,7 +151,10 @@ struct HomeView: View {
                     viewModel.playRecording(recording)
                 } label: {
                     Image(systemName: "play.fill")
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
                 }
+                .buttonStyle(.plain)
                 .accessibilityIdentifier("\(prefix).playButton.\(suffix)")
                 .id("\(prefix).playButton.\(suffix)")
             }
@@ -165,6 +171,8 @@ struct HomeView: View {
                 }
             } label: {
                 Image(systemName: "ellipsis")
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
             }
             .accessibilityIdentifier("\(prefix).moreButton.\(suffix)")
         }
