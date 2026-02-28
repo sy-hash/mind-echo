@@ -141,7 +141,6 @@ struct HomeView: View {
                             .foregroundStyle(.secondary)
                         Spacer()
                         Image(systemName: isCurrentlyPlaying ? "pause.fill" : "play.fill")
-                            .accessibilityIdentifier(isCurrentlyPlaying ? "pause.fill" : "play.fill")
                     }
                     if let summary = recording.summary {
                         Text(summary)
@@ -168,7 +167,20 @@ struct HomeView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             .buttonStyle(.plain)
-            .accessibilityIdentifier(isCurrentlyPlaying ? "\(identifier).playing" : identifier)
+            .accessibilityIdentifier(identifier)
+
+            // Play state indicator for UI tests: this element appears in the
+            // accessibility tree only while the recording is playing.
+            // foregroundStyle(.clear) makes it visually invisible; opacity is
+            // kept at 1.0 so it remains accessible to XCTest.
+            if isCurrentlyPlaying {
+                Text("●")
+                    .font(.system(size: 1))
+                    .foregroundStyle(.clear)
+                    .frame(width: 1, height: 1)
+                    .clipped()
+                    .accessibilityIdentifier("\(identifier).playing")
+            }
 
             // Transcribe button alongside the play button so XCTest can locate
             // it as an independent accessible element.

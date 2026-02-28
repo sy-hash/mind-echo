@@ -40,18 +40,23 @@ final class EntryDetailUITests: XCTestCase {
         XCTAssertTrue(recordingRow.waitForExistence(timeout: 5))
         recordingRow.tap()
 
-        // Row identifier changes to .playing while playback is active
-        let playingRow = app.descendants(matching: .any).matching(
+        // Play state indicator appears while playback is active.
+        // It is a separate element (not the button itself) so XCTest reliably
+        // detects its appearance on iOS 26 SwiftUI List.
+        let playingIndicator = app.descendants(matching: .any).matching(
             NSPredicate(format: "identifier == 'home.recordingRow.1.playing'")
         ).firstMatch
-        XCTAssertTrue(playingRow.waitForExistence(timeout: 5))
+        XCTAssertTrue(playingIndicator.waitForExistence(timeout: 5))
 
-        // Tap again to pause – row reverts to its original identifier
-        playingRow.tap()
-        let pausedRow = app.descendants(matching: .any).matching(
-            NSPredicate(format: "identifier == 'home.recordingRow.1'")
-        ).firstMatch
-        XCTAssertTrue(pausedRow.waitForExistence(timeout: 5))
+        // Tap the same row button again to pause.
+        // (The button keeps its stable identifier throughout; tapping it while
+        // isCurrentlyPlaying == true calls pausePlayback().)
+        recordingRow.tap()
+
+        // Play state indicator disappears when paused.
+        let pausedPredicate = NSPredicate(format: "exists == false")
+        expectation(for: pausedPredicate, evaluatedWith: playingIndicator)
+        waitForExpectations(timeout: 5)
     }
 
     @MainActor
