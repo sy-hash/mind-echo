@@ -40,23 +40,24 @@ final class EntryDetailUITests: XCTestCase {
         XCTAssertTrue(recordingRow.waitForExistence(timeout: 5))
         recordingRow.tap()
 
-        // Play state indicator appears while playback is active.
-        // It is a separate element (not the button itself) so XCTest reliably
-        // detects its appearance on iOS 26 SwiftUI List.
-        let playingIndicator = app.descendants(matching: .any).matching(
-            NSPredicate(format: "identifier == 'home.recordingRow.1.playing'")
-        ).firstMatch
-        XCTAssertTrue(playingIndicator.waitForExistence(timeout: 5))
+        // The button exposes play state via accessibilityValue ("playing" / "paused").
+        // Polling the value of the existing element is more reliable than waiting
+        // for a new element to appear in iOS 26 SwiftUI List.
+        let playingExpectation = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "value == 'playing'"),
+            object: recordingRow
+        )
+        wait(for: [playingExpectation], timeout: 5)
 
         // Tap the same row button again to pause.
-        // (The button keeps its stable identifier throughout; tapping it while
-        // isCurrentlyPlaying == true calls pausePlayback().)
         recordingRow.tap()
 
-        // Play state indicator disappears when paused.
-        let pausedPredicate = NSPredicate(format: "exists == false")
-        expectation(for: pausedPredicate, evaluatedWith: playingIndicator)
-        waitForExpectations(timeout: 5)
+        // accessibilityValue should revert to "paused".
+        let pausedExpectation = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "value == 'paused'"),
+            object: recordingRow
+        )
+        wait(for: [pausedExpectation], timeout: 5)
     }
 
     @MainActor

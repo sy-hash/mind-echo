@@ -168,19 +168,12 @@ struct HomeView: View {
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier(identifier)
-
-            // Play state indicator for UI tests: this element appears in the
-            // accessibility tree only while the recording is playing.
-            // foregroundStyle(.clear) makes it visually invisible; opacity is
-            // kept at 1.0 so it remains accessible to XCTest.
-            if isCurrentlyPlaying {
-                Text("●")
-                    .font(.system(size: 1))
-                    .foregroundStyle(.clear)
-                    .frame(width: 1, height: 1)
-                    .clipped()
-                    .accessibilityIdentifier("\(identifier).playing")
-            }
+            // Expose play state via accessibilityValue so XCTest can detect
+            // playback state changes without relying on a new element appearing.
+            // (iOS 26 SwiftUI List may exclude visually-hidden elements from
+            // the accessibility tree, making the "invisible indicator" approach
+            // unreliable. Polling the value of the existing button is stable.)
+            .accessibilityValue(isCurrentlyPlaying ? "playing" : "paused")
 
             // Transcribe button alongside the play button so XCTest can locate
             // it as an independent accessible element.
