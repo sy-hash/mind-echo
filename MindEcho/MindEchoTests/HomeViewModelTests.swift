@@ -105,4 +105,43 @@ struct HomeViewModelTests {
         let recording = vm.todayEntry?.sortedRecordings.first
         #expect(recording?.transcription == nil)
     }
+
+    @Test func fetchAllEntries_separatesTodayAndPast() throws {
+        let schema = Schema([JournalEntry.self, Recording.self])
+        let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: schema, configurations: [config])
+        let context = container.mainContext
+        let recorder = MockAudioRecorderService()
+        let player = MockAudioPlayerService()
+        let vm = HomeViewModel(modelContext: context, audioRecorder: recorder, audioPlayer: player)
+
+        // Create today's entry
+        let todayEntry = JournalEntry(date: DateHelper.logicalDate())
+        let todayRecording = Recording(sequenceNumber: 1, audioFileName: "today.m4a", duration: 30)
+        todayEntry.recordings.append(todayRecording)
+        context.insert(todayEntry)
+
+        // Create a past entry
+        let pastDate = Calendar.current.date(byAdding: .day, value: -1, to: DateHelper.logicalDate())!
+        let pastEntry = JournalEntry(date: DateHelper.logicalDate(for: pastDate))
+        let pastRecording = Recording(sequenceNumber: 1, audioFileName: "past.m4a", duration: 60)
+        pastEntry.recordings.append(pastRecording)
+        context.insert(pastEntry)
+
+        vm.fetchAllEntries()
+
+        #expect(vm.todayEntry != nil)
+        #expect(vm.pastEntries.count >= 1)
+    }
+
+    @Test func deleteRecording_removesFromEntry() throws {
+        let (vm, _, _, _container) = try makeViewModel()
+        vm.startRecording()
+        vm.stopRecording()
+        #expect(vm.todayEntry?.recordings.count == 1)
+
+        let recording = vm.todayEntry!.recordings.first!
+        vm.deleteRecording(recording, from: vm.todayEntry!)
+        #expect(vm.todayEntry == nil) // Entry deleted since it had no more recordings
+    }
 }

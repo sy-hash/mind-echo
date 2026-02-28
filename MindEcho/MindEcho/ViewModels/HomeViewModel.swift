@@ -18,6 +18,7 @@ class HomeViewModel {
     var isPlaying = false
     var playbackProgress: Double = 0
     var todayEntry: JournalEntry?
+    var pastEntries: [JournalEntry] = []
     var errorMessage: String?
     private(set) var transcriptionState: TranscriptionState = .idle
 
@@ -183,29 +184,6 @@ class HomeViewModel {
         playbackProgress = 0
     }
 
-    // MARK: - Export
-
-    func exportForSharing() async throws -> URL {
-        guard let entry = todayEntry else {
-            throw ExportError.noEntry
-        }
-        let exportDir = FilePathManager.exportsDirectory
-        return try await exportService.exportMergedAudio(entry: entry, to: exportDir)
-    }
-
-    func exportTranscriptForSharing() throws -> String {
-        guard let entry = todayEntry else {
-            throw ExportError.noEntry
-        }
-        let exportDir = FilePathManager.exportsDirectory
-        let url = try exportService.exportCombinedTranscript(entry: entry, to: exportDir)
-        return try String(contentsOf: url, encoding: .utf8)
-    }
-
-    enum ExportError: Error {
-        case noEntry
-    }
-
     // MARK: - Data
 
     func fetchTodayEntry() {
@@ -214,6 +192,43 @@ class HomeViewModel {
             predicate: #Predicate { $0.date == today }
         )
         todayEntry = try? modelContext.fetch(descriptor).first
+    }
+
+    func fetchAllEntries() {
+        let today = DateHelper.logicalDate()
+        fetchTodayEntry()
+        let descriptor = FetchDescriptor<JournalEntry>(
+            sortBy: [SortDescriptor(\.date, order: .reverse)]
+        )
+        let all = (try? modelContext.fetch(descriptor)) ?? []
+        pastEntries = all.filter { $0.date != today }
+    }
+
+    // MARK: - Recording management
+
+    func deleteRecording(_ recording: Recording, from entry: JournalEntry) {
+        let url = FilePathManager.recordingsDirectory
+            .appendingPathComponent(recording.audioFileName)
+        try? FileManager.default.removeItem(at: url)
+        entry.recordings.removeAll { $0.id == recording.id }
+        entry.updatedAt = Date()
+
+        if entry.recordings.isEmpty {
+            // Delete associated audio files and the entry itself
+            modelContext.delete(entry)
+            fetchAllEntries()
+        }
+    }
+
+    func exportForSharing(entry: JournalEntry) async throws -> URL {
+        let exportDir = FilePathManager.exportsDirectory
+        return try await exportService.exportMergedAudio(entry: entry, to: exportDir)
+    }
+
+    func exportTranscriptForSharing(entry: JournalEntry) throws -> String {
+        let exportDir = FilePathManager.exportsDirectory
+        let url = try exportService.exportCombinedTranscript(entry: entry, to: exportDir)
+        return try String(contentsOf: url, encoding: .utf8)
     }
 
     // MARK: - Private

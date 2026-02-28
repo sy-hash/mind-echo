@@ -9,7 +9,7 @@ UIテストプロセスはアプリと別プロセスで動作するため、lau
 | Launch Argument | 用途 |
 |---|---|
 | `--uitesting` | SwiftData を in-memory ストアに切り替え、テスト毎にクリーンな状態を保証 |
-| `--seed-history` | サンプル JournalEntry データを事前投入（履歴テスト用） |
+| `--seed-history` | サンプル JournalEntry データを事前投入（履歴セクションテスト用） |
 | `--seed-today-with-recordings` | 今日のエントリ + モック録音データを事前投入 |
 | `--mock-recorder` | MockAudioRecorderService を注入（マイク不要で録音UI状態遷移をテスト） |
 | `--mock-player` | MockAudioPlayerService を注入（実音声ファイル不要で再生UI状態遷移をテスト） |
@@ -29,24 +29,37 @@ UIテストは **UI状態遷移**（ボタンの表示/非表示、有効/無効
 
 全テスト対象要素に `.accessibilityIdentifier()` を付与する:
 
-### TabView
+### HomeView（統合ビュー）
 
-- `tab.today`
-- `tab.history`
+TabView を廃止し、今日のセクションと過去の履歴セクションを1画面に統合。
 
-### HomeView
+**リスト全体**
 
-- `home.dateLabel`
-- `home.recordButton`
-- `home.recordingsList`
-- `home.recordingRow.{n}`
-- `home.transcribeButton.{n}`
-- `home.transcription.{n}` — 録音セル内の書き起こしテキストプレビュー
-- `home.summary.{n}` — 録音セル内の要約テキストプレビュー（要約がある場合、書き起こしプレビューより優先表示）
-- `home.transcriptionSheet`
-- `home.shareButton` — 共有メニューボタン（録音が存在する場合のみ表示）
+- `home.entryList` — 日付セクション付きのリスト全体
+
+**今日のセクション**
+
+- `home.dateLabel` — 今日の日付表示（セクションヘッダー）
+- `home.emptyState` — 録音がない場合の空状態テキスト
+- `home.recordButton` — 録音開始ボタン（画面下部固定）
+- `home.recordingRow.{n}` — 今日の録音行（n = sequenceNumber）
+- `home.transcribeButton.{n}` — 今日の録音の書き起こしボタン
+- `home.transcription.{n}` — 今日の録音セル内の書き起こしテキストプレビュー
+- `home.summary.{n}` — 今日の録音セル内の要約テキストプレビュー（要約がある場合、書き起こしプレビューより優先表示）
+- `home.deleteButton.{n}` — 今日の録音のスワイプ削除ボタン
+- `home.transcriptionSheet` — 書き起こしシート
+- `home.shareButton` — 共有メニューボタン（今日の録音が存在する場合のみ表示）
 - `home.shareAudioButton` — 共有メニュー内の「音声を共有」ボタン
 - `home.shareTranscriptButton` — 共有メニュー内の「テキストを共有」ボタン
+
+**過去のセクション**
+
+- `home.sectionHeader.{date}` — 過去の日付セクションヘッダー（date = yyyyMMdd）
+- `past.recordingRow.{date}.{n}` — 過去の録音行
+- `past.transcribeButton.{date}.{n}` — 過去の録音の書き起こしボタン
+- `past.transcription.{date}.{n}` — 過去の録音セル内の書き起こしテキストプレビュー
+- `past.summary.{date}.{n}` — 過去の録音セル内の要約テキストプレビュー
+- `past.deleteButton.{date}.{n}` — 過去の録音のスワイプ削除ボタン
 
 ### RecordingModalView
 
@@ -64,13 +77,6 @@ UIテストは **UI状態遷移**（ボタンの表示/非表示、有効/無効
 
 - `recording.transcriptionResult` — 書き起こし結果テキスト（成功・失敗どちらも同じ識別子）
 
-### HistoryListView
-
-- `history.entryList`
-- `history.entryRow.{date}`
-- `history.entryDate.{date}`
-- `history.entryRecordingInfo.{date}`
-
 ### TranscriptionView
 
 - `transcription.loading`
@@ -80,26 +86,15 @@ UIテストは **UI状態遷移**（ボタンの表示/非表示、有効/無効
 - `transcription.summaryText` — 要約結果テキスト
 - `transcription.summaryError` — 要約エラーメッセージ
 
-### EntryDetailView
-
-- `detail.dateHeader`
-- `detail.recordingsList`
-- `detail.recordingRow.{n}`
-- `detail.deleteButton.{n}`
-- `detail.shareButton`
-- `detail.summary.{n}` — 録音セル内の要約テキストプレビュー
-- `detail.shareAudioButton` — 共有メニュー内の「音声を共有」ボタン
-- `detail.shareTranscriptButton` — 共有メニュー内の「テキストを共有」ボタン
-
-## テストケース（5カテゴリ・17テスト）
+## テストケース（5カテゴリ・16テスト）
 
 ### 1. NavigationUITests（3テスト）
 
 | テスト | 検証内容 |
 |-------|---------|
-| `testAppLaunch_showsHomeTab` | 起動時にホームタブが表示される |
-| `testTabSwitching_navigatesBetweenTodayAndHistory` | タブ切り替えで画面が遷移する |
-| `testHistoryToDetail_pushesAndPops` | 履歴→詳細への push/pop ナビゲーション |
+| `testAppLaunch_showsHomeScreen` | 起動時にホーム画面が表示される |
+| `testAppLaunch_showsTodayEmptyState` | 録音なしで空状態が表示される |
+| `testSeededHistory_showsPastSections` | シードデータで過去のセクションが表示される |
 
 ### 2. HomeRecordingUITests（1テスト）
 
@@ -118,26 +113,28 @@ UIテストは **UI状態遷移**（ボタンの表示/非表示、有効/無効
 5. 再開ボタンタップ → `recording.pauseButton` に戻ることを確認
 6. 停止ボタンタップ → 書き起こし開始
 7. `recording.transcriptionResult` が表示されることを確認
-8. スワイプダウンでモーダルを閉じる
+8. 「閉じる」ボタンでモーダルを閉じる
 9. `home.recordingRow.1` がリストに追加されることを確認
 10. 2回目の録音開始（`isHittable` predicate で安定待機）
-11. 停止 → 書き起こし結果を確認 → スワイプで閉じる
+11. 停止 → 書き起こし結果を確認 → 閉じる
 12. `home.recordingRow.1` と `home.recordingRow.2` が両方存在することを確認
 
 ### 3. HistoryListUITests（4テスト）
 
 | テスト | 検証内容 |
 |-------|---------|
-| `testEmptyHistory_showsEmptyState` | データなしで空状態表示 |
-| `testSeededHistory_displaysEntries` | シードデータがリスト表示される |
-| `testEntryRow_showsDateAndRecordingInfo` | セルに日付・録音情報 |
-| `testTapEntry_navigatesToDetail` | セルタップで詳細画面へ遷移 |
+| `testEmptyHistory_showsEmptyState` | データなしで今日のセクションに空状態表示 |
+| `testSeededHistory_displaysEntries` | シードデータが統合リストに表示される |
+| `testEntryRow_showsDatePreviewAndRecordingInfo` | セルに録音情報が表示される |
+| `testPastRecording_playToggle` | 過去の録音行タップで再生状態に遷移 |
 
 ### 4. EntryDetailUITests（5テスト）
 
+統合ビュー上で今日の録音に対するテストを実施（旧 EntryDetailView のテストを HomeView に移行）。
+
 | テスト | 検証内容 |
 |-------|---------|
-| `testDetailView_showsDateAndRecordingsList` | 日付と録音リストの表示 |
+| `testHomeView_showsDateAndRecordingsList` | 日付と録音リストの表示 |
 | `testPlayButton_togglesPlaybackState` | 音声セルタップで再生状態に遷移し、再度タップで停止 |
 | `testShareButton_presentsActivitySheet` | 共有ボタンタップで共有タイプ選択メニュー表示 → 「音声を共有」選択で Activity Sheet 表示 |
 | `testShareTranscriptButton_presentsActivitySheet` | 共有ボタンタップで共有タイプ選択メニュー表示 → 「テキストを共有」選択で Activity Sheet 表示 |
@@ -161,16 +158,6 @@ UIテストは **UI状態遷移**（ボタンの表示/非表示、有効/無効
 - バックグラウンド録音 → 実機テスト
 - 実音声の書き起こし精度 → Speech フレームワーク依存、実機テスト
 - Apple Foundation Models の要約精度 → FoundationModels 依存、対応デバイスでの実機テスト
-
-## 実装順序
-
-機能実装との依存関係を考慮し、以下の順序で進める:
-
-1. **テストヘルパー作成** — 即時実行可能
-2. **NavigationUITests** — TabView + 画面スタブ実装後
-3. **HistoryListUITests + EntryDetailUITests** — 履歴画面・詳細画面実装後
-4. **HomeRecordingUITests** — ホーム画面 + MockRecorder 実装後
-5. **TranscriptionUITests** — 書き起こし機能実装後
 
 ## 検証方法
 
