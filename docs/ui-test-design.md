@@ -1,6 +1,6 @@
 # UIテスト設計
 
-メインシナリオを選定し XCTest で UIテストを記述する（5カテゴリ・14テストケース）。
+メインシナリオを選定し XCTest で UIテストを記述する（5カテゴリ・17テストケース）。
 
 ## テストデータセットアップ（Launch Arguments）
 
@@ -42,11 +42,13 @@ TabView を廃止し、今日のセクションと過去の履歴セクション
 - `home.dateLabel` — 今日の日付表示（セクションヘッダー）
 - `home.emptyState` — 録音がない場合の空状態テキスト
 - `home.recordButton` — 録音開始ボタン（画面下部固定）
-- `home.recordingRow.{n}` — 今日の録音行（n = sequenceNumber）
-- `home.transcribeButton.{n}` — 今日の録音の書き起こしボタン
+- `home.recordingRow.{n}` — 今日の録音行（n = sequenceNumber）。タップで TranscriptionView へ遷移
+- `home.playButton.{n}` — 今日の録音の再生ボタン（セル右端、非再生時に表示）
+- `home.pauseButton.{n}` — 今日の録音の一時停止ボタン（セル右端、再生中に表示）
+- `home.moreButton.{n}` — 今日の録音のメニューボタン（…アイコン、セル右端）
+- `home.deleteMenuItem.{n}` — メニュー内の削除ボタン（destructive スタイル）
 - `home.transcription.{n}` — 今日の録音セル内の書き起こしテキストプレビュー
 - `home.summary.{n}` — 今日の録音セル内の要約テキストプレビュー（要約がある場合、書き起こしプレビューより優先表示）
-- `home.deleteButton.{n}` — 今日の録音のスワイプ削除ボタン
 - `home.transcriptionSheet` — 書き起こしシート
 - `home.shareButton` — 共有メニューボタン（今日のセクションヘッダー内、録音が存在する場合のみ表示）
 - `home.shareAudioButton` — 共有メニュー内の「音声を共有」ボタン
@@ -58,11 +60,13 @@ TabView を廃止し、今日のセクションと過去の履歴セクション
 - `past.shareButton.{date}` — 過去のセクションヘッダー内の共有メニューボタン
 - `past.shareAudioButton.{date}` — 過去の共有メニュー内の「音声を共有」ボタン
 - `past.shareTranscriptButton.{date}` — 過去の共有メニュー内の「テキストを共有」ボタン
-- `past.recordingRow.{date}.{n}` — 過去の録音行
-- `past.transcribeButton.{date}.{n}` — 過去の録音の書き起こしボタン
+- `past.recordingRow.{date}.{n}` — 過去の録音行。タップで TranscriptionView へ遷移
+- `past.playButton.{date}.{n}` — 過去の録音の再生ボタン（セル右端、非再生時に表示）
+- `past.pauseButton.{date}.{n}` — 過去の録音の一時停止ボタン（セル右端、再生中に表示）
+- `past.moreButton.{date}.{n}` — 過去の録音のメニューボタン（…アイコン、セル右端）
+- `past.deleteMenuItem.{date}.{n}` — メニュー内の削除ボタン（destructive スタイル）
 - `past.transcription.{date}.{n}` — 過去の録音セル内の書き起こしテキストプレビュー
 - `past.summary.{date}.{n}` — 過去の録音セル内の要約テキストプレビュー
-- `past.deleteButton.{date}.{n}` — 過去の録音のスワイプ削除ボタン
 
 ### RecordingModalView
 
@@ -89,7 +93,7 @@ TabView を廃止し、今日のセクションと過去の履歴セクション
 - `transcription.summaryText` — 要約結果テキスト
 - `transcription.summaryError` — 要約エラーメッセージ
 
-## テストケース（5カテゴリ・16テスト）
+## テストケース（5カテゴリ・17テスト）
 
 ### 1. NavigationUITests（3テスト）
 
@@ -130,7 +134,7 @@ TabView を廃止し、今日のセクションと過去の履歴セクション
 | `testSeededHistory_displaysEntries` | シードデータが統合リストに表示される |
 | `testEntryRow_showsDatePreviewAndRecordingInfo` | セルに録音情報が表示される |
 
-### 4. EntryDetailUITests（4テスト）
+### 4. EntryDetailUITests（5テスト）
 
 統合ビュー上で今日の録音に対するテストを実施（旧 EntryDetailView のテストを HomeView に移行）。
 
@@ -139,13 +143,14 @@ TabView を廃止し、今日のセクションと過去の履歴セクション
 | `testHomeView_showsDateAndRecordingsList` | 日付と録音リストの表示 |
 | `testShareButton_presentsActivitySheet` | セクションヘッダーの共有ボタンタップで共有タイプ選択メニュー表示 → 「音声を共有」選択で Activity Sheet 表示 |
 | `testShareTranscriptButton_presentsActivitySheet` | セクションヘッダーの共有ボタンタップで共有タイプ選択メニュー表示 → 「テキストを共有」選択で Activity Sheet 表示 |
-| `testSwipeToDelete_removesRecording` | スワイプ削除で録音が削除される |
+| `testMenuDelete_removesRecording` | メニューボタン（…）タップ → 削除メニューアイテムタップで録音が削除される |
+| `testPlayButton_togglesPlaybackState` | 再生ボタンタップで一時停止ボタンに切り替わり、一時停止タップで再生ボタンに戻る |
 
 ### 5. TranscriptionUITests（4テスト）
 
 | テスト | 検証内容 |
 |-------|---------|
-| `testTranscribeButton_opensTranscriptionSheet` | 書き起こしボタンタップでモーダル表示・結果テキスト表示 |
+| `testRecordingRowTap_opensTranscriptionSheet` | 録音セルタップで TranscriptionView がモーダル表示され、結果テキストが表示される |
 | `testTranscription_showsResultText` | 書き起こし完了後にモックテキストが表示される |
 | `testTranscription_showsSummaryAboveResultText` | 要約テキストが書き起こしテキストの上に表示される |
 | `testTranscription_dismissSheet` | シートをスワイプで閉じてホーム画面に戻る |
