@@ -16,7 +16,11 @@ final class EntryDetailUITests: XCTestCase {
         let dateLabel = app.staticTexts["home.dateLabel"]
         XCTAssertTrue(dateLabel.waitForExistence(timeout: 5))
 
-        let recordingRow = app.cells["home.recordingRow.1"]
+        // Use descendants query to find the row regardless of its accessibility type
+        // (iOS 26 SwiftUI List may surface the identifier on a non-Cell element)
+        let recordingRow = app.descendants(matching: .any).matching(
+            NSPredicate(format: "identifier == 'home.recordingRow.1'")
+        ).firstMatch
         XCTAssertTrue(recordingRow.waitForExistence(timeout: 5))
 
         // Verify recording info exists
@@ -28,8 +32,11 @@ final class EntryDetailUITests: XCTestCase {
     func testPlayButton_togglesPlaybackState() throws {
         app.launch()
 
-        // Verify recording row exists and tap to play
-        let recordingRow = app.cells["home.recordingRow.1"]
+        // Use descendants query: in iOS 26 SwiftUI List the identifier may appear
+        // on a non-Cell element; descendants finds it regardless of type.
+        let recordingRow = app.descendants(matching: .any).matching(
+            NSPredicate(format: "identifier == 'home.recordingRow.1'")
+        ).firstMatch
         XCTAssertTrue(recordingRow.waitForExistence(timeout: 5))
         recordingRow.tap()
 
@@ -83,7 +90,11 @@ final class EntryDetailUITests: XCTestCase {
     func testSwipeToDelete_removesRecording() throws {
         app.launch()
 
-        let recordingRow = app.cells["home.recordingRow.1"]
+        // Use descendants query: in iOS 26 SwiftUI List the identifier may appear
+        // on a non-Cell element; descendants finds it regardless of type.
+        let recordingRow = app.descendants(matching: .any).matching(
+            NSPredicate(format: "identifier == 'home.recordingRow.1'")
+        ).firstMatch
         XCTAssertTrue(recordingRow.waitForExistence(timeout: 5))
 
         // Swipe left to reveal delete action

@@ -119,54 +119,57 @@ struct HomeView: View {
             : "past.recordingRow.\(dateTag(entry!.date)).\(recording.sequenceNumber)"
 
         HStack(alignment: .top, spacing: 8) {
-            // Info area: tapping anywhere here toggles playback.
-            // Kept as a separate inner view so the transcribe button below
-            // is NOT inside this gesture area and remains individually accessible.
-            VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    Text("#\(recording.sequenceNumber)")
-                        .font(.headline)
-                    Text(formatTime(recording.recordedAt))
-                        .foregroundStyle(.secondary)
-                    Text(formatDuration(recording.duration))
-                        .foregroundStyle(.secondary)
-                    Spacer()
-                    Image(systemName: viewModel.playingRecordingId == recording.id && viewModel.isPlaying ? "pause.fill" : "play.fill")
-                }
-                if let summary = recording.summary {
-                    Text(summary)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(2)
-                        .accessibilityIdentifier(
-                            isToday
-                                ? "home.summary.\(recording.sequenceNumber)"
-                                : "past.summary.\(dateTag(entry!.date)).\(recording.sequenceNumber)"
-                        )
-                } else if let transcription = recording.transcription {
-                    Text(transcription)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(2)
-                        .accessibilityIdentifier(
-                            isToday
-                                ? "home.transcription.\(recording.sequenceNumber)"
-                                : "past.transcription.\(dateTag(entry!.date)).\(recording.sequenceNumber)"
-                        )
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .contentShape(Rectangle())
-            .onTapGesture {
+            // Play button: using Button (not onTapGesture) so that XCTest can
+            // reliably tap it in a SwiftUI List cell on iOS 26, and so that
+            // the accessibility identifier does NOT collapse the HStack into a
+            // single StaticText element that would hide the transcribe button.
+            Button {
                 if viewModel.playingRecordingId == recording.id && viewModel.isPlaying {
                     viewModel.pausePlayback()
                 } else {
                     viewModel.playRecording(recording)
                 }
+            } label: {
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        Text("#\(recording.sequenceNumber)")
+                            .font(.headline)
+                        Text(formatTime(recording.recordedAt))
+                            .foregroundStyle(.secondary)
+                        Text(formatDuration(recording.duration))
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Image(systemName: viewModel.playingRecordingId == recording.id && viewModel.isPlaying ? "pause.fill" : "play.fill")
+                    }
+                    if let summary = recording.summary {
+                        Text(summary)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(2)
+                            .accessibilityIdentifier(
+                                isToday
+                                    ? "home.summary.\(recording.sequenceNumber)"
+                                    : "past.summary.\(dateTag(entry!.date)).\(recording.sequenceNumber)"
+                            )
+                    } else if let transcription = recording.transcription {
+                        Text(transcription)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(2)
+                            .accessibilityIdentifier(
+                                isToday
+                                    ? "home.transcription.\(recording.sequenceNumber)"
+                                    : "past.transcription.\(dateTag(entry!.date)).\(recording.sequenceNumber)"
+                            )
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier(identifier)
 
-            // Transcribe button is placed outside the tap-gesture VStack so that
-            // XCTest can locate and interact with it as an independent button element.
+            // Transcribe button alongside the play button so XCTest can locate
+            // it as an independent accessible element.
             Button {
                 transcriptionTargetRecording = recording
             } label: {
@@ -192,7 +195,6 @@ struct HomeView: View {
                 )
             }
         }
-        .accessibilityIdentifier(identifier)
     }
 
     // MARK: - Share Menu
