@@ -86,8 +86,10 @@ final class EntryDetailUITests: XCTestCase {
         XCTAssertTrue(moreButton.waitForExistence(timeout: 5))
         moreButton.tap()
 
-        // Tap delete menu item
-        let deleteMenuItem = app.buttons["削除"]
+        // Tap delete menu item (use identifier predicate for robustness)
+        let deleteMenuItem = app.descendants(matching: .any).matching(
+            NSPredicate(format: "identifier == 'home.deleteMenuItem.1'")
+        ).firstMatch
         XCTAssertTrue(deleteMenuItem.waitForExistence(timeout: 5))
         deleteMenuItem.tap()
 

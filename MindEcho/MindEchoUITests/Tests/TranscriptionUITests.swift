@@ -76,6 +76,11 @@ final class TranscriptionUITests: XCTestCase {
         // Swipe down on the result text to dismiss the sheet
         resultText.swipeDown(velocity: .fast)
 
+        // Wait until the transcription sheet is actually dismissed
+        let doesNotExistPredicate = NSPredicate(format: "exists == false")
+        expectation(for: doesNotExistPredicate, evaluatedWith: resultText, handler: nil)
+        waitForExpectations(timeout: 5)
+
         // Verify we're back on the home screen
         XCTAssertTrue(row.waitForExistence(timeout: 5))
     }
