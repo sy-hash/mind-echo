@@ -583,11 +583,11 @@ Speech framework で書き起こし実行
 ### 書き起こしの実行タイミング
 
 1. **録音直後（RecordingModalView）**: 録音停止後に自動で書き起こしを開始し、結果を `Recording.transcription` に保存
-2. **一覧からの手動実行（HomeView / TranscriptionView）**: 録音セルタップ時、既に `transcription` が存在すれば即表示。未書き起こしの場合のみ Speech framework を呼び出して保存
+2. **一覧からの手動実行（HomeView / TranscriptionView）**: 書き起こしボタンタップ時、既に `transcription` が存在すれば即表示。未書き起こしの場合のみ Speech framework を呼び出して保存
 
 ### UI での表示
 
-- **HomeView の録音リスト**: セル全体がタップ領域で、タップすると書き起こし詳細画面（TranscriptionView）を表示。書き起こしテキストの2行プレビューをセル内にインライン表示
+- **HomeView の録音リスト**: 書き起こし済みの録音はアイコンで識別可能（`doc.text.fill` / `doc.text`）。書き起こしテキストの2行プレビューをセル内にインライン表示
 - **TranscriptionView**: 保存済みの書き起こしがあれば即表示。なければ書き起こしを実行して保存
 - **EntryDetailView**: 各録音に書き起こしテキストのプレビューを表示
 
