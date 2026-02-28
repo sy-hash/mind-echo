@@ -121,13 +121,15 @@ struct HomeView: View {
             ? "home.recordingRow.\(recording.sequenceNumber)"
             : "past.recordingRow.\(dateTag(entry!.date)).\(recording.sequenceNumber)"
 
-        recordingRowContent(
-            recording: recording, isToday: isToday,
-            entry: entry)
-        .contentShape(Rectangle())
-        .onTapGesture {
+        Button {
             transcriptionTargetRecording = recording
+        } label: {
+            recordingRowContent(
+                recording: recording, isToday: isToday,
+                entry: entry)
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
         .accessibilityIdentifier(identifier)
         .swipeActions(edge: .trailing) {
             if let targetEntry = isToday ? viewModel.todayEntry : entry {
