@@ -18,73 +18,17 @@ struct HomeView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 20) {
-                    // Date display
-                    Text(DateHelper.displayString(for: DateHelper.today()))
-                        .font(.title2)
-                        .accessibilityIdentifier("home.dateLabel")
+            List {
+                // Today's section
+                todaySection
 
-                    // Today's recordings list
-                    if let entry = viewModel.todayEntry, !entry.recordings.isEmpty {
-                        VStack(spacing: 0) {
-                            ForEach(entry.sortedRecordings) { recording in
-                                VStack(alignment: .leading, spacing: 6) {
-                                    HStack {
-                                        Text("#\(recording.sequenceNumber)")
-                                            .font(.headline)
-                                        Text(formatTime(recording.recordedAt))
-                                            .foregroundStyle(.secondary)
-                                        Text(formatDuration(recording.duration))
-                                            .foregroundStyle(.secondary)
-                                        Spacer()
-                                        Button {
-                                            transcriptionTargetRecording = recording
-                                        } label: {
-                                            Image(systemName: recording.hasTranscription ? "doc.text.fill" : "doc.text")
-                                        }
-                                        .accessibilityIdentifier("home.transcribeButton.\(recording.sequenceNumber)")
-                                        Image(systemName: viewModel.playingRecordingId == recording.id && viewModel.isPlaying ? "pause.fill" : "play.fill")
-                                    }
-                                    .contentShape(Rectangle())
-                                    .onTapGesture {
-                                        if viewModel.playingRecordingId == recording.id && viewModel.isPlaying {
-                                            viewModel.pausePlayback()
-                                        } else {
-                                            viewModel.playRecording(recording)
-                                        }
-                                    }
-
-                                    if let summary = recording.summary {
-                                        Text(summary)
-                                            .font(.subheadline)
-                                            .foregroundStyle(.secondary)
-                                            .lineLimit(2)
-                                            .accessibilityIdentifier("home.summary.\(recording.sequenceNumber)")
-                                    } else if let transcription = recording.transcription {
-                                        Text(transcription)
-                                            .font(.subheadline)
-                                            .foregroundStyle(.secondary)
-                                            .lineLimit(2)
-                                            .accessibilityIdentifier("home.transcription.\(recording.sequenceNumber)")
-                                    }
-                                }
-                                .padding(.vertical, 12)
-                                .accessibilityElement(children: .combine)
-                                .accessibilityAddTraits(.isButton)
-                                .accessibilityIdentifier("home.recordingRow.\(recording.sequenceNumber)")
-
-                                if recording.id != entry.sortedRecordings.last?.id {
-                                    Divider()
-                                }
-                            }
-                        }
-                        .accessibilityElement(children: .contain)
-                        .accessibilityIdentifier("home.recordingsList")
-                    }
+                // Past entries sections
+                ForEach(viewModel.pastEntries) { entry in
+                    pastEntrySection(entry)
                 }
-                .padding()
             }
+            .listStyle(.grouped)
+            .accessibilityIdentifier("home.entryList")
             .safeAreaInset(edge: .bottom) {
                 Button {
                     isRecordingModalPresented = true
@@ -96,28 +40,11 @@ struct HomeView: View {
                 .accessibilityIdentifier("home.recordButton")
                 .padding(.vertical)
             }
-            .navigationTitle("今日")
+            .navigationTitle("MindEcho")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     if viewModel.todayEntry != nil && !(viewModel.todayEntry?.recordings.isEmpty ?? true) {
-                        Menu {
-                            Button {
-                                exportAndShareAudio()
-                            } label: {
-                                Label("音声を共有", systemImage: "waveform")
-                            }
-                            .accessibilityIdentifier("home.shareAudioButton")
-
-                            Button {
-                                exportAndShareTranscript()
-                            } label: {
-                                Label("テキストを共有", systemImage: "doc.text")
-                            }
-                            .accessibilityIdentifier("home.shareTranscriptButton")
-                        } label: {
-                            Image(systemName: "square.and.arrow.up")
-                        }
-                        .accessibilityIdentifier("home.shareButton")
+                        shareMenu(for: viewModel.todayEntry!)
                     }
                 }
             }
@@ -130,14 +57,14 @@ struct HomeView: View {
                 }
             }
             .onAppear {
-                viewModel.fetchTodayEntry()
+                viewModel.fetchAllEntries()
             }
             .sheet(isPresented: $isRecordingModalPresented, onDismiss: {
                 if viewModel.isRecording {
                     viewModel.stopRecording()
                 }
                 viewModel.resetTranscriptionState()
-                viewModel.fetchTodayEntry()
+                viewModel.fetchAllEntries()
             }) {
                 RecordingModalView(viewModel: viewModel)
             }
@@ -148,10 +75,148 @@ struct HomeView: View {
         }
     }
 
-    private func exportAndShareAudio() {
+    // MARK: - Today Section
+
+    @ViewBuilder
+    private var todaySection: some View {
+        Section {
+            if let entry = viewModel.todayEntry, !entry.recordings.isEmpty {
+                ForEach(entry.sortedRecordings) { recording in
+                    recordingRow(recording, isToday: true)
+                }
+            } else {
+                Text("録音がありません")
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("home.emptyState")
+            }
+        } header: {
+            Text(DateHelper.displayString(for: DateHelper.today()))
+                .accessibilityIdentifier("home.dateLabel")
+        }
+    }
+
+    // MARK: - Past Entry Section
+
+    @ViewBuilder
+    private func pastEntrySection(_ entry: JournalEntry) -> some View {
+        Section {
+            ForEach(entry.sortedRecordings) { recording in
+                recordingRow(recording, isToday: false, entry: entry)
+            }
+        } header: {
+            Text(DateHelper.displayString(for: entry.date))
+                .accessibilityIdentifier("home.sectionHeader.\(dateTag(entry.date))")
+        }
+    }
+
+    // MARK: - Recording Row
+
+    @ViewBuilder
+    private func recordingRow(_ recording: Recording, isToday: Bool, entry: JournalEntry? = nil) -> some View {
+        let identifier = isToday
+            ? "home.recordingRow.\(recording.sequenceNumber)"
+            : "past.recordingRow.\(dateTag(entry!.date)).\(recording.sequenceNumber)"
+
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text("#\(recording.sequenceNumber)")
+                    .font(.headline)
+                Text(formatTime(recording.recordedAt))
+                    .foregroundStyle(.secondary)
+                Text(formatDuration(recording.duration))
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Button {
+                    transcriptionTargetRecording = recording
+                } label: {
+                    Image(systemName: recording.hasTranscription ? "doc.text.fill" : "doc.text")
+                }
+                .accessibilityIdentifier(
+                    isToday
+                        ? "home.transcribeButton.\(recording.sequenceNumber)"
+                        : "past.transcribeButton.\(dateTag(entry!.date)).\(recording.sequenceNumber)"
+                )
+                Image(systemName: viewModel.playingRecordingId == recording.id && viewModel.isPlaying ? "pause.fill" : "play.fill")
+            }
+            .contentShape(Rectangle())
+            .onTapGesture {
+                if viewModel.playingRecordingId == recording.id && viewModel.isPlaying {
+                    viewModel.pausePlayback()
+                } else {
+                    viewModel.playRecording(recording)
+                }
+            }
+
+            if let summary = recording.summary {
+                Text(summary)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+                    .accessibilityIdentifier(
+                        isToday
+                            ? "home.summary.\(recording.sequenceNumber)"
+                            : "past.summary.\(dateTag(entry!.date)).\(recording.sequenceNumber)"
+                    )
+            } else if let transcription = recording.transcription {
+                Text(transcription)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+                    .accessibilityIdentifier(
+                        isToday
+                            ? "home.transcription.\(recording.sequenceNumber)"
+                            : "past.transcription.\(dateTag(entry!.date)).\(recording.sequenceNumber)"
+                    )
+            }
+        }
+        .swipeActions(edge: .trailing) {
+            if let targetEntry = isToday ? viewModel.todayEntry : entry {
+                Button(role: .destructive) {
+                    viewModel.deleteRecording(recording, from: targetEntry)
+                } label: {
+                    Label("削除", systemImage: "trash")
+                }
+                .accessibilityIdentifier(
+                    isToday
+                        ? "home.deleteButton.\(recording.sequenceNumber)"
+                        : "past.deleteButton.\(dateTag(entry!.date)).\(recording.sequenceNumber)"
+                )
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isButton)
+        .accessibilityIdentifier(identifier)
+    }
+
+    // MARK: - Share Menu
+
+    private func shareMenu(for entry: JournalEntry) -> some View {
+        Menu {
+            Button {
+                exportAndShareAudio(entry: entry)
+            } label: {
+                Label("音声を共有", systemImage: "waveform")
+            }
+            .accessibilityIdentifier("home.shareAudioButton")
+
+            Button {
+                exportAndShareTranscript(entry: entry)
+            } label: {
+                Label("テキストを共有", systemImage: "doc.text")
+            }
+            .accessibilityIdentifier("home.shareTranscriptButton")
+        } label: {
+            Image(systemName: "square.and.arrow.up")
+        }
+        .accessibilityIdentifier("home.shareButton")
+    }
+
+    // MARK: - Export
+
+    private func exportAndShareAudio(entry: JournalEntry) {
         Task {
             do {
-                let url = try await viewModel.exportForSharing()
+                let url = try await viewModel.exportForSharing(entry: entry)
                 shareItems = [url]
             } catch {
                 // Handle error silently for now
@@ -159,13 +224,22 @@ struct HomeView: View {
         }
     }
 
-    private func exportAndShareTranscript() {
+    private func exportAndShareTranscript(entry: JournalEntry) {
         do {
-            let text = try viewModel.exportTranscriptForSharing()
+            let text = try viewModel.exportTranscriptForSharing(entry: entry)
             shareItems = [text]
         } catch {
             // Handle error silently for now
         }
+    }
+
+    // MARK: - Formatting
+
+    private func dateTag(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyyMMdd"
+        return formatter.string(from: date)
     }
 
     private func formatTime(_ date: Date) -> String {
@@ -179,4 +253,15 @@ struct HomeView: View {
         let seconds = Int(duration) % 60
         return String(format: "%d:%02d", minutes, seconds)
     }
+}
+
+// UIKit ShareSheet wrapper
+struct ShareSheet: UIViewControllerRepresentable {
+    let activityItems: [Any]
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
+    }
+
+    func updateUIViewController(_: UIActivityViewController, context: Context) {}
 }

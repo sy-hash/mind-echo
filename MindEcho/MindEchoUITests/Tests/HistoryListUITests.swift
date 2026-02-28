@@ -12,54 +12,52 @@ final class HistoryListUITests: XCTestCase {
     @MainActor
     func testEmptyHistory_showsEmptyState() throws {
         app.launch()
-        app.buttons["履歴"].tap()
 
-        // Should show empty state (ContentUnavailableView)
-        let emptyText = app.staticTexts["履歴がありません"]
-        XCTAssertTrue(emptyText.waitForExistence(timeout: 5))
+        // Today section should show empty state
+        let emptyState = app.staticTexts["home.emptyState"]
+        XCTAssertTrue(emptyState.waitForExistence(timeout: 5))
     }
 
     @MainActor
     func testSeededHistory_displaysEntries() throws {
         app.launchArguments.append("--seed-history")
         app.launch()
-        app.buttons["履歴"].tap()
 
-        let historyList = app.collectionViews["history.entryList"]
-        XCTAssertTrue(historyList.waitForExistence(timeout: 5))
-        XCTAssertTrue(historyList.cells.count >= 1)
+        let entryList = app.collectionViews["home.entryList"]
+        XCTAssertTrue(entryList.waitForExistence(timeout: 5))
+        // Past entries should appear as recording rows
+        XCTAssertTrue(entryList.cells.count >= 1)
     }
 
     @MainActor
     func testEntryRow_showsDatePreviewAndRecordingInfo() throws {
         app.launchArguments.append("--seed-history")
         app.launch()
-        app.buttons["履歴"].tap()
 
-        let historyList = app.collectionViews["history.entryList"]
-        XCTAssertTrue(historyList.waitForExistence(timeout: 5))
+        let entryList = app.collectionViews["home.entryList"]
+        XCTAssertTrue(entryList.waitForExistence(timeout: 5))
 
-        // Verify first cell has expected elements
-        let firstCell = historyList.cells.firstMatch
-        XCTAssertTrue(firstCell.waitForExistence(timeout: 5))
-        // The cell should contain text (date and preview are within it)
-        XCTAssertTrue(firstCell.staticTexts.count >= 1)
+        // Past recording rows should contain recording info (sequence number, etc.)
+        let firstPastCell = entryList.cells.firstMatch
+        XCTAssertTrue(firstPastCell.waitForExistence(timeout: 5))
+        XCTAssertTrue(firstPastCell.staticTexts.count >= 1)
     }
 
     @MainActor
-    func testTapEntry_navigatesToDetail() throws {
-        app.launchArguments.append("--seed-history")
+    func testPastRecording_playToggle() throws {
+        app.launchArguments.append(contentsOf: ["--seed-history", "--mock-player"])
         app.launch()
-        app.buttons["履歴"].tap()
 
-        let historyList = app.collectionViews["history.entryList"]
-        XCTAssertTrue(historyList.waitForExistence(timeout: 5))
+        let entryList = app.collectionViews["home.entryList"]
+        XCTAssertTrue(entryList.waitForExistence(timeout: 5))
 
-        let firstCell = historyList.cells.firstMatch
-        XCTAssertTrue(firstCell.waitForExistence(timeout: 5))
-        firstCell.tap()
+        // Find a past recording row and tap to play
+        let firstPastCell = entryList.cells.firstMatch
+        XCTAssertTrue(firstPastCell.waitForExistence(timeout: 5))
+        firstPastCell.tap()
 
-        let dateHeader = app.staticTexts["detail.dateHeader"]
-        XCTAssertTrue(dateHeader.waitForExistence(timeout: 5))
+        // Should show pause icon
+        let pauseImage = app.images["pause.fill"]
+        XCTAssertTrue(pauseImage.waitForExistence(timeout: 5))
     }
 }

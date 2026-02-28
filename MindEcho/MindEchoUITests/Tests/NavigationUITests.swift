@@ -10,49 +10,32 @@ final class NavigationUITests: XCTestCase {
     }
 
     @MainActor
-    func testAppLaunch_showsHomeTab() throws {
+    func testAppLaunch_showsHomeScreen() throws {
         app.launch()
         let dateLabel = app.staticTexts["home.dateLabel"]
         XCTAssertTrue(dateLabel.waitForExistence(timeout: 5))
     }
 
     @MainActor
-    func testTabSwitching_navigatesBetweenTodayAndHistory() throws {
-        app.launchArguments.append("--seed-history")
+    func testAppLaunch_showsTodayEmptyState() throws {
         app.launch()
-
-        // Switch to history tab
-        app.buttons["履歴"].tap()
-        let historyList = app.collectionViews["history.entryList"]
-        XCTAssertTrue(historyList.waitForExistence(timeout: 5))
-
-        // Switch back to today tab
-        app.buttons["今日"].tap()
-        let dateLabel = app.staticTexts["home.dateLabel"]
-        XCTAssertTrue(dateLabel.waitForExistence(timeout: 5))
+        let emptyState = app.staticTexts["home.emptyState"]
+        XCTAssertTrue(emptyState.waitForExistence(timeout: 5))
     }
 
     @MainActor
-    func testHistoryToDetail_pushesAndPops() throws {
+    func testSeededHistory_showsPastSections() throws {
         app.launchArguments.append("--seed-history")
         app.launch()
 
-        // Go to history
-        app.buttons["履歴"].tap()
-        let historyList = app.collectionViews["history.entryList"]
-        XCTAssertTrue(historyList.waitForExistence(timeout: 5))
+        // Today section should exist
+        let dateLabel = app.staticTexts["home.dateLabel"]
+        XCTAssertTrue(dateLabel.waitForExistence(timeout: 5))
 
-        // Tap first entry to push detail
-        let firstCell = historyList.cells.firstMatch
-        XCTAssertTrue(firstCell.waitForExistence(timeout: 5))
-        firstCell.tap()
-
-        // Verify detail view
-        let dateHeader = app.staticTexts["detail.dateHeader"]
-        XCTAssertTrue(dateHeader.waitForExistence(timeout: 5))
-
-        // Pop back
-        app.navigationBars.buttons.firstMatch.tap()
-        XCTAssertTrue(historyList.waitForExistence(timeout: 5))
+        // Past entry recordings should be visible in the list
+        let entryList = app.collectionViews["home.entryList"]
+        XCTAssertTrue(entryList.waitForExistence(timeout: 5))
+        // Should have at least today section + past sections
+        XCTAssertTrue(entryList.cells.count >= 1)
     }
 }
