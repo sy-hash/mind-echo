@@ -59,13 +59,12 @@ final class HistoryListUITests: XCTestCase {
         XCTAssertTrue(pastRecordingRow.waitForExistence(timeout: 5))
         pastRecordingRow.tap()
 
-        // The button exposes play state via accessibilityValue ("playing" / "paused").
-        // Polling the value of the existing element is more reliable than waiting
-        // for a new element to appear in iOS 26 SwiftUI List.
-        let playingExpectation = XCTNSPredicateExpectation(
-            predicate: NSPredicate(format: "value == 'playing'"),
-            object: pastRecordingRow
-        )
-        wait(for: [playingExpectation], timeout: 5)
+        // When playing starts, the play button is replaced by a pause button
+        // with the ".pause" suffix. Detecting element appearance/disappearance
+        // is more reliable than polling accessibilityValue on iOS 26 SwiftUI List.
+        let pauseButton = app.descendants(matching: .any).matching(
+            NSPredicate(format: "identifier ENDSWITH '.pause'")
+        ).firstMatch
+        XCTAssertTrue(pauseButton.waitForExistence(timeout: 5))
     }
 }

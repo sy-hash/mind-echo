@@ -34,30 +34,23 @@ final class EntryDetailUITests: XCTestCase {
 
         // Use descendants query: in iOS 26 SwiftUI List the identifier may appear
         // on a non-Cell element; descendants finds it regardless of type.
-        let recordingRow = app.descendants(matching: .any).matching(
+        let playButton = app.descendants(matching: .any).matching(
             NSPredicate(format: "identifier == 'home.recordingRow.1'")
         ).firstMatch
-        XCTAssertTrue(recordingRow.waitForExistence(timeout: 5))
-        recordingRow.tap()
+        XCTAssertTrue(playButton.waitForExistence(timeout: 5))
+        playButton.tap()
 
-        // The button exposes play state via accessibilityValue ("playing" / "paused").
-        // Polling the value of the existing element is more reliable than waiting
-        // for a new element to appear in iOS 26 SwiftUI List.
-        let playingExpectation = XCTNSPredicateExpectation(
-            predicate: NSPredicate(format: "value == 'playing'"),
-            object: recordingRow
-        )
-        wait(for: [playingExpectation], timeout: 5)
+        // When playing starts, the play button is replaced by a pause button
+        // with the ".pause" suffix. Detecting element appearance/disappearance
+        // is more reliable than polling accessibilityValue on iOS 26 SwiftUI List.
+        let pauseButton = app.descendants(matching: .any).matching(
+            NSPredicate(format: "identifier == 'home.recordingRow.1.pause'")
+        ).firstMatch
+        XCTAssertTrue(pauseButton.waitForExistence(timeout: 5))
 
-        // Tap the same row button again to pause.
-        recordingRow.tap()
-
-        // accessibilityValue should revert to "paused".
-        let pausedExpectation = XCTNSPredicateExpectation(
-            predicate: NSPredicate(format: "value == 'paused'"),
-            object: recordingRow
-        )
-        wait(for: [pausedExpectation], timeout: 5)
+        // Tap pause to stop playback; play button should reappear.
+        pauseButton.tap()
+        XCTAssertTrue(playButton.waitForExistence(timeout: 5))
     }
 
     @MainActor

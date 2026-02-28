@@ -120,60 +120,34 @@ struct HomeView: View {
         let isCurrentlyPlaying = viewModel.playingRecordingId == recording.id && viewModel.isPlaying
 
         HStack(alignment: .top, spacing: 8) {
-            // Play button: using Button (not onTapGesture) so that XCTest can
-            // reliably tap it in a SwiftUI List cell on iOS 26, and so that
-            // the accessibility identifier does NOT collapse the HStack into a
-            // single StaticText element that would hide the transcribe button.
-            Button {
-                if isCurrentlyPlaying {
+            // Use if/else with distinct .id() modifiers so SwiftUI fully recreates
+            // the element when play state changes. XCTest reliably detects new
+            // elements appearing/disappearing in the accessibility tree, whereas
+            // dynamic property changes (accessibilityValue, identifier updates on
+            // the same element) may not propagate reliably on iOS 26 SwiftUI List.
+            if isCurrentlyPlaying {
+                Button {
                     viewModel.pausePlayback()
-                } else {
+                } label: {
+                    recordingRowContent(
+                        recording: recording, isToday: isToday,
+                        entry: entry, isPlaying: true)
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("\(identifier).pause")
+                .id("\(identifier).pause")
+            } else {
+                Button {
                     viewModel.playRecording(recording)
+                } label: {
+                    recordingRowContent(
+                        recording: recording, isToday: isToday,
+                        entry: entry, isPlaying: false)
                 }
-            } label: {
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack {
-                        Text("#\(recording.sequenceNumber)")
-                            .font(.headline)
-                        Text(formatTime(recording.recordedAt))
-                            .foregroundStyle(.secondary)
-                        Text(formatDuration(recording.duration))
-                            .foregroundStyle(.secondary)
-                        Spacer()
-                        Image(systemName: isCurrentlyPlaying ? "pause.fill" : "play.fill")
-                    }
-                    if let summary = recording.summary {
-                        Text(summary)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(2)
-                            .accessibilityIdentifier(
-                                isToday
-                                    ? "home.summary.\(recording.sequenceNumber)"
-                                    : "past.summary.\(dateTag(entry!.date)).\(recording.sequenceNumber)"
-                            )
-                    } else if let transcription = recording.transcription {
-                        Text(transcription)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(2)
-                            .accessibilityIdentifier(
-                                isToday
-                                    ? "home.transcription.\(recording.sequenceNumber)"
-                                    : "past.transcription.\(dateTag(entry!.date)).\(recording.sequenceNumber)"
-                            )
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .buttonStyle(.plain)
+                .accessibilityIdentifier(identifier)
+                .id(identifier)
             }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier(identifier)
-            // Expose play state via accessibilityValue so XCTest can detect
-            // playback state changes without relying on a new element appearing.
-            // (iOS 26 SwiftUI List may exclude visually-hidden elements from
-            // the accessibility tree, making the "invisible indicator" approach
-            // unreliable. Polling the value of the existing button is stable.)
-            .accessibilityValue(isCurrentlyPlaying ? "playing" : "paused")
 
             // Transcribe button alongside the play button so XCTest can locate
             // it as an independent accessible element.
@@ -202,6 +176,47 @@ struct HomeView: View {
                 )
             }
         }
+    }
+
+    @ViewBuilder
+    private func recordingRowContent(
+        recording: Recording, isToday: Bool,
+        entry: JournalEntry?, isPlaying: Bool
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text("#\(recording.sequenceNumber)")
+                    .font(.headline)
+                Text(formatTime(recording.recordedAt))
+                    .foregroundStyle(.secondary)
+                Text(formatDuration(recording.duration))
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Image(systemName: isPlaying ? "pause.fill" : "play.fill")
+            }
+            if let summary = recording.summary {
+                Text(summary)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+                    .accessibilityIdentifier(
+                        isToday
+                            ? "home.summary.\(recording.sequenceNumber)"
+                            : "past.summary.\(dateTag(entry!.date)).\(recording.sequenceNumber)"
+                    )
+            } else if let transcription = recording.transcription {
+                Text(transcription)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+                    .accessibilityIdentifier(
+                        isToday
+                            ? "home.transcription.\(recording.sequenceNumber)"
+                            : "past.transcription.\(dateTag(entry!.date)).\(recording.sequenceNumber)"
+                    )
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     // MARK: - Share Menu
