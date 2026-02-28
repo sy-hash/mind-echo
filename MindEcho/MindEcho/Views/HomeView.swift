@@ -117,6 +117,7 @@ struct HomeView: View {
         let identifier = isToday
             ? "home.recordingRow.\(recording.sequenceNumber)"
             : "past.recordingRow.\(dateTag(entry!.date)).\(recording.sequenceNumber)"
+        let isCurrentlyPlaying = viewModel.playingRecordingId == recording.id && viewModel.isPlaying
 
         HStack(alignment: .top, spacing: 8) {
             // Play button: using Button (not onTapGesture) so that XCTest can
@@ -124,7 +125,7 @@ struct HomeView: View {
             // the accessibility identifier does NOT collapse the HStack into a
             // single StaticText element that would hide the transcribe button.
             Button {
-                if viewModel.playingRecordingId == recording.id && viewModel.isPlaying {
+                if isCurrentlyPlaying {
                     viewModel.pausePlayback()
                 } else {
                     viewModel.playRecording(recording)
@@ -139,7 +140,8 @@ struct HomeView: View {
                         Text(formatDuration(recording.duration))
                             .foregroundStyle(.secondary)
                         Spacer()
-                        Image(systemName: viewModel.playingRecordingId == recording.id && viewModel.isPlaying ? "pause.fill" : "play.fill")
+                        Image(systemName: isCurrentlyPlaying ? "pause.fill" : "play.fill")
+                            .accessibilityIdentifier(isCurrentlyPlaying ? "pause.fill" : "play.fill")
                     }
                     if let summary = recording.summary {
                         Text(summary)

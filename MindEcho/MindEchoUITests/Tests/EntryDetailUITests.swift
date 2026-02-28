@@ -6,7 +6,7 @@ final class EntryDetailUITests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
         app = XCUIApplication()
-        app.launchArguments = ["--uitesting", "--seed-today-with-recordings"]
+        app.launchArguments = ["--uitesting", "--seed-today-with-recordings", "--mock-player"]
     }
 
     @MainActor
