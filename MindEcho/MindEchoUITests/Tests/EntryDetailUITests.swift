@@ -32,7 +32,10 @@ final class EntryDetailUITests: XCTestCase {
     func testShareButton_presentsActivitySheet() throws {
         app.launch()
 
-        let shareBtn = app.buttons["home.shareButton"]
+        // Share button is now in the section header, use descendants query
+        let shareBtn = app.descendants(matching: .any).matching(
+            NSPredicate(format: "identifier == 'home.shareButton'")
+        ).firstMatch
         XCTAssertTrue(shareBtn.waitForExistence(timeout: 5))
         shareBtn.tap()
 
@@ -50,7 +53,10 @@ final class EntryDetailUITests: XCTestCase {
     func testShareTranscriptButton_presentsActivitySheet() throws {
         app.launch()
 
-        let shareBtn = app.buttons["home.shareButton"]
+        // Share button is now in the section header, use descendants query
+        let shareBtn = app.descendants(matching: .any).matching(
+            NSPredicate(format: "identifier == 'home.shareButton'")
+        ).firstMatch
         XCTAssertTrue(shareBtn.waitForExistence(timeout: 5))
         shareBtn.tap()
 

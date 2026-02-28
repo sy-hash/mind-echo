@@ -48,13 +48,16 @@ TabView を廃止し、今日のセクションと過去の履歴セクション
 - `home.summary.{n}` — 今日の録音セル内の要約テキストプレビュー（要約がある場合、書き起こしプレビューより優先表示）
 - `home.deleteButton.{n}` — 今日の録音のスワイプ削除ボタン
 - `home.transcriptionSheet` — 書き起こしシート
-- `home.shareButton` — 共有メニューボタン（今日の録音が存在する場合のみ表示）
+- `home.shareButton` — 共有メニューボタン（今日のセクションヘッダー内、録音が存在する場合のみ表示）
 - `home.shareAudioButton` — 共有メニュー内の「音声を共有」ボタン
 - `home.shareTranscriptButton` — 共有メニュー内の「テキストを共有」ボタン
 
 **過去のセクション**
 
 - `home.sectionHeader.{date}` — 過去の日付セクションヘッダー（date = yyyyMMdd）
+- `past.shareButton.{date}` — 過去のセクションヘッダー内の共有メニューボタン
+- `past.shareAudioButton.{date}` — 過去の共有メニュー内の「音声を共有」ボタン
+- `past.shareTranscriptButton.{date}` — 過去の共有メニュー内の「テキストを共有」ボタン
 - `past.recordingRow.{date}.{n}` — 過去の録音行
 - `past.transcribeButton.{date}.{n}` — 過去の録音の書き起こしボタン
 - `past.transcription.{date}.{n}` — 過去の録音セル内の書き起こしテキストプレビュー
@@ -134,8 +137,8 @@ TabView を廃止し、今日のセクションと過去の履歴セクション
 | テスト | 検証内容 |
 |-------|---------|
 | `testHomeView_showsDateAndRecordingsList` | 日付と録音リストの表示 |
-| `testShareButton_presentsActivitySheet` | 共有ボタンタップで共有タイプ選択メニュー表示 → 「音声を共有」選択で Activity Sheet 表示 |
-| `testShareTranscriptButton_presentsActivitySheet` | 共有ボタンタップで共有タイプ選択メニュー表示 → 「テキストを共有」選択で Activity Sheet 表示 |
+| `testShareButton_presentsActivitySheet` | セクションヘッダーの共有ボタンタップで共有タイプ選択メニュー表示 → 「音声を共有」選択で Activity Sheet 表示 |
+| `testShareTranscriptButton_presentsActivitySheet` | セクションヘッダーの共有ボタンタップで共有タイプ選択メニュー表示 → 「テキストを共有」選択で Activity Sheet 表示 |
 | `testSwipeToDelete_removesRecording` | スワイプ削除で録音が削除される |
 
 ### 5. TranscriptionUITests（4テスト）
