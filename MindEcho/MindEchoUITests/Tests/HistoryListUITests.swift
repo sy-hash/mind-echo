@@ -59,8 +59,10 @@ final class HistoryListUITests: XCTestCase {
         XCTAssertTrue(pastRecordingRow.waitForExistence(timeout: 5))
         pastRecordingRow.tap()
 
-        // Should show pause icon
-        let pauseImage = app.images["pause.fill"]
-        XCTAssertTrue(pauseImage.waitForExistence(timeout: 5))
+        // Row identifier gains a .playing suffix while playback is active
+        let playingRow = app.descendants(matching: .any).matching(
+            NSPredicate(format: "identifier BEGINSWITH 'past.recordingRow.' AND identifier ENDSWITH '.playing'")
+        ).firstMatch
+        XCTAssertTrue(playingRow.waitForExistence(timeout: 5))
     }
 }

@@ -40,14 +40,18 @@ final class EntryDetailUITests: XCTestCase {
         XCTAssertTrue(recordingRow.waitForExistence(timeout: 5))
         recordingRow.tap()
 
-        // Icon should change to pause
-        let pauseImage = app.images["pause.fill"]
-        XCTAssertTrue(pauseImage.waitForExistence(timeout: 5))
+        // Row identifier changes to .playing while playback is active
+        let playingRow = app.descendants(matching: .any).matching(
+            NSPredicate(format: "identifier == 'home.recordingRow.1.playing'")
+        ).firstMatch
+        XCTAssertTrue(playingRow.waitForExistence(timeout: 5))
 
-        // Tap again to pause
-        recordingRow.tap()
-        let playImage = app.images["play.fill"]
-        XCTAssertTrue(playImage.waitForExistence(timeout: 5))
+        // Tap again to pause – row reverts to its original identifier
+        playingRow.tap()
+        let pausedRow = app.descendants(matching: .any).matching(
+            NSPredicate(format: "identifier == 'home.recordingRow.1'")
+        ).firstMatch
+        XCTAssertTrue(pausedRow.waitForExistence(timeout: 5))
     }
 
     @MainActor

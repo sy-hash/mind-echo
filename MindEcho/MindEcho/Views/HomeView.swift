@@ -168,7 +168,7 @@ struct HomeView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             .buttonStyle(.plain)
-            .accessibilityIdentifier(identifier)
+            .accessibilityIdentifier(isCurrentlyPlaying ? "\(identifier).playing" : identifier)
 
             // Transcribe button alongside the play button so XCTest can locate
             // it as an independent accessible element.
