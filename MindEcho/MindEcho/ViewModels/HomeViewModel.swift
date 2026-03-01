@@ -241,6 +241,9 @@ class HomeViewModel {
         if let existing = todayEntry, existing.date == logicalDate {
             return existing
         }
+        if let existing = pastEntries.first(where: { $0.date == logicalDate }) {
+            return existing
+        }
         let descriptor = FetchDescriptor<JournalEntry>(
             predicate: #Predicate { $0.date == logicalDate }
         )
