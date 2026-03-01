@@ -71,25 +71,53 @@ final class EntryDetailUITests: XCTestCase {
     }
 
     @MainActor
-    func testSwipeToDelete_removesRecording() throws {
+    func testMenuDelete_removesRecording() throws {
         app.launch()
 
-        // Use descendants query: in iOS 26 SwiftUI List the identifier may appear
-        // on a non-Cell element; descendants finds it regardless of type.
         let recordingRow = app.descendants(matching: .any).matching(
             NSPredicate(format: "identifier == 'home.recordingRow.1'")
         ).firstMatch
         XCTAssertTrue(recordingRow.waitForExistence(timeout: 5))
 
-        // Swipe left to reveal delete action
-        recordingRow.swipeLeft()
-        let deleteButton = app.buttons["削除"]
-        XCTAssertTrue(deleteButton.waitForExistence(timeout: 5))
-        deleteButton.tap()
+        // Tap the more button to open context menu
+        let moreButton = app.descendants(matching: .any).matching(
+            NSPredicate(format: "identifier == 'home.moreButton.1'")
+        ).firstMatch
+        XCTAssertTrue(moreButton.waitForExistence(timeout: 5))
+        moreButton.tap()
+
+        // Tap delete menu item (use identifier predicate for robustness)
+        let deleteMenuItem = app.descendants(matching: .any).matching(
+            NSPredicate(format: "identifier == 'home.deleteMenuItem.1'")
+        ).firstMatch
+        XCTAssertTrue(deleteMenuItem.waitForExistence(timeout: 5))
+        deleteMenuItem.tap()
 
         // Recording row should disappear
         let rowGone = NSPredicate(format: "exists == false")
         expectation(for: rowGone, evaluatedWith: recordingRow)
         waitForExpectations(timeout: 5)
+    }
+
+    @MainActor
+    func testPlayButton_togglesPlaybackState() throws {
+        app.launch()
+
+        // Play button should exist
+        let playButton = app.descendants(matching: .any).matching(
+            NSPredicate(format: "identifier == 'home.playButton.1'")
+        ).firstMatch
+        XCTAssertTrue(playButton.waitForExistence(timeout: 5))
+
+        // Tap play → should switch to pause button
+        playButton.tap()
+        let pauseButton = app.descendants(matching: .any).matching(
+            NSPredicate(format: "identifier == 'home.pauseButton.1'")
+        ).firstMatch
+        XCTAssertTrue(pauseButton.waitForExistence(timeout: 5))
+
+        // Tap pause → should switch back to play button
+        pauseButton.tap()
+        XCTAssertTrue(playButton.waitForExistence(timeout: 5))
     }
 }

@@ -9,22 +9,22 @@ final class TranscriptionUITests: XCTestCase {
         app.launchArguments = ["--uitesting", "--seed-today-with-recordings", "--mock-transcription", "--mock-summarization"]
     }
 
-    // Helper: find the transcribe button regardless of its accessibility type.
-    // In iOS 26 SwiftUI List cells, buttons may not surface as Button type in XCTest;
-    // using descendants with an identifier predicate locates them reliably.
-    private func transcribeButton(index: Int = 1) -> XCUIElement {
+    // Helper: find the recording row regardless of its accessibility type.
+    // In iOS 26 SwiftUI List cells, elements may not surface as expected type
+    // in XCTest; using descendants with an identifier predicate locates them reliably.
+    private func recordingRow(index: Int = 1) -> XCUIElement {
         app.descendants(matching: .any).matching(
-            NSPredicate(format: "identifier == 'home.transcribeButton.\(index)'")
+            NSPredicate(format: "identifier == 'home.recordingRow.\(index)'")
         ).firstMatch
     }
 
     @MainActor
-    func testTranscribeButton_opensTranscriptionSheet() throws {
+    func testRecordingRowTap_opensTranscriptionSheet() throws {
         app.launch()
 
-        let button = transcribeButton()
-        XCTAssertTrue(button.waitForExistence(timeout: 5))
-        button.tap()
+        let row = recordingRow()
+        XCTAssertTrue(row.waitForExistence(timeout: 5))
+        row.tap()
 
         // Sheet should open and eventually show result text
         let resultText = app.staticTexts["transcription.resultText"]
@@ -35,9 +35,9 @@ final class TranscriptionUITests: XCTestCase {
     func testTranscription_showsResultText() throws {
         app.launch()
 
-        let button = transcribeButton()
-        XCTAssertTrue(button.waitForExistence(timeout: 5))
-        button.tap()
+        let row = recordingRow()
+        XCTAssertTrue(row.waitForExistence(timeout: 5))
+        row.tap()
 
         let resultText = app.staticTexts["transcription.resultText"]
         XCTAssertTrue(resultText.waitForExistence(timeout: 10))
@@ -48,9 +48,9 @@ final class TranscriptionUITests: XCTestCase {
     func testTranscription_showsSummaryAboveResultText() throws {
         app.launch()
 
-        let button = transcribeButton()
-        XCTAssertTrue(button.waitForExistence(timeout: 5))
-        button.tap()
+        let row = recordingRow()
+        XCTAssertTrue(row.waitForExistence(timeout: 5))
+        row.tap()
 
         // Summary text should appear above the transcription result
         let summaryText = app.staticTexts["transcription.summaryText"]
@@ -66,17 +66,24 @@ final class TranscriptionUITests: XCTestCase {
     func testTranscription_dismissSheet() throws {
         app.launch()
 
-        let button = transcribeButton()
-        XCTAssertTrue(button.waitForExistence(timeout: 5))
-        button.tap()
+        let row = recordingRow()
+        XCTAssertTrue(row.waitForExistence(timeout: 5))
+        row.tap()
 
         let resultText = app.staticTexts["transcription.resultText"]
         XCTAssertTrue(resultText.waitForExistence(timeout: 10))
 
-        // Swipe down on the result text to dismiss the sheet
-        resultText.swipeDown(velocity: .fast)
+        // Tap the close button to dismiss the sheet
+        let closeButton = app.buttons["transcription.closeButton"]
+        XCTAssertTrue(closeButton.waitForExistence(timeout: 5))
+        closeButton.tap()
+
+        // Wait until the transcription sheet is actually dismissed
+        let doesNotExistPredicate = NSPredicate(format: "exists == false")
+        expectation(for: doesNotExistPredicate, evaluatedWith: resultText, handler: nil)
+        waitForExpectations(timeout: 5)
 
         // Verify we're back on the home screen
-        XCTAssertTrue(button.waitForExistence(timeout: 5))
+        XCTAssertTrue(row.waitForExistence(timeout: 5))
     }
 }

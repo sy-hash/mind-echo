@@ -117,74 +117,70 @@ struct HomeView: View {
 
     @ViewBuilder
     private func recordingRow(_ recording: Recording, isToday: Bool, entry: JournalEntry? = nil) -> some View {
-        let identifier = isToday
-            ? "home.recordingRow.\(recording.sequenceNumber)"
-            : "past.recordingRow.\(dateTag(entry!.date)).\(recording.sequenceNumber)"
+        let prefix = isToday ? "home" : "past"
+        let suffix = isToday
+            ? "\(recording.sequenceNumber)"
+            : "\(dateTag(entry!.date)).\(recording.sequenceNumber)"
         let isCurrentlyPlaying = viewModel.playingRecordingId == recording.id && viewModel.isPlaying
 
-        HStack(alignment: .top, spacing: 8) {
-            // Use if/else with distinct .id() modifiers so SwiftUI fully recreates
-            // the element when play state changes. XCTest reliably detects new
-            // elements appearing/disappearing in the accessibility tree, whereas
-            // dynamic property changes (accessibilityValue, identifier updates on
-            // the same element) may not propagate reliably on iOS 26 SwiftUI List.
+        HStack(alignment: .center, spacing: 4) {
+            // Main content area — tap navigates to TranscriptionView
+            Button {
+                transcriptionTargetRecording = recording
+            } label: {
+                recordingRowContent(
+                    recording: recording, isToday: isToday, entry: entry)
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("\(prefix).recordingRow.\(suffix)")
+
+            // Play / Pause button (distinct id for reliable XCTest detection)
             if isCurrentlyPlaying {
                 Button {
                     viewModel.pausePlayback()
                 } label: {
-                    recordingRowContent(
-                        recording: recording, isToday: isToday,
-                        entry: entry, isPlaying: true)
+                    Image(systemName: "pause.fill")
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .accessibilityIdentifier("\(identifier).pause")
-                .id("\(identifier).pause")
+                .accessibilityIdentifier("\(prefix).pauseButton.\(suffix)")
+                .id("\(prefix).pauseButton.\(suffix)")
             } else {
                 Button {
                     viewModel.playRecording(recording)
                 } label: {
-                    recordingRowContent(
-                        recording: recording, isToday: isToday,
-                        entry: entry, isPlaying: false)
+                    Image(systemName: "play.fill")
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .accessibilityIdentifier(identifier)
-                .id(identifier)
+                .accessibilityIdentifier("\(prefix).playButton.\(suffix)")
+                .id("\(prefix).playButton.\(suffix)")
             }
 
-            // Transcribe button alongside the play button so XCTest can locate
-            // it as an independent accessible element.
-            Button {
-                transcriptionTargetRecording = recording
-            } label: {
-                Image(systemName: recording.hasTranscription ? "doc.text.fill" : "doc.text")
-            }
-            .accessibilityIdentifier(
-                isToday
-                    ? "home.transcribeButton.\(recording.sequenceNumber)"
-                    : "past.transcribeButton.\(dateTag(entry!.date)).\(recording.sequenceNumber)"
-            )
-        }
-        .swipeActions(edge: .trailing) {
-            if let targetEntry = isToday ? viewModel.todayEntry : entry {
-                Button(role: .destructive) {
-                    viewModel.deleteRecording(recording, from: targetEntry)
-                } label: {
-                    Label("削除", systemImage: "trash")
+            // Menu button with delete option
+            Menu {
+                if let targetEntry = isToday ? viewModel.todayEntry : entry {
+                    Button(role: .destructive) {
+                        viewModel.deleteRecording(recording, from: targetEntry)
+                    } label: {
+                        Label("削除", systemImage: "trash")
+                    }
+                    .accessibilityIdentifier("\(prefix).deleteMenuItem.\(suffix)")
                 }
-                .accessibilityIdentifier(
-                    isToday
-                        ? "home.deleteButton.\(recording.sequenceNumber)"
-                        : "past.deleteButton.\(dateTag(entry!.date)).\(recording.sequenceNumber)"
-                )
+            } label: {
+                Image(systemName: "ellipsis")
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
             }
+            .accessibilityIdentifier("\(prefix).moreButton.\(suffix)")
         }
     }
 
     @ViewBuilder
     private func recordingRowContent(
-        recording: Recording, isToday: Bool,
-        entry: JournalEntry?, isPlaying: Bool
+        recording: Recording, isToday: Bool, entry: JournalEntry?
     ) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
@@ -195,7 +191,6 @@ struct HomeView: View {
                 Text(formatDuration(recording.duration))
                     .foregroundStyle(.secondary)
                 Spacer()
-                Image(systemName: isPlaying ? "pause.fill" : "play.fill")
             }
             if let summary = recording.summary {
                 Text(summary)

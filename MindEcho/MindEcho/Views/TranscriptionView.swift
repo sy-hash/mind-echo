@@ -4,6 +4,7 @@ import SwiftUI
 
 struct TranscriptionView: View {
     let recording: Recording
+    @Environment(\.dismiss) private var dismiss
     @State private var viewModel = TranscriptionViewModel()
 
     var body: some View {
@@ -35,6 +36,16 @@ struct TranscriptionView: View {
             }
             .navigationTitle("書き起こし #\(recording.sequenceNumber)")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button {
+                        dismiss()
+                    } label: {
+                        Image(systemName: "xmark")
+                    }
+                    .accessibilityIdentifier("transcription.closeButton")
+                }
+            }
         }
         .task {
             if ProcessInfo.processInfo.arguments.contains("--mock-transcription") {
