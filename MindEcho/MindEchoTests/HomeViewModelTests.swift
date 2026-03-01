@@ -131,7 +131,7 @@ struct HomeViewModelTests {
         vm.fetchAllEntries()
 
         #expect(vm.todayEntry != nil)
-        #expect(vm.pastEntries.count >= 1)
+        #expect(vm.pastRows.count >= 1)
     }
 
     @Test func deleteRecording_removesFromEntry() throws {

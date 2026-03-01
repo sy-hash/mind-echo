@@ -39,4 +39,23 @@ public enum DateHelper {
     public static func today(calendar: Calendar = .current) -> Date {
         logicalDate(for: Date(), calendar: calendar)
     }
+
+    /// Returns an array of logical dates from `from` to `to` (both inclusive, descending order).
+    /// Each date is normalized to noon local time using `logicalDate(for:calendar:)`.
+    /// Returns an empty array if `to` is before `from`.
+    public static func logicalDateRange(from: Date, to: Date, calendar: Calendar = .current) -> [Date] {
+        var cal = calendar
+        cal.timeZone = TimeZone.current
+        let fromNoon = logicalDate(for: from, calendar: cal)
+        let toNoon = logicalDate(for: to, calendar: cal)
+
+        guard toNoon >= fromNoon else { return [] }
+
+        let days = cal.dateComponents([.day], from: fromNoon, to: toNoon).day ?? 0
+
+        return (0...days).reversed().compactMap { offset in
+            cal.date(byAdding: .day, value: offset, to: fromNoon)
+                .map { logicalDate(for: $0, calendar: cal) }
+        }
+    }
 }
