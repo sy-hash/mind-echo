@@ -90,6 +90,7 @@ jobs:
           echo "failed_jobs=$FAILED_JOBS" >> "$GITHUB_OUTPUT"
 
           # 構造化テスト結果の組み立て
+          NL=$'\n'
           REPORT=""
 
           if [ "$HAS_RESULTS" = "true" ]; then
@@ -110,7 +111,7 @@ jobs:
                 ' "$f" 2>/dev/null || true)
 
                 if [ -n "$FAILURES" ]; then
-                  REPORT="${REPORT}### ${KIND^} Test Failures (from result bundle)\n${FAILURES}\n\n"
+                  REPORT="${REPORT}### ${KIND^} Test Failures (from result bundle)${NL}${FAILURES}${NL}${NL}"
                 fi
               done
 
@@ -122,7 +123,7 @@ jobs:
                 ' "$f" 2>/dev/null || true)
 
                 if [ -n "$STATS" ]; then
-                  REPORT="${REPORT}### ${KIND^} Test Summary\n${STATS}\n\n"
+                  REPORT="${REPORT}### ${KIND^} Test Summary${NL}${STATS}${NL}${NL}"
                 fi
               done
             done
@@ -138,16 +139,16 @@ jobs:
               | head -80)
 
             if [ -n "$SUMMARY" ]; then
-              REPORT="### Failed Log (grep fallback)\n\`\`\`\n${SUMMARY}\n\`\`\`\n"
+              REPORT="### Failed Log (grep fallback)${NL}\`\`\`${NL}${SUMMARY}${NL}\`\`\`${NL}"
             else
-              REPORT="### Note\nNo detailed failure information available. Check the workflow run directly.\n"
+              REPORT="### Note${NL}No detailed failure information available. Check the workflow run directly.${NL}"
             fi
           fi
 
           # GITHUB_OUTPUT に書き出し（複数行対応）
           {
             echo "report<<REPORT_EOF"
-            echo -e "$REPORT"
+            printf '%s\n' "$REPORT"
             echo "REPORT_EOF"
           } >> "$GITHUB_OUTPUT"
 
@@ -237,7 +238,7 @@ jobs:
         run: |
           gh pr comment "${{ steps.pr.outputs.number }}" \
             --repo "${{ github.repository }}" \
-            --body "$(cat <<EOF
+            --body "$(cat <<'EOF'
           <!-- test-analysis-auto -->
           @claude 以下のテスト失敗を修正してください。
 
@@ -263,7 +264,7 @@ jobs:
 
           gh pr comment "${{ steps.pr.outputs.number }}" \
             --repo "${{ github.repository }}" \
-            --body "$(cat <<EOF
+            --body "$(cat <<'EOF'
           <!-- test-analysis-auto -->
           ⚠️ **Flaky テスト検出**: 失敗がタイミング依存の可能性があるため、失敗ジョブを自動リランしました。
 
@@ -280,7 +281,7 @@ jobs:
         run: |
           gh pr comment "${{ steps.pr.outputs.number }}" \
             --repo "${{ github.repository }}" \
-            --body "$(cat <<EOF
+            --body "$(cat <<'EOF'
           <!-- test-analysis-auto -->
           🔍 **テスト失敗の自動分析結果**: 自動修正が困難な失敗です。人間によるレビューが必要です。
 
