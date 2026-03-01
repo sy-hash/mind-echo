@@ -129,6 +129,7 @@ final class HomeRecordingUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["recording.duration"].waitForExistence(timeout: 10))
 
         // 5. Stop recording
+        XCTAssertTrue(app.buttons["recording.stopButton"].waitForExistence(timeout: 10))
         app.buttons["recording.stopButton"].tap()
 
         // 6. Wait for transcription result
