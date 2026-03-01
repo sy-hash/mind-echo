@@ -195,10 +195,8 @@ struct HomeView: View {
     ) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text("#\(recording.sequenceNumber)")
-                    .font(.headline)
                 Text(formatTime(recording.recordedAt))
-                    .foregroundStyle(.secondary)
+                    .font(.headline)
                 Text(formatDuration(recording.duration))
                     .foregroundStyle(.secondary)
                 Spacer()

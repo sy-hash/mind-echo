@@ -43,7 +43,7 @@ final class HistoryListUITests: XCTestCase {
         let entryList = app.collectionViews["home.entryList"]
         XCTAssertTrue(entryList.waitForExistence(timeout: 5))
 
-        // Past recording rows should contain recording info (sequence number, etc.)
+        // Past recording rows should contain recording info (time, duration, etc.)
         let firstPastCell = entryList.cells.firstMatch
         XCTAssertTrue(firstPastCell.waitForExistence(timeout: 5))
         XCTAssertTrue(firstPastCell.staticTexts.count >= 1)
