@@ -20,8 +20,16 @@ final class TranscriptionViewModel {
         case unavailable
     }
 
+    enum PromptState: Equatable {
+        case idle
+        case loading
+        case success(String)
+        case failure(String)
+    }
+
     private(set) var state: State = .idle
     private(set) var summaryState: SummaryState = .idle
+    private(set) var promptState: PromptState = .idle
 
     @ObservationIgnored
     var transcribe: (URL, Locale) async throws -> String = TranscriptionService().transcribe
@@ -37,6 +45,8 @@ final class TranscriptionViewModel {
     var summarize: (String) async throws -> String = SummarizationService().summarize
     @ObservationIgnored
     var isSummarizationAvailable: () -> Bool = { SummarizationService.isAvailable }
+    @ObservationIgnored
+    var processPrompt: (String, String) async throws -> String = SummarizationService().applyPrompt
 
     func startTranscription(recording: Recording) async {
         // 保存済みの書き起こしがあれば即表示
@@ -78,6 +88,20 @@ final class TranscriptionViewModel {
             }
         } catch {
             state = .failure("書き起こしに失敗しました: \(error.localizedDescription)")
+        }
+    }
+
+    func applyAIPrompt(transcriptionText: String, prompt: String) async {
+        promptState = .loading
+        do {
+            let result = try await processPrompt(transcriptionText, prompt)
+            if result.isEmpty {
+                promptState = .failure("AI結果が空でした。")
+            } else {
+                promptState = .success(result)
+            }
+        } catch {
+            promptState = .failure("AI処理に失敗しました: \(error.localizedDescription)")
         }
     }
 
