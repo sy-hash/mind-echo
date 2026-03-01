@@ -13,12 +13,19 @@ class HomeViewModel {
         case failure(String)
     }
 
+    /// Represents a single calendar day in the past section, with an optional entry.
+    struct DateRow: Identifiable {
+        let date: Date
+        let entry: JournalEntry?
+        var id: Date { date }
+    }
+
     var recordingDuration: TimeInterval = 0
     var playingRecordingId: UUID?
     var isPlaying = false
     var playbackProgress: Double = 0
     var todayEntry: JournalEntry?
-    var pastEntries: [JournalEntry] = []
+    var pastRows: [DateRow] = []
     var errorMessage: String?
     private(set) var transcriptionState: TranscriptionState = .idle
     var recordingTargetDate: Date?
@@ -206,7 +213,18 @@ class HomeViewModel {
             sortBy: [SortDescriptor(\.date, order: .reverse)]
         )
         let all = (try? modelContext.fetch(descriptor)) ?? []
-        pastEntries = all.filter { $0.date != today }
+        let past = all.filter { $0.date != today }
+
+        guard let oldestDate = past.last?.date else {
+            pastRows = []
+            return
+        }
+
+        let cal = Calendar.current
+        let yesterday = cal.date(byAdding: .day, value: -1, to: today) ?? today
+        let allDates = DateHelper.logicalDateRange(from: oldestDate, to: yesterday)
+        let entryByDate = Dictionary(past.map { ($0.date, $0) }, uniquingKeysWith: { first, _ in first })
+        pastRows = allDates.map { DateRow(date: $0, entry: entryByDate[$0]) }
     }
 
     // MARK: - Recording management
@@ -242,7 +260,7 @@ class HomeViewModel {
         if let existing = todayEntry, existing.date == logicalDate {
             return existing
         }
-        if let existing = pastEntries.first(where: { $0.date == logicalDate }) {
+        if let existing = pastRows.first(where: { $0.date == logicalDate })?.entry {
             return existing
         }
         let descriptor = FetchDescriptor<JournalEntry>(

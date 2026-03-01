@@ -37,5 +37,11 @@ final class NavigationUITests: XCTestCase {
         XCTAssertTrue(entryList.waitForExistence(timeout: 5))
         // Should have at least today section + past sections
         XCTAssertTrue(entryList.cells.count >= 1)
+
+        // Dates without recordings (2 and 4 days ago) should show empty state
+        let emptyStateQuery = app.staticTexts.matching(
+            NSPredicate(format: "identifier BEGINSWITH 'past.emptyState.'")
+        )
+        XCTAssertTrue(emptyStateQuery.firstMatch.waitForExistence(timeout: 5))
     }
 }

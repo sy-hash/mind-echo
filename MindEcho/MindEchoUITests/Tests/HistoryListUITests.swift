@@ -27,6 +27,12 @@ final class HistoryListUITests: XCTestCase {
         XCTAssertTrue(entryList.waitForExistence(timeout: 5))
         // Past entries should appear as recording rows
         XCTAssertTrue(entryList.cells.count >= 1)
+
+        // Add button should exist even for dates without recordings (2 days ago in sparse seed)
+        let addButtonQuery = app.buttons.matching(
+            NSPredicate(format: "identifier BEGINSWITH 'past.addButton.'")
+        )
+        XCTAssertTrue(addButtonQuery.firstMatch.waitForExistence(timeout: 5))
     }
 
     @MainActor

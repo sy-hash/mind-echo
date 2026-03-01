@@ -24,8 +24,8 @@ struct HomeView: View {
                 todaySection
 
                 // Past entries sections
-                ForEach(viewModel.pastEntries) { entry in
-                    pastEntrySection(entry)
+                ForEach(viewModel.pastRows) { row in
+                    pastSection(row)
                 }
             }
             .listStyle(.grouped)
@@ -97,21 +97,29 @@ struct HomeView: View {
         }
     }
 
-    // MARK: - Past Entry Section
+    // MARK: - Past Section
 
     @ViewBuilder
-    private func pastEntrySection(_ entry: JournalEntry) -> some View {
+    private func pastSection(_ row: HomeViewModel.DateRow) -> some View {
         Section {
-            ForEach(entry.sortedRecordings) { recording in
-                recordingRow(recording, isToday: false, entry: entry)
+            if let entry = row.entry, !entry.recordings.isEmpty {
+                ForEach(entry.sortedRecordings) { recording in
+                    recordingRow(recording, isToday: false, entry: entry)
+                }
+            } else {
+                Text("録音がありません")
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("past.emptyState.\(dateTag(row.date))")
             }
         } header: {
             HStack {
-                Text(DateHelper.displayString(for: entry.date))
-                    .accessibilityIdentifier("home.sectionHeader.\(dateTag(entry.date))")
+                Text(DateHelper.displayString(for: row.date))
+                    .accessibilityIdentifier("home.sectionHeader.\(dateTag(row.date))")
                 Spacer()
-                addMenu(for: entry.date, prefix: "past", dateTag: dateTag(entry.date))
-                shareMenu(for: entry, prefix: "past", dateTag: dateTag(entry.date))
+                addMenu(for: row.date, prefix: "past", dateTag: dateTag(row.date))
+                if let entry = row.entry, !entry.recordings.isEmpty {
+                    shareMenu(for: entry, prefix: "past", dateTag: dateTag(row.date))
+                }
             }
         }
     }

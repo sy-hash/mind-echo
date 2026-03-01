@@ -69,7 +69,8 @@ struct MindEchoApp: App {
     @MainActor
     private static func seedHistory(context: ModelContext) {
         let calendar = Calendar.current
-        for dayOffset in 1...5 {
+        // Use non-consecutive offsets so that "empty" dates (2, 4 days ago) appear in the list
+        for dayOffset in [1, 3, 5] {
             let referenceDate = calendar.date(
                 byAdding: .day,
                 value: -dayOffset,
