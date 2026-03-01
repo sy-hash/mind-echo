@@ -276,11 +276,13 @@ struct HomeView: View {
     }
 
     private func exportAndShareTranscript(entry: JournalEntry) {
-        do {
-            let text = try viewModel.exportTranscriptForSharing(entry: entry)
-            shareItems = [text]
-        } catch {
-            // Handle error silently for now
+        Task { @MainActor in
+            do {
+                let text = try viewModel.exportTranscriptForSharing(entry: entry)
+                shareItems = [text]
+            } catch {
+                // Handle error silently for now
+            }
         }
     }
 
