@@ -207,7 +207,6 @@ struct HomeView: View {
                 Text(summary)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-                    .lineLimit(2)
                     .accessibilityIdentifier(
                         isToday
                             ? "home.summary.\(recording.sequenceNumber)"
@@ -217,7 +216,6 @@ struct HomeView: View {
                 Text(transcription)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-                    .lineLimit(2)
                     .accessibilityIdentifier(
                         isToday
                             ? "home.transcription.\(recording.sequenceNumber)"
