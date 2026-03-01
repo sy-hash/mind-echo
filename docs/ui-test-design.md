@@ -9,7 +9,7 @@ UIテストプロセスはアプリと別プロセスで動作するため、lau
 | Launch Argument | 用途 |
 |---|---|
 | `--uitesting` | SwiftData を in-memory ストアに切り替え、テスト毎にクリーンな状態を保証 |
-| `--seed-history` | サンプル JournalEntry データを事前投入（履歴セクションテスト用） |
+| `--seed-history` | サンプル JournalEntry データを歯抜けで事前投入（1日前、3日前、5日前のみ。履歴セクション＋空状態テスト用） |
 | `--seed-today-with-recordings` | 今日のエントリ + モック録音データを事前投入 |
 | `--mock-recorder` | MockAudioRecorderService を注入（マイク不要で録音UI状態遷移をテスト） |
 | `--mock-player` | MockAudioPlayerService を注入（実音声ファイル不要で再生UI状態遷移をテスト） |
@@ -58,8 +58,11 @@ TabView を廃止し、今日のセクションと過去の履歴セクション
 
 **過去のセクション**
 
+全日付表示により、最古の JournalEntry.date から今日の前日までの全日付がセクションとして表示される。記録がない日付にも空状態メッセージと追加ボタンが表示される。
+
 - `home.sectionHeader.{date}` — 過去の日付セクションヘッダー（date = yyyyMMdd）
-- `past.addButton.{date}` — 過去のセクションヘッダー内の追加メニューボタン（➕アイコン）
+- `past.emptyState.{date}` — 過去の日付で録音がない場合の空状態テキスト（date = yyyyMMdd）
+- `past.addButton.{date}` — 過去のセクションヘッダー内の追加メニューボタン（➕アイコン、記録がない日付にも表示）
 - `past.recordMenuItem.{date}` — 過去の追加メニュー内の「音声を録音」ボタン
 - `past.shareButton.{date}` — 過去のセクションヘッダー内の共有メニューボタン
 - `past.shareAudioButton.{date}` — 過去の共有メニュー内の「音声を共有」ボタン
@@ -106,7 +109,7 @@ TabView を廃止し、今日のセクションと過去の履歴セクション
 |-------|---------|
 | `testAppLaunch_showsHomeScreen` | 起動時にホーム画面が表示される |
 | `testAppLaunch_showsTodayEmptyState` | 録音なしで空状態が表示される |
-| `testSeededHistory_showsPastSections` | シードデータで過去のセクションが表示される |
+| `testSeededHistory_showsPastSections` | シードデータで過去の全日付セクション（記録あり・なし含む）が表示される。記録がない日付に `past.emptyState.{date}` が表示されることを検証 |
 
 ### 2. HomeRecordingUITests（2テスト）
 
@@ -149,7 +152,7 @@ TabView を廃止し、今日のセクションと過去の履歴セクション
 | テスト | 検証内容 |
 |-------|---------|
 | `testEmptyHistory_showsEmptyState` | データなしで今日のセクションに空状態表示 |
-| `testSeededHistory_displaysEntries` | シードデータが統合リストに表示される |
+| `testSeededHistory_displaysEntries` | シードデータが統合リストに表示される。記録がない日付にも `past.addButton.{date}` が表示されタップ可能であることを検証 |
 | `testEntryRow_showsDatePreviewAndRecordingInfo` | セルに録音情報が表示される |
 
 ### 4. EntryDetailUITests（5テスト）

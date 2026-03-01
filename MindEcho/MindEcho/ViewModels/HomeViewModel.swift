@@ -4,6 +4,12 @@ import MindEchoCore
 import Observation
 import SwiftData
 
+struct DateSlot: Identifiable {
+    let date: Date
+    let entry: JournalEntry?
+    var id: Date { date }
+}
+
 @Observable
 class HomeViewModel {
     enum TranscriptionState: Equatable {
@@ -19,6 +25,7 @@ class HomeViewModel {
     var playbackProgress: Double = 0
     var todayEntry: JournalEntry?
     var pastEntries: [JournalEntry] = []
+    var pastDateSlots: [DateSlot] = []
     var errorMessage: String?
     private(set) var transcriptionState: TranscriptionState = .idle
     var recordingTargetDate: Date?
@@ -207,6 +214,23 @@ class HomeViewModel {
         )
         let all = (try? modelContext.fetch(descriptor)) ?? []
         pastEntries = all.filter { $0.date != today }
+
+        // Build pastDateSlots: all dates from oldest entry to yesterday
+        if let oldestDate = all.map(\.date).min() {
+            let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: today)
+                .map { DateHelper.logicalDate(for: $0) } ?? today
+            if oldestDate < today {
+                let allDates = DateHelper.logicalDateRange(from: oldestDate, to: yesterday)
+                let entryByDate = Dictionary(uniqueKeysWithValues: pastEntries.map { ($0.date, $0) })
+                pastDateSlots = allDates.map { date in
+                    DateSlot(date: date, entry: entryByDate[date])
+                }
+            } else {
+                pastDateSlots = []
+            }
+        } else {
+            pastDateSlots = []
+        }
     }
 
     // MARK: - Recording management
@@ -240,6 +264,9 @@ class HomeViewModel {
 
     private func getOrCreateEntry(for logicalDate: Date) -> JournalEntry {
         if let existing = todayEntry, existing.date == logicalDate {
+            return existing
+        }
+        if let slot = pastDateSlots.first(where: { $0.date == logicalDate }), let existing = slot.entry {
             return existing
         }
         if let existing = pastEntries.first(where: { $0.date == logicalDate }) {

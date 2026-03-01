@@ -23,9 +23,9 @@ struct HomeView: View {
                 // Today's section
                 todaySection
 
-                // Past entries sections
-                ForEach(viewModel.pastEntries) { entry in
-                    pastEntrySection(entry)
+                // Past date sections (all dates from oldest entry to yesterday)
+                ForEach(viewModel.pastDateSlots) { slot in
+                    pastDateSection(date: slot.date, entry: slot.entry)
                 }
             }
             .listStyle(.grouped)
@@ -97,21 +97,29 @@ struct HomeView: View {
         }
     }
 
-    // MARK: - Past Entry Section
+    // MARK: - Past Date Section
 
     @ViewBuilder
-    private func pastEntrySection(_ entry: JournalEntry) -> some View {
+    private func pastDateSection(date: Date, entry: JournalEntry?) -> some View {
         Section {
-            ForEach(entry.sortedRecordings) { recording in
-                recordingRow(recording, isToday: false, entry: entry)
+            if let entry, !entry.recordings.isEmpty {
+                ForEach(entry.sortedRecordings) { recording in
+                    recordingRow(recording, isToday: false, entry: entry)
+                }
+            } else {
+                Text("録音がありません")
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("past.emptyState.\(dateTag(date))")
             }
         } header: {
             HStack {
-                Text(DateHelper.displayString(for: entry.date))
-                    .accessibilityIdentifier("home.sectionHeader.\(dateTag(entry.date))")
+                Text(DateHelper.displayString(for: date))
+                    .accessibilityIdentifier("home.sectionHeader.\(dateTag(date))")
                 Spacer()
-                addMenu(for: entry.date, prefix: "past", dateTag: dateTag(entry.date))
-                shareMenu(for: entry, prefix: "past", dateTag: dateTag(entry.date))
+                addMenu(for: date, prefix: "past", dateTag: dateTag(date))
+                if let entry, !entry.recordings.isEmpty {
+                    shareMenu(for: entry, prefix: "past", dateTag: dateTag(date))
+                }
             }
         }
     }

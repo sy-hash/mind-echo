@@ -35,7 +35,20 @@ final class NavigationUITests: XCTestCase {
         // Past entry recordings should be visible in the list
         let entryList = app.collectionViews["home.entryList"]
         XCTAssertTrue(entryList.waitForExistence(timeout: 5))
-        // Should have at least today section + past sections
-        XCTAssertTrue(entryList.cells.count >= 1)
+
+        // With sparse seed data (1, 3, 5 days ago) and all-dates display,
+        // we should have 5 past sections (1-5 days ago) + today section.
+        // Today empty state + 3 recording cells + 2 empty state cells = 6 cells total
+        XCTAssertTrue(entryList.cells.count >= 6)
+
+        // Verify empty state exists for a date without recordings (2 days ago)
+        let calendar = Calendar.current
+        let twoDaysAgo = calendar.date(byAdding: .day, value: -2, to: Date())!
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyyMMdd"
+        let twoDaysAgoTag = formatter.string(from: twoDaysAgo)
+        let emptyState = app.staticTexts["past.emptyState.\(twoDaysAgoTag)"]
+        XCTAssertTrue(emptyState.waitForExistence(timeout: 5))
     }
 }
