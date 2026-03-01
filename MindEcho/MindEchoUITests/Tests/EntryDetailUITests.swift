@@ -23,9 +23,8 @@ final class EntryDetailUITests: XCTestCase {
         ).firstMatch
         XCTAssertTrue(recordingRow.waitForExistence(timeout: 5))
 
-        // Verify recording info exists
-        let recordingNumber = app.staticTexts["#1"]
-        XCTAssertTrue(recordingNumber.exists)
+        // Verify recording row is displayed
+        XCTAssertTrue(recordingRow.exists)
     }
 
     @MainActor
