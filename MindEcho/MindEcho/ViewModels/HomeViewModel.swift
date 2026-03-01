@@ -122,6 +122,7 @@ class HomeViewModel {
             duration: finalDuration,
             recordedAt: currentRecordingStartedAt ?? Date()
         )
+        modelContext.insert(recording)
         entry.recordings.append(recording)
         entry.updatedAt = Date()
         if targetDate == DateHelper.logicalDate() {
