@@ -1,6 +1,6 @@
 # UIテスト設計
 
-メインシナリオを選定し XCTest で UIテストを記述する（5カテゴリ・17テストケース）。
+メインシナリオを選定し XCTest で UIテストを記述する（5カテゴリ・19テストケース）。
 
 ## テストデータセットアップ（Launch Arguments）
 
@@ -15,6 +15,7 @@ UIテストプロセスはアプリと別プロセスで動作するため、lau
 | `--mock-player` | MockAudioPlayerService を注入（実音声ファイル不要で再生UI状態遷移をテスト） |
 | `--mock-transcription` | TranscriptionView 内の書き起こしクロージャを mock に差し替え（Speech フレームワーク不要でテスト） |
 | `--mock-summarization` | TranscriptionView 内の要約クロージャを mock に差し替え（FoundationModels 不要でテスト） |
+| `--mock-ai-prompt` | TranscriptionView 内の AI プロンプト適用クロージャを mock に差し替え（FoundationModels 不要でテスト） |
 
 ## マイク非依存のテスト方式
 
@@ -97,8 +98,14 @@ TabView を廃止し、今日のセクションと過去の履歴セクション
 - `transcription.summaryLoading` — 要約生成中のプログレス表示
 - `transcription.summaryText` — 要約結果テキスト
 - `transcription.summaryError` — 要約エラーメッセージ
+- `transcription.tabPicker` — 原文/AI結果セグメントコントロール
+- `transcription.promptField` — プロンプト入力フィールド
+- `transcription.applyButton` — 「適用」ボタン
+- `transcription.aiResultText` — AI処理結果テキスト
+- `transcription.aiResultLoading` — AI処理中プログレス表示
+- `transcription.aiResultError` — AI処理エラーメッセージ
 
-## テストケース（5カテゴリ・16テスト）
+## テストケース（5カテゴリ・18テスト）
 
 ### 1. NavigationUITests（3テスト）
 
@@ -164,13 +171,15 @@ TabView を廃止し、今日のセクションと過去の履歴セクション
 | `testMenuDelete_removesRecording` | メニューボタン（…）タップ → 削除メニューアイテムタップで録音が削除される |
 | `testPlayButton_togglesPlaybackState` | 再生ボタンタップで一時停止ボタンに切り替わり、一時停止タップで再生ボタンに戻る |
 
-### 5. TranscriptionUITests（4テスト）
+### 5. TranscriptionUITests（6テスト）
 
 | テスト | 検証内容 |
 |-------|---------|
 | `testRecordingRowTap_opensTranscriptionSheet` | 録音セルタップで TranscriptionView がモーダル表示され、結果テキストが表示される |
 | `testTranscription_showsResultText` | 書き起こし完了後にモックテキストが表示される |
 | `testTranscription_showsSummaryAboveResultText` | 要約テキストが書き起こしテキストの上に表示される |
+| `testAIPrompt_customPrompt_showsResult` | プロンプト入力+適用で AI 結果が表示される |
+| `testAIPrompt_tabSwitching` | セグメント切り替えで原文と AI 結果を行き来できる |
 | `testTranscription_dismissSheet` | 閉じるボタン（×）をタップしてシートを閉じ、ホーム画面に戻る |
 
 ## テスト対象外（明示的に除外）
