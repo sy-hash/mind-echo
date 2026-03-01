@@ -131,7 +131,10 @@ struct HomeViewModelTests {
         vm.fetchAllEntries()
 
         #expect(vm.todayEntry != nil)
-        #expect(vm.pastEntries.count >= 1)
+        #expect(vm.pastDateEntries.count >= 1)
+        // The past date entry with a recording should have a non-nil entry
+        let withEntry = vm.pastDateEntries.first(where: { $0.entry != nil })
+        #expect(withEntry != nil)
     }
 
     @Test func deleteRecording_removesFromEntry() throws {

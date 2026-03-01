@@ -4,6 +4,13 @@ import MindEchoCore
 import Observation
 import SwiftData
 
+/// Represents a past date that may or may not have a JournalEntry.
+struct PastDateEntry: Identifiable {
+    let date: Date
+    var entry: JournalEntry?
+    var id: Date { date }
+}
+
 @Observable
 class HomeViewModel {
     enum TranscriptionState: Equatable {
@@ -18,7 +25,7 @@ class HomeViewModel {
     var isPlaying = false
     var playbackProgress: Double = 0
     var todayEntry: JournalEntry?
-    var pastEntries: [JournalEntry] = []
+    var pastDateEntries: [PastDateEntry] = []
     var errorMessage: String?
     private(set) var transcriptionState: TranscriptionState = .idle
     var recordingTargetDate: Date?
@@ -206,7 +213,22 @@ class HomeViewModel {
             sortBy: [SortDescriptor(\.date, order: .reverse)]
         )
         let all = (try? modelContext.fetch(descriptor)) ?? []
-        pastEntries = all.filter { $0.date != today }
+        let pastEntries = all.filter { $0.date != today }
+
+        // Build full date range from oldest entry to today
+        guard let oldestDate = pastEntries.last?.date else {
+            pastDateEntries = []
+            return
+        }
+        let allDates = DateHelper.logicalDateRange(from: oldestDate, to: today)
+        // Skip today (first element since descending) — it's shown in todaySection
+        let pastDates = allDates.filter { $0 != today }
+
+        // Map entries by date for fast lookup
+        let entryByDate = Dictionary(uniqueKeysWithValues: pastEntries.map { ($0.date, $0) })
+        pastDateEntries = pastDates.map { date in
+            PastDateEntry(date: date, entry: entryByDate[date])
+        }
     }
 
     // MARK: - Recording management
@@ -242,7 +264,7 @@ class HomeViewModel {
         if let existing = todayEntry, existing.date == logicalDate {
             return existing
         }
-        if let existing = pastEntries.first(where: { $0.date == logicalDate }) {
+        if let existing = pastDateEntries.first(where: { $0.date == logicalDate })?.entry {
             return existing
         }
         let descriptor = FetchDescriptor<JournalEntry>(

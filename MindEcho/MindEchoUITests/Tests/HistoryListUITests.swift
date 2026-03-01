@@ -25,8 +25,18 @@ final class HistoryListUITests: XCTestCase {
 
         let entryList = app.collectionViews["home.entryList"]
         XCTAssertTrue(entryList.waitForExistence(timeout: 5))
-        // Past entries should appear as recording rows
+        // Past entries should appear as recording rows + empty state rows
         XCTAssertTrue(entryList.cells.count >= 1)
+
+        // Dates without entries should still have an addButton
+        let calendar = Calendar.current
+        let twoDaysAgo = calendar.date(byAdding: .day, value: -2, to: Date())!
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyyMMdd"
+        let twoDaysAgoTag = formatter.string(from: twoDaysAgo)
+        let addButton = app.buttons["past.addButton.\(twoDaysAgoTag)"]
+        XCTAssertTrue(addButton.waitForExistence(timeout: 5))
     }
 
     @MainActor
