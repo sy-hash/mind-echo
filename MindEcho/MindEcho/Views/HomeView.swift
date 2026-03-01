@@ -57,6 +57,7 @@ struct HomeView: View {
                 if viewModel.isRecording {
                     viewModel.stopRecording()
                 }
+                viewModel.recordingTargetDate = nil
                 viewModel.resetTranscriptionState()
                 viewModel.fetchAllEntries()
             }) {
@@ -88,6 +89,7 @@ struct HomeView: View {
                 Text(DateHelper.displayString(for: DateHelper.today()))
                     .accessibilityIdentifier("home.dateLabel")
                 Spacer()
+                addMenu(for: DateHelper.today(), prefix: "home")
                 if let entry = viewModel.todayEntry, !entry.recordings.isEmpty {
                     shareMenu(for: entry, prefix: "home")
                 }
@@ -108,6 +110,7 @@ struct HomeView: View {
                 Text(DateHelper.displayString(for: entry.date))
                     .accessibilityIdentifier("home.sectionHeader.\(dateTag(entry.date))")
                 Spacer()
+                addMenu(for: entry.date, prefix: "past", dateTag: dateTag(entry.date))
                 shareMenu(for: entry, prefix: "past", dateTag: dateTag(entry.date))
             }
         }
@@ -215,6 +218,24 @@ struct HomeView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    // MARK: - Add Menu
+
+    private func addMenu(for date: Date, prefix: String, dateTag: String? = nil) -> some View {
+        let suffix = dateTag.map { ".\($0)" } ?? ""
+        return Menu {
+            Button {
+                viewModel.recordingTargetDate = date
+                isRecordingModalPresented = true
+            } label: {
+                Label("音声を録音", systemImage: "mic")
+            }
+            .accessibilityIdentifier("\(prefix).recordMenuItem\(suffix)")
+        } label: {
+            Image(systemName: "plus")
+        }
+        .accessibilityIdentifier("\(prefix).addButton\(suffix)")
     }
 
     // MARK: - Share Menu
