@@ -71,7 +71,27 @@ jobs:
             -scheme MindEcho \
             -destination "$DESTINATION" \
             -derivedDataPath DerivedData \
-            -only-testing:MindEchoTests
+            -only-testing:MindEchoTests \
+            -resultBundlePath TestResults/UnitTests.xcresult
+
+      - name: Extract test results on failure
+        if: failure()
+        run: |
+          xcrun xcresulttool get test-results tests \
+            --path TestResults/UnitTests.xcresult \
+            > TestResults/unit-test-results.json 2>/dev/null || true
+
+          xcrun xcresulttool get test-results summary \
+            --path TestResults/UnitTests.xcresult \
+            > TestResults/unit-test-summary.json 2>/dev/null || true
+
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-results
+          path: TestResults/
+          retention-days: 7
 
   ui-tests:
     name: UI Tests
@@ -94,4 +114,24 @@ jobs:
             -scheme MindEcho \
             -destination "$DESTINATION" \
             -derivedDataPath DerivedData \
-            -only-testing:MindEchoUITests
+            -only-testing:MindEchoUITests \
+            -resultBundlePath TestResults/UITests.xcresult
+
+      - name: Extract test results on failure
+        if: failure()
+        run: |
+          xcrun xcresulttool get test-results tests \
+            --path TestResults/UITests.xcresult \
+            > TestResults/ui-test-results.json 2>/dev/null || true
+
+          xcrun xcresulttool get test-results summary \
+            --path TestResults/UITests.xcresult \
+            > TestResults/ui-test-summary.json 2>/dev/null || true
+
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-test-results
+          path: TestResults/
+          retention-days: 7
