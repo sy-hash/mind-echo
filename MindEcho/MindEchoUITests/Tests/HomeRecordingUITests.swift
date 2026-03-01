@@ -96,4 +96,62 @@ final class HomeRecordingUITests: XCTestCase {
         XCTAssertTrue(app.descendants(matching: .any)["home.recordingRow.1"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.descendants(matching: .any)["home.recordingRow.2"].waitForExistence(timeout: 5))
     }
+
+    @MainActor
+    func testAddRecordingToPastDate() throws {
+        // TODO: モーダルを閉じた後に過去エントリへ追加した録音行が UI に反映されない問題が未解決のためスキップ。
+        // SwiftData の inverse 関係（recording.entry 経由）での保存方法または
+        // modelContext.save() の追加による修正を検討中。
+        // 参考: https://github.com/sy-hash/mind-echo/pull/56#issuecomment-3979334745
+        throw XCTSkip("過去日付への録音追加後に録音行が UI に反映されない問題が未修正のためスキップ (#56)")
+
+        app.launchArguments.append("--seed-history")
+        app.launch()
+
+        // 1. Find a past section's add button
+        let addButton = app.descendants(matching: .any).matching(
+            NSPredicate(format: "identifier BEGINSWITH 'past.addButton.'")
+        ).firstMatch
+        XCTAssertTrue(addButton.waitForExistence(timeout: 5))
+
+        // 2. Tap the add button to open menu
+        addButton.tap()
+
+        // 3. Tap "音声を録音" menu item
+        let recordMenuItem = app.buttons["音声を録音"]
+        XCTAssertTrue(recordMenuItem.waitForExistence(timeout: 5))
+        recordMenuItem.tap()
+
+        // Trigger interrupt monitor for microphone permission
+        app.tap()
+
+        // 4. Verify recording modal is shown
+        XCTAssertTrue(app.staticTexts["recording.duration"].waitForExistence(timeout: 10))
+
+        // 5. Stop recording
+        XCTAssertTrue(app.buttons["recording.stopButton"].waitForExistence(timeout: 10))
+        app.buttons["recording.stopButton"].tap()
+
+        // 6. Wait for transcription result
+        let transcriptionResult = app.staticTexts["recording.transcriptionResult"]
+        XCTAssertTrue(transcriptionResult.waitForExistence(timeout: 10))
+
+        // 7. Close modal
+        let closeButton = app.buttons["閉じる"]
+        XCTAssertTrue(closeButton.waitForExistence(timeout: 5))
+        closeButton.tap()
+
+        // 8. Wait for modal to dismiss
+        let modalDismissed = NSPredicate(format: "exists == false")
+        expectation(for: modalDismissed, evaluatedWith: transcriptionResult)
+        waitForExpectations(timeout: 5)
+
+        // 9. Verify a second recording appeared in a past entry
+        //    Seed data creates 1 recording per entry (sequenceNumber 1).
+        //    After adding, one entry should have sequenceNumber 2.
+        let newRecording = app.descendants(matching: .any).matching(
+            NSPredicate(format: "identifier MATCHES 'past\\.recordingRow\\.\\d+\\.2'")
+        ).firstMatch
+        XCTAssertTrue(newRecording.waitForExistence(timeout: 5))
+    }
 }

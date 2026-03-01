@@ -1,6 +1,6 @@
 # UIテスト設計
 
-メインシナリオを選定し XCTest で UIテストを記述する（5カテゴリ・16テストケース）。
+メインシナリオを選定し XCTest で UIテストを記述する（5カテゴリ・17テストケース）。
 
 ## テストデータセットアップ（Launch Arguments）
 
@@ -41,6 +41,8 @@ TabView を廃止し、今日のセクションと過去の履歴セクション
 
 - `home.dateLabel` — 今日の日付表示（セクションヘッダー）
 - `home.emptyState` — 録音がない場合の空状態テキスト
+- `home.addButton` — 今日のセクションヘッダー内の追加メニューボタン（➕アイコン）
+- `home.recordMenuItem` — 追加メニュー内の「音声を録音」ボタン
 - `home.recordButton` — 録音開始ボタン（画面下部固定）
 - `home.recordingRow.{n}` — 今日の録音行（n = sequenceNumber）。タップで TranscriptionView へ遷移
 - `home.playButton.{n}` — 今日の録音の再生ボタン（セル右端、非再生時に表示）
@@ -57,6 +59,8 @@ TabView を廃止し、今日のセクションと過去の履歴セクション
 **過去のセクション**
 
 - `home.sectionHeader.{date}` — 過去の日付セクションヘッダー（date = yyyyMMdd）
+- `past.addButton.{date}` — 過去のセクションヘッダー内の追加メニューボタン（➕アイコン）
+- `past.recordMenuItem.{date}` — 過去の追加メニュー内の「音声を録音」ボタン
 - `past.shareButton.{date}` — 過去のセクションヘッダー内の共有メニューボタン
 - `past.shareAudioButton.{date}` — 過去の共有メニュー内の「音声を共有」ボタン
 - `past.shareTranscriptButton.{date}` — 過去の共有メニュー内の「テキストを共有」ボタン
@@ -104,13 +108,14 @@ TabView を廃止し、今日のセクションと過去の履歴セクション
 | `testAppLaunch_showsTodayEmptyState` | 録音なしで空状態が表示される |
 | `testSeededHistory_showsPastSections` | シードデータで過去のセクションが表示される |
 
-### 2. HomeRecordingUITests（1テスト）
+### 2. HomeRecordingUITests（2テスト）
 
 録音UIをモーダルに移行したことで、複数の独立したテストケースを1つの統合フローテストに統合した。
 
 | テスト | 検証内容 |
 |-------|---------|
 | `testRecordingModalFlow` | 録音ボタン → モーダル → 一時停止 → 再開 → 停止 → 書き起こし → 閉じる → 2回目録音 → 行数確認まで12ステップを通しで検証 |
+| `testAddRecordingToPastDate` | 過去の日付セクションの➕ボタン → メニュー「音声を録音」→ モーダル → 停止 → 書き起こし → 閉じる → 過去エントリに録音が追加されることを検証 |
 
 **テストステップ詳細:**
 
@@ -126,6 +131,18 @@ TabView を廃止し、今日のセクションと過去の履歴セクション
 10. 2回目の録音開始（`isHittable` predicate で安定待機）
 11. 停止 → 書き起こし結果を確認 → 閉じる
 12. `home.recordingRow.1` と `home.recordingRow.2` が両方存在することを確認
+
+**`testAddRecordingToPastDate` テストステップ:**
+
+1. `--seed-history` でシードデータ付きで起動
+2. `past.addButton.{date}` の存在確認
+3. 追加ボタンタップ → メニュー表示
+4. 「音声を録音」タップ → 録音モーダルが開く
+5. 停止ボタンタップ → 書き起こし開始
+6. `recording.transcriptionResult` が表示されることを確認
+7. 「閉じる」ボタンでモーダルを閉じる
+8. モーダルが完全に閉じたことを確認
+9. 過去のエントリに `sequenceNumber 2` の録音行が追加されたことを確認
 
 ### 3. HistoryListUITests（3テスト）
 

@@ -21,6 +21,7 @@ class HomeViewModel {
     var pastEntries: [JournalEntry] = []
     var errorMessage: String?
     private(set) var transcriptionState: TranscriptionState = .idle
+    var recordingTargetDate: Date?
 
     @ObservationIgnored
     var transcribe: (URL, Locale) async throws -> String = { url, locale in
@@ -111,8 +112,8 @@ class HomeViewModel {
         // Save recording to SwiftData
         guard let fileName = currentRecordingFileName else { return }
         lastRecordedFileName = fileName
-        let today = DateHelper.logicalDate()
-        let entry = getOrCreateTodayEntry(for: today)
+        let targetDate = recordingTargetDate ?? DateHelper.logicalDate()
+        let entry = getOrCreateEntry(for: targetDate)
         let nextSeq = (entry.recordings.map(\.sequenceNumber).max() ?? 0) + 1
 
         let recording = Recording(
@@ -121,9 +122,12 @@ class HomeViewModel {
             duration: finalDuration,
             recordedAt: currentRecordingStartedAt ?? Date()
         )
+        modelContext.insert(recording)
         entry.recordings.append(recording)
         entry.updatedAt = Date()
-        todayEntry = entry
+        if targetDate == DateHelper.logicalDate() {
+            todayEntry = entry
+        }
         lastRecordedRecording = recording
 
         currentRecordingFileName = nil
@@ -131,6 +135,7 @@ class HomeViewModel {
         recordingDuration = 0
         accumulatedDuration = 0
         recordingStartTime = nil
+        recordingTargetDate = nil
     }
 
     // MARK: - Transcription
@@ -233,8 +238,11 @@ class HomeViewModel {
 
     // MARK: - Private
 
-    private func getOrCreateTodayEntry(for logicalDate: Date) -> JournalEntry {
+    private func getOrCreateEntry(for logicalDate: Date) -> JournalEntry {
         if let existing = todayEntry, existing.date == logicalDate {
+            return existing
+        }
+        if let existing = pastEntries.first(where: { $0.date == logicalDate }) {
             return existing
         }
         let descriptor = FetchDescriptor<JournalEntry>(
