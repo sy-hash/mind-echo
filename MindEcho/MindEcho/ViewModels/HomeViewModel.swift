@@ -223,7 +223,7 @@ class HomeViewModel {
         let cal = Calendar.current
         let yesterday = cal.date(byAdding: .day, value: -1, to: today) ?? today
         let allDates = DateHelper.logicalDateRange(from: oldestDate, to: yesterday)
-        let entryByDate = Dictionary(uniqueKeysWithValues: past.map { ($0.date, $0) })
+        let entryByDate = Dictionary(past.map { ($0.date, $0) }, uniquingKeysWith: { first, _ in first })
         pastRows = allDates.map { DateRow(date: $0, entry: entryByDate[$0]) }
     }
 

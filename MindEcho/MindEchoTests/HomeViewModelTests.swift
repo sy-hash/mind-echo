@@ -134,6 +134,52 @@ struct HomeViewModelTests {
         #expect(vm.pastRows.count >= 1)
     }
 
+    @Test func fetchAllEntries_gappedDates_includesMissingDatesWithNilEntry() throws {
+        let schema = Schema([JournalEntry.self, Recording.self])
+        let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: schema, configurations: [config])
+        let context = container.mainContext
+        let recorder = MockAudioRecorderService()
+        let player = MockAudioPlayerService()
+        let vm = HomeViewModel(modelContext: context, audioRecorder: recorder, audioPlayer: player)
+
+        let cal = Calendar.current
+        let today = DateHelper.logicalDate()
+        // 1・3・5日前にエントリを作成（2・4日前は歯抜け）
+        let daysWithEntries = [-1, -3, -5]
+        var entryDates: [Date] = []
+        for offset in daysWithEntries {
+            let date = cal.date(byAdding: .day, value: offset, to: today)!
+            let logicalDate = DateHelper.logicalDate(for: date)
+            let entry = JournalEntry(date: logicalDate)
+            let recording = Recording(sequenceNumber: 1, audioFileName: "rec\(offset).m4a", duration: 10)
+            entry.recordings.append(recording)
+            context.insert(entry)
+            entryDates.append(logicalDate)
+        }
+
+        vm.fetchAllEntries()
+
+        // 1〜5日前の5行が生成されること
+        #expect(vm.pastRows.count == 5)
+
+        // 1・3・5日前は entry が非 nil
+        for offset in daysWithEntries {
+            let date = DateHelper.logicalDate(for: cal.date(byAdding: .day, value: offset, to: today)!)
+            let row = vm.pastRows.first { $0.date == date }
+            #expect(row != nil, "offset \(offset) の行が存在すること")
+            #expect(row?.entry != nil, "offset \(offset) の行は entry を持つこと")
+        }
+
+        // 2・4日前は entry が nil（歯抜け日付）
+        for offset in [-2, -4] {
+            let date = DateHelper.logicalDate(for: cal.date(byAdding: .day, value: offset, to: today)!)
+            let row = vm.pastRows.first { $0.date == date }
+            #expect(row != nil, "offset \(offset) の行が存在すること")
+            #expect(row?.entry == nil, "offset \(offset) の行は entry を持たないこと")
+        }
+    }
+
     @Test func deleteRecording_removesFromEntry() throws {
         let (vm, _, _, _container) = try makeViewModel()
         vm.startRecording()
