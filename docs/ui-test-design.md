@@ -86,6 +86,7 @@ TabView を廃止し、今日のセクションと過去の履歴セクション
 
 ### TranscriptionView
 
+- `transcription.closeButton` — シートを閉じるボタン（×アイコン、ナビゲーションバー左端）
 - `transcription.loading`
 - `transcription.resultText`
 - `transcription.error`
@@ -153,7 +154,7 @@ TabView を廃止し、今日のセクションと過去の履歴セクション
 | `testRecordingRowTap_opensTranscriptionSheet` | 録音セルタップで TranscriptionView がモーダル表示され、結果テキストが表示される |
 | `testTranscription_showsResultText` | 書き起こし完了後にモックテキストが表示される |
 | `testTranscription_showsSummaryAboveResultText` | 要約テキストが書き起こしテキストの上に表示される |
-| `testTranscription_dismissSheet` | シートをスワイプで閉じてホーム画面に戻る |
+| `testTranscription_dismissSheet` | 閉じるボタン（×）をタップしてシートを閉じ、ホーム画面に戻る |
 
 ## テスト対象外（明示的に除外）
 
