@@ -15,6 +15,7 @@ UIテストプロセスはアプリと別プロセスで動作するため、lau
 | `--mock-player` | MockAudioPlayerService を注入（実音声ファイル不要で再生UI状態遷移をテスト） |
 | `--mock-transcription` | TranscriptionView 内の書き起こしクロージャを mock に差し替え（Speech フレームワーク不要でテスト） |
 | `--mock-summarization` | TranscriptionView 内の要約クロージャを mock に差し替え（FoundationModels 不要でテスト） |
+| `--mock-live-transcription` | MockLiveTranscriptionService を注入（SFSpeechRecognizer 不要でリアルタイム書き起こし UI のテスト） |
 
 ## マイク非依存のテスト方式
 
@@ -84,6 +85,10 @@ TabView を廃止し、今日のセクションと過去の履歴セクション
 - `recording.pauseButton` — 一時停止ボタン（録音中のみ表示）
 - `recording.resumeButton` — 再開ボタン（一時停止中のみ表示）
 - `recording.stopButton` — 停止ボタン
+- `recording.liveTranscription` — リアルタイム書き起こし ScrollView コンテナ（`--mock-live-transcription` 注入時のみ表示）
+- `recording.liveTranscriptionText` — 書き起こしテキスト（テキストが存在する場合）
+- `recording.liveTranscriptionPlaceholder` — プレースホルダー（テキストが空の場合）
+- `recording.liveTranscriptionError` — エラーメッセージ（認識エラー発生時）
 
 **書き起こし後（`viewModel.isRecording == false`）**
 
@@ -99,7 +104,7 @@ TabView を廃止し、今日のセクションと過去の履歴セクション
 - `transcription.summaryText` — 要約結果テキスト
 - `transcription.summaryError` — 要約エラーメッセージ
 
-## テストケース（5カテゴリ・16テスト）
+## テストケース（6カテゴリ・17テスト）
 
 ### 1. NavigationUITests（3テスト）
 
@@ -165,7 +170,24 @@ TabView を廃止し、今日のセクションと過去の履歴セクション
 | `testMenuDelete_removesRecording` | メニューボタン（…）タップ → 削除メニューアイテムタップで録音が削除される |
 | `testPlayButton_togglesPlaybackState` | 再生ボタンタップで一時停止ボタンに切り替わり、一時停止タップで再生ボタンに戻る |
 
-### 5. TranscriptionUITests（4テスト）
+### 5. LiveTranscriptionUITests（1テスト）
+
+| テスト | 検証内容 |
+|-------|---------|
+| `testLiveTranscription_flowDuringRecording` | プレースホルダー → テキスト更新 → 停止後にリアルタイム書き起こしエリアが消え、録音後書き起こし結果へ切り替わる一連のフロー |
+
+**テストステップ詳細:**
+
+1. `--uitesting`, `--mock-recorder`, `--mock-live-transcription`, `--mock-transcription` 付きで起動
+2. `home.recordButton` タップ → モーダルが開き録音開始
+3. `recording.liveTranscriptionPlaceholder` が表示されることを確認（初期状態）
+4. `recording.liveTranscriptionText` の出現を待機（timeout: 5秒）— モックテキスト更新を確認
+5. `recording.liveTranscriptionPlaceholder` が消えていることを確認
+6. `recording.stopButton` タップ → 録音停止
+7. `recording.liveTranscription` が消えていることを確認（`exists == false`）
+8. `recording.transcriptionResult` が表示されることを確認
+
+### 6. TranscriptionUITests（4テスト）
 
 | テスト | 検証内容 |
 |-------|---------|

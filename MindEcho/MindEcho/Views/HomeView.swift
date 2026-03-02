@@ -9,11 +9,17 @@ struct HomeView: View {
     @State private var isRecordingModalPresented = false
     @State private var shareItems: [Any]?
 
-    init(modelContext: ModelContext, audioRecorder: any AudioRecording, audioPlayer: any AudioPlaying = AudioPlayerService()) {
+    init(
+        modelContext: ModelContext,
+        audioRecorder: any AudioRecording,
+        audioPlayer: any AudioPlaying = AudioPlayerService(),
+        liveTranscriber: (any LiveTranscribing)? = nil
+    ) {
         _viewModel = State(initialValue: HomeViewModel(
             modelContext: modelContext,
             audioRecorder: audioRecorder,
-            audioPlayer: audioPlayer
+            audioPlayer: audioPlayer,
+            liveTranscriber: liveTranscriber
         ))
     }
 
@@ -59,6 +65,7 @@ struct HomeView: View {
                 }
                 viewModel.recordingTargetDate = nil
                 viewModel.resetTranscriptionState()
+                viewModel.resetLiveTranscription()
                 viewModel.fetchAllEntries()
             }) {
                 RecordingModalView(viewModel: viewModel)
