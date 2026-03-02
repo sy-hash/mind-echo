@@ -49,6 +49,8 @@ jobs:
                   "Bash(xcodebuild build *)",
                   "Bash(xcodebuild test *)",
                   "Bash(xcrun simctl *)",
+                  "Bash(gh pr create *)",
+                  "Bash(gh pr view *)",
                   "Read",
                   "Edit",
                   "Write",
@@ -72,4 +74,5 @@ jobs:
             ## PR Description Rule
 
             PRを作成する際は、必ず .github/pull_request_template.md を読み、そのテンプレートに沿った説明欄を作成すること。
-            テンプレートの各セクションを埋め、該当しないセクションは「なし」と記載すること。"
+            テンプレートの各セクションを埋め、該当しないセクションは「なし」と記載すること。
+            PRの作成には必ず gh pr create コマンドを使用し、--body オプションでテンプレートに沿った説明欄を渡すこと。"
