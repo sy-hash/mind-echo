@@ -81,6 +81,7 @@ TabView を廃止し、今日のセクションと過去の履歴セクション
 
 - `recording.duration` — 録音時間（モノスペースフォント）
 - `recording.waveform` — リアルタイム波形表示
+- `recording.liveTranscription` — リアルタイム書き起こし結果（音声認識テキストがある場合のみ表示）
 - `recording.pauseButton` — 一時停止ボタン（録音中のみ表示）
 - `recording.resumeButton` — 再開ボタン（一時停止中のみ表示）
 - `recording.stopButton` — 停止ボタン

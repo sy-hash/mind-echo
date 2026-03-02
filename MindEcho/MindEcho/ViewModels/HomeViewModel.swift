@@ -39,6 +39,7 @@ class HomeViewModel {
     private var audioRecorder: any AudioRecording
     private var audioPlayer: any AudioPlaying
     private let exportService: any Exporting
+    private let liveTranscriptionService = LiveTranscriptionService()
     private var durationTimer: Timer?
     private var recordingStartTime: Date?
     private var accumulatedDuration: TimeInterval = 0
@@ -64,11 +65,12 @@ class HomeViewModel {
         }
     }
 
-    // MARK: - Computed (forwarding from recorder)
+    // MARK: - Computed (forwarding from recorder / live transcription)
 
     var isRecording: Bool { audioRecorder.isRecording }
     var isRecordingPaused: Bool { audioRecorder.isPaused }
     var audioLevels: [Float] { audioRecorder.audioLevels }
+    var liveTranscriptionText: String { liveTranscriptionService.liveText }
 
     // MARK: - Recording
 
@@ -82,6 +84,10 @@ class HomeViewModel {
             currentRecordingFileName = url.lastPathComponent
             currentRecordingStartedAt = Date()
             try audioRecorder.startRecording(to: url)
+            liveTranscriptionService.start(locale: Locale(identifier: "ja-JP"))
+            audioRecorder.onAudioBuffer = { [weak self] buffer in
+                self?.liveTranscriptionService.appendBuffer(buffer)
+            }
             recordingDuration = 0
             accumulatedDuration = 0
             recordingStartTime = Date()
@@ -114,6 +120,7 @@ class HomeViewModel {
         }
         let finalDuration = accumulatedDuration
         stopDurationTimer()
+        liveTranscriptionService.stop()
         audioRecorder.stopRecording()
 
         // Save recording to SwiftData
