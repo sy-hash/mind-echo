@@ -82,6 +82,20 @@ struct HomeViewModelTests {
         #expect(vm.todayEntry?.recordings.count == 1)
     }
 
+    @Test func startRecording_liveTranscriptionTextIsEmpty() throws {
+        let (vm, _, _, _container) = try makeViewModel()
+        vm.startRecording()
+        #expect(vm.liveTranscriptionText == "")
+    }
+
+    @Test func stopRecording_liveTranscriptionServiceStopped() throws {
+        let (vm, _, _, _container) = try makeViewModel()
+        vm.startRecording()
+        vm.stopRecording()
+        // After stopping, liveTranscriptionText returns service's liveText which is still ""
+        #expect(vm.liveTranscriptionText == "")
+    }
+
     @Test func startTranscription_savesTranscriptionToRecording() async throws {
         let (vm, _, _, _container) = try makeViewModel()
         vm.transcribe = { _, _ in "書き起こしテスト結果" }

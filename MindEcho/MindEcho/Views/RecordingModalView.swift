@@ -27,6 +27,19 @@ struct RecordingModalView: View {
                     .frame(height: 80)
                     .accessibilityIdentifier("recording.waveform")
 
+                    // Live transcription result
+                    if !viewModel.liveTranscriptionText.isEmpty {
+                        ScrollView {
+                            Text(viewModel.liveTranscriptionText)
+                                .font(.body)
+                                .foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal)
+                        }
+                        .frame(maxHeight: 150)
+                        .accessibilityIdentifier("recording.liveTranscription")
+                    }
+
                     // Pause/Resume + Stop buttons
                     HStack(spacing: 30) {
                         if viewModel.isRecordingPaused {

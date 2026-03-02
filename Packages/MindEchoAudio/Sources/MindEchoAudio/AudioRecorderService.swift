@@ -26,6 +26,7 @@ public class AudioRecorderService: AudioRecording {
     public var isRecording = false
     public var isPaused = false
     public var audioLevels: [Float] = []
+    @ObservationIgnored public var onAudioBuffer: (@MainActor (AVAudioPCMBuffer) -> Void)?
 
     private var audioEngine: AVAudioEngine?
     private var audioFile: AVAudioFile?
@@ -89,6 +90,7 @@ public class AudioRecorderService: AudioRecording {
 
             // Add sample 3 times for faster animation (per reference implementation)
             DispatchQueue.main.async {
+                self?.onAudioBuffer?(buffer)
                 self?.audioLevels.append(linear)
                 self?.audioLevels.append(linear)
                 self?.audioLevels.append(linear)
@@ -123,6 +125,7 @@ public class AudioRecorderService: AudioRecording {
         isPaused = false
         pauseFlag.value = false
         audioLevels = []
+        onAudioBuffer = nil
 
         try? AVAudioSession.sharedInstance().setActive(false)
     }

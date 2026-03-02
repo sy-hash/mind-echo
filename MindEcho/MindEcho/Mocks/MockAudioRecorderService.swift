@@ -1,3 +1,4 @@
+import AVFoundation
 import Foundation
 import MindEchoAudio
 import Observation
@@ -7,6 +8,7 @@ class MockAudioRecorderService: AudioRecording {
     var isRecording = false
     var isPaused = false
     var audioLevels: [Float] = []
+    @ObservationIgnored var onAudioBuffer: (@MainActor (AVAudioPCMBuffer) -> Void)?
     private(set) var recordingURL: URL?
 
     func startRecording(to url: URL) throws {
