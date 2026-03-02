@@ -1,6 +1,6 @@
 # UIテスト設計
 
-メインシナリオを選定し XCTest で UIテストを記述する（5カテゴリ・17テストケース）。
+メインシナリオを選定し XCTest で UIテストを記述する（6カテゴリ・18テストケース）。
 
 ## テストデータセットアップ（Launch Arguments）
 
@@ -15,6 +15,7 @@ UIテストプロセスはアプリと別プロセスで動作するため、lau
 | `--mock-player` | MockAudioPlayerService を注入（実音声ファイル不要で再生UI状態遷移をテスト） |
 | `--mock-transcription` | TranscriptionView 内の書き起こしクロージャを mock に差し替え（Speech フレームワーク不要でテスト） |
 | `--mock-summarization` | TranscriptionView 内の要約クロージャを mock に差し替え（FoundationModels 不要でテスト） |
+| `--mock-live-transcription` | MockLiveTranscriptionService を注入（Speech フレームワーク不要でリアルタイム書き起こしUIをテスト） |
 
 ## マイク非依存のテスト方式
 
@@ -84,6 +85,10 @@ TabView を廃止し、今日のセクションと過去の履歴セクション
 - `recording.pauseButton` — 一時停止ボタン（録音中のみ表示）
 - `recording.resumeButton` — 再開ボタン（一時停止中のみ表示）
 - `recording.stopButton` — 停止ボタン
+- `recording.liveTranscription` — リアルタイム書き起こし ScrollView コンテナ（`liveTranscriber` が注入されている場合のみ表示）
+- `recording.liveTranscriptionText` — リアルタイム書き起こしテキスト（テキストが存在する場合）
+- `recording.liveTranscriptionPlaceholder` — プレースホルダー「話し始めると書き起こしが表示されます」（テキストが空の場合）
+- `recording.liveTranscriptionError` — エラーメッセージ（認識エラー発生時）
 
 **書き起こし後（`viewModel.isRecording == false`）**
 
@@ -99,7 +104,7 @@ TabView を廃止し、今日のセクションと過去の履歴セクション
 - `transcription.summaryText` — 要約結果テキスト
 - `transcription.summaryError` — 要約エラーメッセージ
 
-## テストケース（5カテゴリ・16テスト）
+## テストケース（6カテゴリ・17テスト）
 
 ### 1. NavigationUITests（3テスト）
 
@@ -173,6 +178,26 @@ TabView を廃止し、今日のセクションと過去の履歴セクション
 | `testTranscription_showsResultText` | 書き起こし完了後にモックテキストが表示される |
 | `testTranscription_showsSummaryAboveResultText` | 要約テキストが書き起こしテキストの上に表示される |
 | `testTranscription_dismissSheet` | 閉じるボタン（×）をタップしてシートを閉じ、ホーム画面に戻る |
+
+### 6. LiveTranscriptionUITests（1テスト）
+
+録音中のリアルタイム書き起こし表示フローを検証。
+
+| テスト | 検証内容 |
+|-------|---------|
+| `testLiveTranscription_flowDuringRecording` | プレースホルダー表示 → テキスト更新 → 停止後にリアルタイム書き起こしが消え、録音後書き起こし結果に切り替わる一連のフロー |
+
+**テストステップ:**
+
+1. `home.recordButton` タップ → モーダルが開き録音開始
+2. `recording.liveTranscriptionPlaceholder` が表示されることを確認（初期状態）
+3. `recording.liveTranscriptionText` の出現を待機（timeout: 5秒）— テキスト更新を確認
+4. `recording.liveTranscriptionPlaceholder` が消えていることを確認
+5. `recording.stopButton` タップ → 録音停止
+6. `recording.liveTranscription` が消えていることを確認（`exists == false`）
+7. `recording.transcriptionResult`（既存の録音後書き起こし）が表示されることを確認
+
+**既存テストへの影響:** `HomeRecordingUITests.testRecordingModalFlow` は変更不要。`--mock-live-transcription` を含まないため、リアルタイム書き起こし UI は表示されない。
 
 ## テスト対象外（明示的に除外）
 
