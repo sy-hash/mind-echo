@@ -29,6 +29,8 @@ class HomeViewModel {
     var errorMessage: String?
     private(set) var transcriptionState: TranscriptionState = .idle
     var recordingTargetDate: Date?
+    private(set) var liveTranscriptionText: String?
+    private(set) var liveTranscriptionError: String?
 
     @ObservationIgnored
     var transcribe: (URL, Locale) async throws -> String = { url, locale in
@@ -39,6 +41,8 @@ class HomeViewModel {
     private var audioRecorder: any AudioRecording
     private var audioPlayer: any AudioPlaying
     private let exportService: any Exporting
+    private var liveTranscriber: (any LiveTranscribing)?
+    private var liveTranscriptionTask: Task<Void, Never>?
     private var durationTimer: Timer?
     private var recordingStartTime: Date?
     private var accumulatedDuration: TimeInterval = 0
@@ -51,12 +55,14 @@ class HomeViewModel {
         modelContext: ModelContext,
         audioRecorder: any AudioRecording,
         audioPlayer: any AudioPlaying = AudioPlayerService(),
-        exportService: any Exporting = ExportServiceImpl()
+        exportService: any Exporting = ExportServiceImpl(),
+        liveTranscriber: (any LiveTranscribing)? = nil
     ) {
         self.modelContext = modelContext
         self.audioRecorder = audioRecorder
         self.audioPlayer = audioPlayer
         self.exportService = exportService
+        self.liveTranscriber = liveTranscriber
         self.audioPlayer.onPlaybackFinished = { [weak self] in
             self?.isPlaying = false
             self?.playingRecordingId = nil
@@ -69,6 +75,7 @@ class HomeViewModel {
     var isRecording: Bool { audioRecorder.isRecording }
     var isRecordingPaused: Bool { audioRecorder.isPaused }
     var audioLevels: [Float] { audioRecorder.audioLevels }
+    var hasLiveTranscriber: Bool { liveTranscriber != nil }
 
     // MARK: - Recording
 
@@ -86,6 +93,7 @@ class HomeViewModel {
             accumulatedDuration = 0
             recordingStartTime = Date()
             startDurationTimer()
+            startLiveTranscription()
         } catch {
             currentRecordingFileName = nil
             currentRecordingStartedAt = nil
@@ -114,6 +122,7 @@ class HomeViewModel {
         }
         let finalDuration = accumulatedDuration
         stopDurationTimer()
+        stopLiveTranscription()
         audioRecorder.stopRecording()
 
         // Save recording to SwiftData
@@ -168,6 +177,11 @@ class HomeViewModel {
         transcriptionState = .idle
         lastRecordedFileName = nil
         lastRecordedRecording = nil
+    }
+
+    func resetLiveTranscription() {
+        liveTranscriptionText = nil
+        liveTranscriptionError = nil
     }
 
     // MARK: - Playback
@@ -272,6 +286,34 @@ class HomeViewModel {
         let newEntry = JournalEntry(date: logicalDate)
         modelContext.insert(newEntry)
         return newEntry
+    }
+
+    // MARK: - Live Transcription
+
+    private func startLiveTranscription() {
+        guard let transcriber = liveTranscriber else { return }
+        liveTranscriptionText = nil
+        liveTranscriptionError = nil
+        liveTranscriptionTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            let stream = transcriber.transcriptionStream(locale: Locale(identifier: "ja-JP"))
+            do {
+                for try await text in stream {
+                    guard !Task.isCancelled else { break }
+                    self.liveTranscriptionText = text
+                }
+            } catch {
+                if !Task.isCancelled {
+                    self.liveTranscriptionError = "書き起こしに失敗しました: \(error.localizedDescription)"
+                }
+            }
+        }
+    }
+
+    private func stopLiveTranscription() {
+        liveTranscriber?.stop()
+        liveTranscriptionTask?.cancel()
+        liveTranscriptionTask = nil
     }
 
     private func startDurationTimer() {

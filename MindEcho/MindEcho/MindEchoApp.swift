@@ -9,12 +9,14 @@ struct MindEchoApp: App {
     private let modelContainer: ModelContainer
     private let audioRecorder: any AudioRecording
     private let audioPlayer: any AudioPlaying
+    private let liveTranscriber: (any LiveTranscribing)?
 
     init() {
         let args = ProcessInfo.processInfo.arguments
         let isUITesting = args.contains("--uitesting")
         let useMockRecorder = args.contains("--mock-recorder")
         let useMockPlayer = args.contains("--mock-player")
+        let useMockLiveTranscription = args.contains("--mock-live-transcription")
         let schema = Schema([
             JournalEntry.self,
             Recording.self,
@@ -41,6 +43,12 @@ struct MindEchoApp: App {
             audioPlayer = AudioPlayerService()
         }
 
+        if useMockLiveTranscription {
+            liveTranscriber = MockLiveTranscriptionService()
+        } else {
+            liveTranscriber = nil
+        }
+
         // Seed data for UI testing
         if isUITesting {
             let context = modelContainer.mainContext
@@ -58,7 +66,8 @@ struct MindEchoApp: App {
             HomeView(
                 modelContext: modelContainer.mainContext,
                 audioRecorder: audioRecorder,
-                audioPlayer: audioPlayer
+                audioPlayer: audioPlayer,
+                liveTranscriber: liveTranscriber
             )
         }
         .modelContainer(modelContainer)

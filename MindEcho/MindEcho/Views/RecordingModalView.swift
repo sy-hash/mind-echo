@@ -59,6 +59,9 @@ struct RecordingModalView: View {
                         }
                         .accessibilityIdentifier("recording.stopButton")
                     }
+
+                    // Live transcription area
+                    liveTranscriptionView
                 } else {
                     // Transcription result area
                     switch viewModel.transcriptionState {
@@ -107,6 +110,46 @@ struct RecordingModalView: View {
                 }
             }
             viewModel.startRecording()
+        }
+    }
+
+    @ViewBuilder
+    private var liveTranscriptionView: some View {
+        if viewModel.hasLiveTranscriber {
+            ScrollViewReader { proxy in
+                ScrollView {
+                    if let errorText = viewModel.liveTranscriptionError {
+                        Text(errorText)
+                            .foregroundStyle(.red)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding()
+                            .accessibilityIdentifier("recording.liveTranscriptionError")
+                            .id("bottom")
+                    } else if let text = viewModel.liveTranscriptionText, !text.isEmpty {
+                        Text(text)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding()
+                            .accessibilityIdentifier("recording.liveTranscriptionText")
+                            .id("bottom")
+                    } else {
+                        Text("話し始めると書き起こしが表示されます")
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding()
+                            .accessibilityIdentifier("recording.liveTranscriptionPlaceholder")
+                            .id("bottom")
+                    }
+                }
+                .frame(maxHeight: 150)
+                .background(Color(.secondarySystemBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .accessibilityIdentifier("recording.liveTranscription")
+                .onChange(of: viewModel.liveTranscriptionText) {
+                    withAnimation {
+                        proxy.scrollTo("bottom", anchor: .bottom)
+                    }
+                }
+            }
         }
     }
 
