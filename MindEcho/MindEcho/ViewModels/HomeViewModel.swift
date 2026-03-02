@@ -2,6 +2,7 @@ import Foundation
 import MindEchoAudio
 import MindEchoCore
 import Observation
+import Speech
 import SwiftData
 
 @Observable
@@ -29,6 +30,8 @@ class HomeViewModel {
     var errorMessage: String?
     private(set) var transcriptionState: TranscriptionState = .idle
     var recordingTargetDate: Date?
+    /// 録音中にリアルタイムで更新される書き起こしテキスト。
+    private(set) var liveTranscriptionText: String = ""
 
     @ObservationIgnored
     var transcribe: (URL, Locale) async throws -> String = { url, locale in
@@ -39,6 +42,7 @@ class HomeViewModel {
     private var audioRecorder: any AudioRecording
     private var audioPlayer: any AudioPlaying
     private let exportService: any Exporting
+    @ObservationIgnored private var liveTranscriptionService: LiveTranscriptionService?
     private var durationTimer: Timer?
     private var recordingStartTime: Date?
     private var accumulatedDuration: TimeInterval = 0
@@ -76,6 +80,7 @@ class HomeViewModel {
         transcriptionState = .idle
         lastRecordedFileName = nil
         lastRecordedRecording = nil
+        liveTranscriptionText = ""
         do {
             try FilePathManager.ensureDirectoryExists(FilePathManager.recordingsDirectory)
             let url = FilePathManager.newRecordingURL()
@@ -86,6 +91,7 @@ class HomeViewModel {
             accumulatedDuration = 0
             recordingStartTime = Date()
             startDurationTimer()
+            startLiveTranscription()
         } catch {
             currentRecordingFileName = nil
             currentRecordingStartedAt = nil
@@ -114,6 +120,7 @@ class HomeViewModel {
         }
         let finalDuration = accumulatedDuration
         stopDurationTimer()
+        stopLiveTranscription()
         audioRecorder.stopRecording()
 
         // Save recording to SwiftData
@@ -284,5 +291,42 @@ class HomeViewModel {
     private func stopDurationTimer() {
         durationTimer?.invalidate()
         durationTimer = nil
+    }
+
+    // MARK: - Live Transcription
+
+    private func startLiveTranscription() {
+        // UIテスト用: --mock-live-transcription が設定されている場合はモックテキストを使う
+        if ProcessInfo.processInfo.arguments.contains("--mock-live-transcription") {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+                self?.liveTranscriptionText = "これはリアルタイム書き起こしのモックテキストです。"
+            }
+            return
+        }
+
+        SFSpeechRecognizer.requestAuthorization { [weak self] status in
+            guard status == .authorized else { return }
+            DispatchQueue.main.async {
+                self?.startLiveTranscriptionSession()
+            }
+        }
+    }
+
+    private func startLiveTranscriptionSession() {
+        let service = LiveTranscriptionService()
+        service.onTextUpdate = { [weak self] text in
+            self?.liveTranscriptionText = text
+        }
+        service.start()
+        liveTranscriptionService = service
+
+        audioRecorder.onAudioBuffer = { [weak service] buffer, time in
+            service?.processBuffer(buffer, time: time)
+        }
+    }
+
+    private func stopLiveTranscription() {
+        liveTranscriptionService?.stop()
+        audioRecorder.onAudioBuffer = nil
     }
 }

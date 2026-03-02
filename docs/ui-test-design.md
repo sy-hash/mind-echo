@@ -15,6 +15,7 @@ UIテストプロセスはアプリと別プロセスで動作するため、lau
 | `--mock-player` | MockAudioPlayerService を注入（実音声ファイル不要で再生UI状態遷移をテスト） |
 | `--mock-transcription` | TranscriptionView 内の書き起こしクロージャを mock に差し替え（Speech フレームワーク不要でテスト） |
 | `--mock-summarization` | TranscriptionView 内の要約クロージャを mock に差し替え（FoundationModels 不要でテスト） |
+| `--mock-live-transcription` | 録音中のリアルタイム書き起こしをモックテキストで代替（マイクなしでリアルタイム書き起こしUIをテスト） |
 
 ## マイク非依存のテスト方式
 
@@ -81,6 +82,7 @@ TabView を廃止し、今日のセクションと過去の履歴セクション
 
 - `recording.duration` — 録音時間（モノスペースフォント）
 - `recording.waveform` — リアルタイム波形表示
+- `recording.liveTranscription` — リアルタイム書き起こしテキスト表示エリア（ScrollView）
 - `recording.pauseButton` — 一時停止ボタン（録音中のみ表示）
 - `recording.resumeButton` — 再開ボタン（一時停止中のみ表示）
 - `recording.stopButton` — 停止ボタン
@@ -99,7 +101,7 @@ TabView を廃止し、今日のセクションと過去の履歴セクション
 - `transcription.summaryText` — 要約結果テキスト
 - `transcription.summaryError` — 要約エラーメッセージ
 
-## テストケース（5カテゴリ・16テスト）
+## テストケース（5カテゴリ・17テスト）
 
 ### 1. NavigationUITests（3テスト）
 
@@ -109,13 +111,14 @@ TabView を廃止し、今日のセクションと過去の履歴セクション
 | `testAppLaunch_showsTodayEmptyState` | 録音なしで空状態が表示される |
 | `testSeededHistory_showsPastSections` | シードデータで過去のセクションが表示され、録音がない日付に `past.emptyState.{date}` が表示される |
 
-### 2. HomeRecordingUITests（2テスト）
+### 2. HomeRecordingUITests（3テスト）
 
 録音UIをモーダルに移行したことで、複数の独立したテストケースを1つの統合フローテストに統合した。
 
 | テスト | 検証内容 |
 |-------|---------|
 | `testRecordingModalFlow` | 録音ボタン → モーダル → 一時停止 → 再開 → 停止 → 書き起こし → 閉じる → 2回目録音 → 行数確認まで12ステップを通しで検証 |
+| `testLiveTranscription_showsTextDuringRecording` | `--mock-live-transcription` を使って録音中に `recording.liveTranscription` とモックテキストが表示されることを検証 |
 | `testAddRecordingToPastDate` | 過去の日付セクションの➕ボタン → メニュー「音声を録音」→ モーダル → 停止 → 書き起こし → 閉じる → 過去エントリに録音が追加されることを検証 |
 
 **テストステップ詳細:**

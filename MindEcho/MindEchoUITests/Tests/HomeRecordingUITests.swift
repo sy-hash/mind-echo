@@ -98,6 +98,33 @@ final class HomeRecordingUITests: XCTestCase {
     }
 
     @MainActor
+    func testLiveTranscription_showsTextDuringRecording() throws {
+        app.launchArguments = ["--uitesting", "--mock-recorder", "--mock-transcription", "--mock-live-transcription"]
+        app.launch()
+
+        // 1. 録音ボタンをタップしてモーダルを開く
+        let recordBtn = app.buttons["home.recordButton"]
+        XCTAssertTrue(recordBtn.waitForExistence(timeout: 5))
+        recordBtn.tap()
+        app.tap()
+
+        // 2. 録音中に recording.liveTranscription が表示されることを確認
+        let liveTranscription = app.scrollViews["recording.liveTranscription"]
+        XCTAssertTrue(liveTranscription.waitForExistence(timeout: 10))
+
+        // 3. モックテキストが表示されることを確認
+        let mockTextPredicate = NSPredicate(format: "label CONTAINS 'リアルタイム書き起こし'")
+        let mockTextElement = app.staticTexts.matching(mockTextPredicate).firstMatch
+        XCTAssertTrue(mockTextElement.waitForExistence(timeout: 5))
+
+        // 4. 停止して閉じる
+        app.buttons["recording.stopButton"].tap()
+        let closeButton = app.buttons["閉じる"]
+        XCTAssertTrue(closeButton.waitForExistence(timeout: 5))
+        closeButton.tap()
+    }
+
+    @MainActor
     func testAddRecordingToPastDate() throws {
         // TODO: モーダルを閉じた後に過去エントリへ追加した録音行が UI に反映されない問題が未解決のためスキップ。
         // SwiftData の inverse 関係（recording.entry 経由）での保存方法または
