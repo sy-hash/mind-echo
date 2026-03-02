@@ -46,110 +46,32 @@ jobs:
             echo "skip=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Download test result artifacts
-        id: artifacts
+      - name: Fetch failed logs
+        id: logs
         if: steps.pr.outputs.number && !steps.loop-check.outputs.skip
         env:
           GH_TOKEN: ${{ secrets.CLAUDE_CODE_PAT }}
           RUN_ID: ${{ github.event.workflow_run.id }}
-        run: |
-          mkdir -p test-results
-          HAS_RESULTS=false
-
-          # unit-test-results アーティファクトのダウンロード
-          if gh run download "$RUN_ID" \
-            --repo "${{ github.repository }}" \
-            --name unit-test-results \
-            --dir test-results/unit 2>/dev/null; then
-            echo "unit=true" >> "$GITHUB_OUTPUT"
-            HAS_RESULTS=true
-          fi
-
-          # ui-test-results アーティファクトのダウンロード
-          if gh run download "$RUN_ID" \
-            --repo "${{ github.repository }}" \
-            --name ui-test-results \
-            --dir test-results/ui 2>/dev/null; then
-            echo "ui=true" >> "$GITHUB_OUTPUT"
-            HAS_RESULTS=true
-          fi
-
-          echo "has_results=$HAS_RESULTS" >> "$GITHUB_OUTPUT"
-
-      - name: Build structured test report
-        id: report
-        if: steps.pr.outputs.number && !steps.loop-check.outputs.skip
-        env:
-          GH_TOKEN: ${{ secrets.CLAUDE_CODE_PAT }}
-          RUN_ID: ${{ github.event.workflow_run.id }}
-          HAS_RESULTS: ${{ steps.artifacts.outputs.has_results }}
         run: |
           # どのジョブが失敗したか
           FAILED_JOBS=$(gh run view "$RUN_ID" --repo "${{ github.repository }}" \
             --json jobs --jq '[.jobs[] | select(.conclusion == "failure") | .name] | join(", ")')
           echo "failed_jobs=$FAILED_JOBS" >> "$GITHUB_OUTPUT"
 
-          # 構造化テスト結果の組み立て
-          NL=$'\n'
-          REPORT=""
+          # 失敗ログの取得
+          FAILED_LOG=$(gh run view "$RUN_ID" --repo "${{ github.repository }}" \
+            --log-failed 2>/dev/null || echo "")
 
-          if [ "$HAS_RESULTS" = "true" ]; then
-            # xcresulttool JSON から失敗テストを抽出
-            for KIND in unit ui; do
-              RESULTS_FILE="test-results/$KIND/*-test-results.json"
-              SUMMARY_FILE="test-results/$KIND/*-test-summary.json"
-
-              # results JSON がある場合、失敗テストのみ抽出
-              for f in $RESULTS_FILE; do
-                [ -f "$f" ] || continue
-                FAILURES=$(jq -r '
-                  [.. | objects | select(.status? == "Failed" or .result? == "failed")]
-                  | if length > 0 then
-                      map("- \(.name // .testName // "unknown"): \(.message // .failureMessage // "no message")")
-                      | join("\n")
-                    else empty end
-                ' "$f" 2>/dev/null || true)
-
-                if [ -n "$FAILURES" ]; then
-                  REPORT="${REPORT}### ${KIND^} Test Failures (from result bundle)${NL}${FAILURES}${NL}${NL}"
-                fi
-              done
-
-              # summary JSON がある場合、統計情報を追加
-              for f in $SUMMARY_FILE; do
-                [ -f "$f" ] || continue
-                STATS=$(jq -r '
-                  "Total: \(.totalCount // "?"), Passed: \(.passedCount // "?"), Failed: \(.failedCount // "?"), Skipped: \(.skippedCount // "?")"
-                ' "$f" 2>/dev/null || true)
-
-                if [ -n "$STATS" ]; then
-                  REPORT="${REPORT}### ${KIND^} Test Summary${NL}${STATS}${NL}${NL}"
-                fi
-              done
-            done
-          fi
-
-          # result bundle が取得できなかった場合、従来のログ抽出にフォールバック
-          if [ -z "$REPORT" ]; then
-            FAILED_LOG=$(gh run view "$RUN_ID" --repo "${{ github.repository }}" \
-              --log-failed 2>/dev/null || echo "")
-
-            SUMMARY=$(echo "$FAILED_LOG" | grep -E \
-              "(error:|warning:.*treated as error|Test Case.*failed|Executed.*with.*failure|\*\* TEST FAILED \*\*|XCTAssert|expected .* but got)" \
-              | head -80)
-
-            if [ -n "$SUMMARY" ]; then
-              REPORT="### Failed Log (grep fallback)${NL}\`\`\`${NL}${SUMMARY}${NL}\`\`\`${NL}"
-            else
-              REPORT="### Note${NL}No detailed failure information available. Check the workflow run directly.${NL}"
-            fi
-          fi
+          # xcodebuild のエラー行を抽出（50行上限）
+          SUMMARY=$(echo "$FAILED_LOG" | grep -E \
+            "(error:|Test Case.*failed|Executed.*with.*failure|\*\* TEST FAILED \*\*)" \
+            | head -50)
 
           # GITHUB_OUTPUT に書き出し（複数行対応）
           {
-            echo "report<<REPORT_EOF"
-            printf '%s\n' "$REPORT"
-            echo "REPORT_EOF"
+            echo "summary<<LOGS_EOF"
+            echo "$SUMMARY"
+            echo "LOGS_EOF"
           } >> "$GITHUB_OUTPUT"
 
       - name: Checkout
@@ -167,42 +89,23 @@ jobs:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ secrets.CLAUDE_CODE_PAT }}
           prompt: |
-            以下の PR のテスト失敗を分析し、分類してください。
-            xcresulttool で抽出した構造化データとログを提供します。
+            以下のテスト失敗ログを分析して分類してください。
 
-            **失敗ジョブ**: ${{ steps.report.outputs.failed_jobs }}
+            失敗ジョブ: ${{ steps.logs.outputs.failed_jobs }}
 
-            ## テスト結果
-            ${{ steps.report.outputs.report }}
+            失敗ログ:
+            ```
+            ${{ steps.logs.outputs.summary }}
+            ```
 
             ## 分類基準
+            - FIXABLE: コード修正で解決できる明確なバグ（アサーション失敗、コンパイルエラー等）
+            - FLAKY: タイミング依存、非決定的な失敗（タイムアウト、順序依存等）
+            - NEEDS_HUMAN: 環境問題やアーキテクチャ変更が必要で自動修正が困難
 
-            ### FIXABLE
-            コード修正で解決できる明確なバグ。以下が該当:
-            - XCTAssert / #expect のアサーション失敗（期待値と実際値の不一致）
-            - コンパイルエラー、リンクエラー
-            - nil アクセス、型不一致、missing import
-            - テストコード自体のバグ（セットアップ不備等）
-
-            ### FLAKY
-            タイミングや環境に依存する非決定的な失敗。以下が該当:
-            - タイムアウト（waitForExistence 等）
-            - テスト実行順序への依存
-            - シミュレータの起動失敗やクラッシュ
-            - 非同期処理のレースコンディション
-
-            ### NEEDS_HUMAN
-            自動修正が困難で人間の判断が必要。以下が該当:
-            - アーキテクチャ変更が必要
-            - 外部依存（API、証明書等）の問題
-            - CI 環境固有の問題（ランナー、キャッシュ等）
-            - 意図的な仕様変更に伴うテスト修正（要件確認が必要）
-
-            ## 出力フォーマット
-            以下の形式で回答してください。他の説明は不要です。ツールは使わないでください。
-
-            CLASSIFICATION: <FIXABLE|FLAKY|NEEDS_HUMAN>
-            REASON: <1行の理由>
+            ## 出力
+            分析結果として FIXABLE, FLAKY, NEEDS_HUMAN のいずれか1つだけを回答してください。
+            ツールは使わず、テキストで回答してください。他の説明は不要です。
           claude_args: '--max-turns 1'
 
       - name: Read classification
@@ -210,26 +113,18 @@ jobs:
         if: steps.pr.outputs.number && !steps.loop-check.outputs.skip
         run: |
           EXEC_FILE="${{ steps.analyze.outputs.execution_file }}"
-          RESPONSE=$(cat "$EXEC_FILE" 2>/dev/null \
-            | jq -r '.[].message.content // [] | .[]? | select(.type == "text") | .text' 2>/dev/null || echo "")
-
-          CLASS=$(echo "$RESPONSE" | grep -oE 'FIXABLE|FLAKY|NEEDS_HUMAN' | tail -1)
-          REASON=$(echo "$RESPONSE" | grep -oP '(?<=REASON: ).*' | tail -1)
+          CLASS=$(cat "$EXEC_FILE" 2>/dev/null \
+            | jq -r '.[].message.content // [] | .[]? | select(.type == "text") | .text' 2>/dev/null \
+            | grep -oE 'FIXABLE|FLAKY|NEEDS_HUMAN' | tail -1)
 
           # 有効な分類値かバリデーション
           if [ "$CLASS" != "FIXABLE" ] && [ "$CLASS" != "FLAKY" ] && [ "$CLASS" != "NEEDS_HUMAN" ]; then
             echo "Unexpected classification: $CLASS — falling back to NEEDS_HUMAN"
             CLASS="NEEDS_HUMAN"
-            REASON="Classification could not be determined"
           fi
 
           echo "result=$CLASS" >> "$GITHUB_OUTPUT"
-          {
-            echo "reason<<REASON_EOF"
-            echo "$REASON"
-            echo "REASON_EOF"
-          } >> "$GITHUB_OUTPUT"
-          echo "Classification: $CLASS (Reason: $REASON)"
+          echo "Classification: $CLASS"
 
       - name: Request fix via @claude
         if: steps.classify.outputs.result == 'FIXABLE'
@@ -242,13 +137,12 @@ jobs:
           <!-- test-analysis-auto -->
           @claude 以下のテスト失敗を修正してください。
 
-          **分類**: FIXABLE
-          **理由**: ${{ steps.classify.outputs.reason }}
-          **失敗ジョブ**: ${{ steps.report.outputs.failed_jobs }}
+          **失敗ジョブ**: ${{ steps.logs.outputs.failed_jobs }}
           **Workflow Run**: ${{ github.event.workflow_run.html_url }}
 
-          ## テスト結果詳細
-          ${{ steps.report.outputs.report }}
+          ```
+          ${{ steps.logs.outputs.summary }}
+          ```
 
           テストが通るようにコードを修正し、ビルドが通ることも確認してください。
           EOF
@@ -268,8 +162,7 @@ jobs:
           <!-- test-analysis-auto -->
           ⚠️ **Flaky テスト検出**: 失敗がタイミング依存の可能性があるため、失敗ジョブを自動リランしました。
 
-          **理由**: ${{ steps.classify.outputs.reason }}
-          **失敗ジョブ**: ${{ steps.report.outputs.failed_jobs }}
+          **失敗ジョブ**: ${{ steps.logs.outputs.failed_jobs }}
           **Workflow Run**: ${{ github.event.workflow_run.html_url }}
           EOF
           )"
@@ -285,11 +178,11 @@ jobs:
           <!-- test-analysis-auto -->
           🔍 **テスト失敗の自動分析結果**: 自動修正が困難な失敗です。人間によるレビューが必要です。
 
-          **理由**: ${{ steps.classify.outputs.reason }}
-          **失敗ジョブ**: ${{ steps.report.outputs.failed_jobs }}
+          **失敗ジョブ**: ${{ steps.logs.outputs.failed_jobs }}
           **Workflow Run**: ${{ github.event.workflow_run.html_url }}
 
-          ## テスト結果詳細
-          ${{ steps.report.outputs.report }}
+          ```
+          ${{ steps.logs.outputs.summary }}
+          ```
           EOF
           )"
