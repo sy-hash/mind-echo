@@ -38,35 +38,33 @@ jobs:
         id: claude
         uses: anthropics/claude-code-action@v1
         with:
-          model: claude-opus-4-6
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ secrets.CLAUDE_CODE_PAT }}
           settings: |
             {
-              "language": "Japanese"
+              "model": "claude-opus-4-6",
+              "language": "Japanese",
+              "permissions": {
+                "allow": [
+                  "Bash(xcodebuild build *)",
+                  "Bash(xcodebuild test *)",
+                  "Bash(xcrun simctl *)",
+                  "Read",
+                  "Edit",
+                  "Write",
+                  "Glob",
+                  "Grep"
+                ]
+              }
             }
-          allowed_tools: |
-            Bash(xcodebuild build *)
-            Bash(xcodebuild test *)
-            Bash(xcrun simctl *)
-            Read
-            Edit
-            Write
-            Glob
-            Grep
-          custom_instructions: |
-            ## Build Verification Rule
+          claude_args: |
+            --append-system-prompt "## Build Verification Rule
 
             プロダクトコード（Packages/ または MindEcho/MindEcho/ 配下の .swift ファイル）を
             変更した場合は、必ず以下のコマンドでビルドが通ることを確認すること。
 
-            ```bash
-            xcodebuild build \
-              -workspace MindEcho.xcworkspace \
-              -scheme MindEcho \
-              -destination 'platform=iOS Simulator,name=iPhone 17'
-            ```
+            xcodebuild build -project MindEcho/MindEcho.xcodeproj -scheme MindEcho -destination 'platform=iOS Simulator,name=iPhone 17'
 
             - ビルドエラーが発生した場合は、エラーを修正して再度ビルドを実行する
             - テストコードのみの変更、ドキュメントのみの変更の場合はビルド不要
-            - ビルド結果（成功/失敗）をコメントで報告する
+            - ビルド結果（成功/失敗）をコメントで報告する"
