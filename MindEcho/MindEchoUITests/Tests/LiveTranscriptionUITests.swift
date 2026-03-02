@@ -42,9 +42,9 @@ final class LiveTranscriptionUITests: XCTestCase {
         let placeholder = app.staticTexts["recording.liveTranscriptionPlaceholder"]
         XCTAssertTrue(placeholder.waitForExistence(timeout: 5))
 
-        // 3. Wait for live transcription text to appear (mock emits after 300ms delays)
+        // 3. Wait for live transcription text to appear (mock emits after 3s initial delay)
         let liveText = app.staticTexts["recording.liveTranscriptionText"]
-        XCTAssertTrue(liveText.waitForExistence(timeout: 5))
+        XCTAssertTrue(liveText.waitForExistence(timeout: 10))
 
         // 4. Assert placeholder has disappeared
         XCTAssertFalse(placeholder.exists)

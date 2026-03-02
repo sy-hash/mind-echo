@@ -6,7 +6,9 @@ class MockLiveTranscriptionService: LiveTranscribing, @unchecked Sendable {
     func transcriptionStream(locale: Locale) -> AsyncThrowingStream<String, Error> {
         AsyncThrowingStream { continuation in
             Task {
-                try? await Task.sleep(for: .milliseconds(300))
+                // Initial delay must be long enough for XCTest to detect the placeholder state.
+                // XCTest typically needs 2-3 seconds after sheet presentation to start checking elements.
+                try? await Task.sleep(for: .milliseconds(3000))
                 continuation.yield("これは")
                 try? await Task.sleep(for: .milliseconds(300))
                 continuation.yield("これはモックの")
