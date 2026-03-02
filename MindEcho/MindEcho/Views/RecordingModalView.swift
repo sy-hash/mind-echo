@@ -59,6 +59,40 @@ struct RecordingModalView: View {
                         }
                         .accessibilityIdentifier("recording.stopButton")
                     }
+
+                    // Live transcription area
+                    if viewModel.hasLiveTranscription {
+                        ScrollViewReader { proxy in
+                            ScrollView {
+                                VStack(alignment: .leading) {
+                                    if let error = viewModel.liveTranscriptionError {
+                                        Text(error)
+                                            .foregroundStyle(.red)
+                                            .accessibilityIdentifier("recording.liveTranscriptionError")
+                                    } else if viewModel.liveTranscriptionText.isEmpty {
+                                        Text("話し始めると書き起こしが表示されます")
+                                            .foregroundStyle(.secondary)
+                                            .accessibilityIdentifier("recording.liveTranscriptionPlaceholder")
+                                    } else {
+                                        Text(viewModel.liveTranscriptionText)
+                                            .accessibilityIdentifier("recording.liveTranscriptionText")
+                                    }
+                                    Color.clear.frame(height: 1).id("bottom")
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding()
+                            }
+                            .frame(maxHeight: 150)
+                            .background(Color(.secondarySystemBackground))
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                            .accessibilityIdentifier("recording.liveTranscription")
+                            .onChange(of: viewModel.liveTranscriptionText) {
+                                withAnimation {
+                                    proxy.scrollTo("bottom", anchor: .bottom)
+                                }
+                            }
+                        }
+                    }
                 } else {
                     // Transcription result area
                     switch viewModel.transcriptionState {
