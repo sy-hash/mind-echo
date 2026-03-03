@@ -3,16 +3,19 @@ import Foundation
 import Speech
 
 protocol LiveTranscribing: Sendable {
-    func transcriptionStream(locale: Locale) -> AsyncThrowingStream<String, Error>
+    func start(locale: Locale) -> AsyncThrowingStream<String, Error>
+    func feedAudioBuffer(_ buffer: AVAudioPCMBuffer, format: AVAudioFormat)
     func stop()
 }
 
 final class LiveTranscriptionService: LiveTranscribing, @unchecked Sendable {
     private var analyzer: SpeechAnalyzer?
-    private var audioEngine: AVAudioEngine?
     private var inputContinuation: AsyncStream<AnalyzerInput>.Continuation?
+    private var converter: AVAudioConverter?
+    private var analyzerFormat: AVAudioFormat?
+    private var isSetupComplete = false
 
-    func transcriptionStream(locale: Locale) -> AsyncThrowingStream<String, Error> {
+    func start(locale: Locale) -> AsyncThrowingStream<String, Error> {
         AsyncThrowingStream { continuation in
             Task {
                 do {
@@ -30,64 +33,10 @@ final class LiveTranscriptionService: LiveTranscribing, @unchecked Sendable {
                     self.inputContinuation = inputContinuation
 
                     // Get best audio format for the analyzer
-                    let analyzerFormat = await SpeechAnalyzer.bestAvailableAudioFormat(
+                    self.analyzerFormat = await SpeechAnalyzer.bestAvailableAudioFormat(
                         compatibleWith: [transcriber]
                     )
-
-                    // Set up AVAudioEngine
-                    let audioEngine = AVAudioEngine()
-                    self.audioEngine = audioEngine
-                    let inputNode = audioEngine.inputNode
-                    let hardwareFormat = inputNode.outputFormat(forBus: 0)
-
-                    // Create format converter if needed
-                    let converter: AVAudioConverter?
-                    if let target = analyzerFormat {
-                        converter = AVAudioConverter(from: hardwareFormat, to: target)
-                    } else {
-                        converter = nil
-                    }
-
-                    inputNode.installTap(onBus: 0, bufferSize: 4096, format: hardwareFormat) {
-                        [weak self] buffer, _ in
-                        guard let self else { return }
-                        if let converter, let targetFormat = analyzerFormat {
-                            // Convert to analyzer format
-                            let frameCapacity = AVAudioFrameCount(
-                                Double(buffer.frameLength) * targetFormat.sampleRate
-                                    / hardwareFormat.sampleRate
-                            )
-                            guard
-                                let convertedBuffer = AVAudioPCMBuffer(
-                                    pcmFormat: targetFormat, frameCapacity: frameCapacity)
-                            else { return }
-                            var error: NSError?
-                            converter.convert(to: convertedBuffer, error: &error) { _, outStatus in
-                                outStatus.pointee = .haveData
-                                return buffer
-                            }
-                            if error == nil {
-                                self.inputContinuation?.yield(AnalyzerInput(buffer: convertedBuffer))
-                            }
-                        } else {
-                            // Copy buffer to avoid reuse issues from installTap
-                            guard
-                                let copy = AVAudioPCMBuffer(
-                                    pcmFormat: hardwareFormat,
-                                    frameCapacity: buffer.frameLength)
-                            else { return }
-                            copy.frameLength = buffer.frameLength
-                            if let src = buffer.floatChannelData,
-                                let dst = copy.floatChannelData
-                            {
-                                for ch in 0..<Int(hardwareFormat.channelCount) {
-                                    dst[ch].update(
-                                        from: src[ch], count: Int(buffer.frameLength))
-                                }
-                            }
-                            self.inputContinuation?.yield(AnalyzerInput(buffer: copy))
-                        }
-                    }
+                    self.isSetupComplete = true
 
                     // Collect transcription results
                     Task {
@@ -101,8 +50,7 @@ final class LiveTranscriptionService: LiveTranscribing, @unchecked Sendable {
                                     } else {
                                         finalText += " " + newText
                                     }
-                                    let combined = finalText
-                                    continuation.yield(combined)
+                                    continuation.yield(finalText)
                                 } else {
                                     // Volatile (partial) result — show final + partial
                                     let combined: String
@@ -120,9 +68,7 @@ final class LiveTranscriptionService: LiveTranscribing, @unchecked Sendable {
                         }
                     }
 
-                    // Start audio engine and analyzer
-                    audioEngine.prepare()
-                    try audioEngine.start()
+                    // Start analyzer
                     try await analyzer.start(inputSequence: inputStream)
                 } catch {
                     continuation.finish(throwing: error)
@@ -131,12 +77,54 @@ final class LiveTranscriptionService: LiveTranscribing, @unchecked Sendable {
         }
     }
 
+    func feedAudioBuffer(_ buffer: AVAudioPCMBuffer, format: AVAudioFormat) {
+        guard isSetupComplete, let inputContinuation else { return }
+
+        if let targetFormat = analyzerFormat {
+            // Create or reuse converter for the source format
+            if converter == nil || converter?.inputFormat != format {
+                converter = AVAudioConverter(from: format, to: targetFormat)
+            }
+            guard let converter else { return }
+
+            let frameCapacity = AVAudioFrameCount(
+                Double(buffer.frameLength) * targetFormat.sampleRate / format.sampleRate
+            )
+            guard
+                let convertedBuffer = AVAudioPCMBuffer(
+                    pcmFormat: targetFormat, frameCapacity: frameCapacity)
+            else { return }
+
+            var error: NSError?
+            converter.convert(to: convertedBuffer, error: &error) { _, outStatus in
+                outStatus.pointee = .haveData
+                return buffer
+            }
+            if error == nil {
+                inputContinuation.yield(AnalyzerInput(buffer: convertedBuffer))
+            }
+        } else {
+            // Copy buffer to avoid reuse issues from installTap
+            guard
+                let copy = AVAudioPCMBuffer(
+                    pcmFormat: format, frameCapacity: buffer.frameLength)
+            else { return }
+            copy.frameLength = buffer.frameLength
+            if let src = buffer.floatChannelData, let dst = copy.floatChannelData {
+                for ch in 0..<Int(format.channelCount) {
+                    dst[ch].update(from: src[ch], count: Int(buffer.frameLength))
+                }
+            }
+            inputContinuation.yield(AnalyzerInput(buffer: copy))
+        }
+    }
+
     func stop() {
         inputContinuation?.finish()
         inputContinuation = nil
-        audioEngine?.inputNode.removeTap(onBus: 0)
-        audioEngine?.stop()
-        audioEngine = nil
+        converter = nil
+        analyzerFormat = nil
+        isSetupComplete = false
         Task {
             try? await analyzer?.finalizeAndFinishThroughEndOfInput()
         }

@@ -1,9 +1,10 @@
+import AVFAudio
 import Foundation
 import Observation
 
 @Observable
 class MockLiveTranscriptionService: LiveTranscribing, @unchecked Sendable {
-    func transcriptionStream(locale: Locale) -> AsyncThrowingStream<String, Error> {
+    func start(locale: Locale) -> AsyncThrowingStream<String, Error> {
         AsyncThrowingStream { continuation in
             Task {
                 // Initial delay must be long enough for XCTest to detect the placeholder state.
@@ -16,6 +17,10 @@ class MockLiveTranscriptionService: LiveTranscribing, @unchecked Sendable {
                 continuation.finish()
             }
         }
+    }
+
+    func feedAudioBuffer(_ buffer: AVAudioPCMBuffer, format: AVAudioFormat) {
+        // No-op for mock — text is emitted on a timer
     }
 
     func stop() {}

@@ -91,15 +91,18 @@ class HomeViewModel {
             let url = FilePathManager.newRecordingURL()
             currentRecordingFileName = url.lastPathComponent
             currentRecordingStartedAt = Date()
+            // Set up live transcription BEFORE starting recorder to avoid
+            // missing initial audio buffers.
+            startLiveTranscription()
             try audioRecorder.startRecording(to: url)
             recordingDuration = 0
             accumulatedDuration = 0
             recordingStartTime = Date()
             startDurationTimer()
-            startLiveTranscription()
         } catch {
             currentRecordingFileName = nil
             currentRecordingStartedAt = nil
+            audioRecorder.onAudioBuffer = nil
             errorMessage = "録音の開始に失敗しました: \(error.localizedDescription)"
         }
     }
@@ -302,7 +305,13 @@ class HomeViewModel {
 
     private func startLiveTranscription() {
         guard let liveTranscriber else { return }
-        let stream = liveTranscriber.transcriptionStream(locale: Locale(identifier: "ja-JP"))
+
+        // Bridge audio buffers from recorder to live transcription service
+        audioRecorder.onAudioBuffer = { buffer, format in
+            liveTranscriber.feedAudioBuffer(buffer, format: format)
+        }
+
+        let stream = liveTranscriber.start(locale: Locale(identifier: "ja-JP"))
         liveTranscriptionTask = Task { @MainActor [weak self] in
             do {
                 for try await text in stream {
@@ -317,6 +326,7 @@ class HomeViewModel {
     private func stopLiveTranscription() {
         liveTranscriptionTask?.cancel()
         liveTranscriptionTask = nil
+        audioRecorder.onAudioBuffer = nil
         liveTranscriber?.stop()
     }
 }
