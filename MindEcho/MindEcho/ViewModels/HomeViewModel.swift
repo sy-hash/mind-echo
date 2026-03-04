@@ -317,6 +317,8 @@ class HomeViewModel {
                 for try await text in stream {
                     self?.liveTranscriptionText = text
                 }
+            } catch is CancellationError {
+                // ユーザーによる停止操作に伴うキャンセルはエラーとして扱わない
             } catch {
                 self?.liveTranscriptionError = "書き起こしに失敗しました: \(error.localizedDescription)"
             }
