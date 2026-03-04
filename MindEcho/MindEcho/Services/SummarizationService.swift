@@ -9,6 +9,13 @@ struct SummarizationService {
         return String(response.content).trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    func applyPrompt(text: String, prompt: String) async throws -> String {
+        let session = LanguageModelSession()
+        let fullPrompt = "\(prompt)\n\n\(text)"
+        let response = try await session.respond(to: fullPrompt)
+        return String(response.content).trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     static var isAvailable: Bool {
         if case .available = SystemLanguageModel.default.availability {
             return true
