@@ -102,7 +102,7 @@ class HomeViewModel {
         } catch {
             currentRecordingFileName = nil
             currentRecordingStartedAt = nil
-            audioRecorder.onAudioBuffer = nil
+            stopLiveTranscription()
             errorMessage = "録音の開始に失敗しました: \(error.localizedDescription)"
         }
     }

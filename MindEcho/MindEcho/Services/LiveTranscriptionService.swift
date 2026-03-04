@@ -14,6 +14,7 @@ final class LiveTranscriptionService: LiveTranscribing, @unchecked Sendable {
     private var converter: AVAudioConverter?
     private var analyzerFormat: AVAudioFormat?
     private var isSetupComplete = false
+    nonisolated(unsafe) private var lock = os_unfair_lock()
 
     func start(locale: Locale) -> AsyncThrowingStream<String, Error> {
         AsyncThrowingStream { continuation in
@@ -36,7 +37,10 @@ final class LiveTranscriptionService: LiveTranscribing, @unchecked Sendable {
                     self.analyzerFormat = await SpeechAnalyzer.bestAvailableAudioFormat(
                         compatibleWith: [transcriber]
                     )
-                    self.isSetupComplete = true
+
+                    // Mark setup complete under lock to ensure memory visibility
+                    // for feedAudioBuffer on the audio thread.
+                    self.markSetupComplete()
 
                     // Collect transcription results
                     Task {
@@ -77,7 +81,16 @@ final class LiveTranscriptionService: LiveTranscribing, @unchecked Sendable {
         }
     }
 
+    private func markSetupComplete() {
+        os_unfair_lock_lock(&lock)
+        isSetupComplete = true
+        os_unfair_lock_unlock(&lock)
+    }
+
     func feedAudioBuffer(_ buffer: AVAudioPCMBuffer, format: AVAudioFormat) {
+        os_unfair_lock_lock(&lock)
+        defer { os_unfair_lock_unlock(&lock) }
+
         guard isSetupComplete, let inputContinuation else { return }
 
         if let targetFormat = analyzerFormat {
@@ -120,14 +133,18 @@ final class LiveTranscriptionService: LiveTranscribing, @unchecked Sendable {
     }
 
     func stop() {
+        os_unfair_lock_lock(&lock)
+        let currentAnalyzer = analyzer
         inputContinuation?.finish()
         inputContinuation = nil
         converter = nil
         analyzerFormat = nil
         isSetupComplete = false
-        Task {
-            try? await analyzer?.finalizeAndFinishThroughEndOfInput()
-        }
         analyzer = nil
+        os_unfair_lock_unlock(&lock)
+
+        Task {
+            try? await currentAnalyzer?.finalizeAndFinishThroughEndOfInput()
+        }
     }
 }

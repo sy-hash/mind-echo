@@ -104,7 +104,7 @@ TabView を廃止し、今日のセクションと過去の履歴セクション
 - `transcription.summaryText` — 要約結果テキスト
 - `transcription.summaryError` — 要約エラーメッセージ
 
-## テストケース（6カテゴリ・17テスト）
+## テストケース（6カテゴリ・18テスト）
 
 ### 1. NavigationUITests（3テスト）
 
