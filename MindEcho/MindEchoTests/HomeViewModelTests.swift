@@ -224,6 +224,21 @@ struct HomeViewModelTests {
         #expect(vm.summaryState == .failure("要約結果が空でした。"))
     }
 
+    @Test func startTranscription_summarizationThrows_setsFailureState() async throws {
+        let (vm, _, _, _container) = try makeViewModel()
+        vm.transcribe = { _, _ in "書き起こしテスト結果" }
+        vm.summarize = { _ in throw NSError(domain: "test", code: 1, userInfo: [NSLocalizedDescriptionKey: "テストエラー"]) }
+        vm.isSummarizationAvailable = { true }
+        vm.startRecording()
+        vm.stopRecording()
+
+        await vm.startTranscription()
+
+        let recording = vm.todayEntry?.sortedRecordings.first
+        #expect(recording?.summary == nil)
+        #expect(vm.summaryState == .failure("要約に失敗しました: テストエラー"))
+    }
+
     @Test func deleteRecording_removesFromEntry() throws {
         let (vm, _, _, _container) = try makeViewModel()
         vm.startRecording()

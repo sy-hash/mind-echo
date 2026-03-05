@@ -13,13 +13,7 @@ class HomeViewModel {
         case failure(String)
     }
 
-    enum SummaryState: Equatable {
-        case idle
-        case loading
-        case success(String)
-        case failure(String)
-        case unavailable
-    }
+    typealias SummaryState = TranscriptionViewModel.SummaryState
 
     /// Represents a single calendar day in the past section, with an optional entry.
     struct DateRow: Identifiable {
@@ -176,7 +170,8 @@ class HomeViewModel {
     // MARK: - Transcription
 
     func startTranscription() async {
-        guard let fileName = lastRecordedFileName else { return }
+        guard let fileName = lastRecordedFileName,
+              let recording = lastRecordedRecording else { return }
         let url = FilePathManager.recordingsDirectory.appendingPathComponent(fileName)
         transcriptionState = .loading
         do {
@@ -184,11 +179,9 @@ class HomeViewModel {
             if text.isEmpty {
                 transcriptionState = .failure("書き起こし結果が空でした。")
             } else {
-                lastRecordedRecording?.transcription = text
+                recording.transcription = text
                 transcriptionState = .success(text)
-                if let recording = lastRecordedRecording {
-                    await startSummarization(recording: recording, text: text)
-                }
+                await startSummarization(recording: recording, text: text)
             }
         } catch {
             transcriptionState = .failure("書き起こしに失敗しました: \(error.localizedDescription)")
