@@ -26,6 +26,7 @@ public class AudioRecorderService: AudioRecording {
     public var isRecording = false
     public var isPaused = false
     public var audioLevels: [Float] = []
+    public var onAudioBuffer: ((AVAudioPCMBuffer, AVAudioFormat) -> Void)?
 
     private var audioEngine: AVAudioEngine?
     private var audioFile: AVAudioFile?
@@ -70,6 +71,9 @@ public class AudioRecorderService: AudioRecording {
         inputNode.installTap(onBus: 0, bufferSize: 4096, format: format) { [weak self] buffer, _ in
             guard !flag.value else { return }
             try? file.write(from: buffer)
+
+            // Forward buffer to external consumers (e.g., live transcription)
+            self?.onAudioBuffer?(buffer, format)
 
             // Calculate RMS from PCM buffer
             guard let channelData = buffer.floatChannelData?[0] else { return }
@@ -123,6 +127,7 @@ public class AudioRecorderService: AudioRecording {
         isPaused = false
         pauseFlag.value = false
         audioLevels = []
+        onAudioBuffer = nil
 
         try? AVAudioSession.sharedInstance().setActive(false)
     }

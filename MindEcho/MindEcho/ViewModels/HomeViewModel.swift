@@ -29,6 +29,8 @@ class HomeViewModel {
     var errorMessage: String?
     private(set) var transcriptionState: TranscriptionState = .idle
     var recordingTargetDate: Date?
+    private(set) var liveTranscriptionText: String = ""
+    private(set) var liveTranscriptionError: String?
 
     @ObservationIgnored
     var transcribe: (URL, Locale) async throws -> String = { url, locale in
@@ -39,6 +41,7 @@ class HomeViewModel {
     private var audioRecorder: any AudioRecording
     private var audioPlayer: any AudioPlaying
     private let exportService: any Exporting
+    private let liveTranscriber: (any LiveTranscribing)?
     private var durationTimer: Timer?
     private var recordingStartTime: Date?
     private var accumulatedDuration: TimeInterval = 0
@@ -46,17 +49,22 @@ class HomeViewModel {
     private var currentRecordingStartedAt: Date?
     private var lastRecordedFileName: String?
     private var lastRecordedRecording: Recording?
+    private var liveTranscriptionTask: Task<Void, Never>?
+
+    var hasLiveTranscription: Bool { liveTranscriber != nil }
 
     init(
         modelContext: ModelContext,
         audioRecorder: any AudioRecording,
         audioPlayer: any AudioPlaying = AudioPlayerService(),
-        exportService: any Exporting = ExportServiceImpl()
+        exportService: any Exporting = ExportServiceImpl(),
+        liveTranscriber: (any LiveTranscribing)? = nil
     ) {
         self.modelContext = modelContext
         self.audioRecorder = audioRecorder
         self.audioPlayer = audioPlayer
         self.exportService = exportService
+        self.liveTranscriber = liveTranscriber
         self.audioPlayer.onPlaybackFinished = { [weak self] in
             self?.isPlaying = false
             self?.playingRecordingId = nil
@@ -76,11 +84,16 @@ class HomeViewModel {
         transcriptionState = .idle
         lastRecordedFileName = nil
         lastRecordedRecording = nil
+        liveTranscriptionText = ""
+        liveTranscriptionError = nil
         do {
             try FilePathManager.ensureDirectoryExists(FilePathManager.recordingsDirectory)
             let url = FilePathManager.newRecordingURL()
             currentRecordingFileName = url.lastPathComponent
             currentRecordingStartedAt = Date()
+            // Set up live transcription BEFORE starting recorder to avoid
+            // missing initial audio buffers.
+            startLiveTranscription()
             try audioRecorder.startRecording(to: url)
             recordingDuration = 0
             accumulatedDuration = 0
@@ -89,6 +102,7 @@ class HomeViewModel {
         } catch {
             currentRecordingFileName = nil
             currentRecordingStartedAt = nil
+            stopLiveTranscription()
             errorMessage = "録音の開始に失敗しました: \(error.localizedDescription)"
         }
     }
@@ -109,6 +123,7 @@ class HomeViewModel {
     }
 
     func stopRecording() {
+        stopLiveTranscription()
         if let start = recordingStartTime {
             accumulatedDuration += Date().timeIntervalSince(start)
         }
@@ -284,5 +299,36 @@ class HomeViewModel {
     private func stopDurationTimer() {
         durationTimer?.invalidate()
         durationTimer = nil
+    }
+
+    // MARK: - Live Transcription
+
+    private func startLiveTranscription() {
+        guard let liveTranscriber else { return }
+
+        // Bridge audio buffers from recorder to live transcription service
+        audioRecorder.onAudioBuffer = { buffer, format in
+            liveTranscriber.feedAudioBuffer(buffer, format: format)
+        }
+
+        let stream = liveTranscriber.start(locale: Locale(identifier: "ja-JP"))
+        liveTranscriptionTask = Task { @MainActor [weak self] in
+            do {
+                for try await text in stream {
+                    self?.liveTranscriptionText = text
+                }
+            } catch is CancellationError {
+                // ユーザーによる停止操作に伴うキャンセルはエラーとして扱わない
+            } catch {
+                self?.liveTranscriptionError = "書き起こしに失敗しました: \(error.localizedDescription)"
+            }
+        }
+    }
+
+    private func stopLiveTranscription() {
+        liveTranscriptionTask?.cancel()
+        liveTranscriptionTask = nil
+        audioRecorder.onAudioBuffer = nil
+        liveTranscriber?.stop()
     }
 }
