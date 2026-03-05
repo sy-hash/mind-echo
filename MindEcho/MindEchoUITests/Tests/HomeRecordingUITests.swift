@@ -6,7 +6,7 @@ final class HomeRecordingUITests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
         app = XCUIApplication()
-        app.launchArguments = ["--uitesting", "--mock-recorder", "--mock-transcription"]
+        app.launchArguments = ["--uitesting", "--mock-recorder", "--mock-transcription", "--mock-summarization"]
         app.resetAuthorizationStatus(for: .microphone)
         addUIInterruptionMonitor(withDescription: "Microphone Permission") { alert in
             let allowButton = alert.buttons["Allow"]
@@ -57,6 +57,10 @@ final class HomeRecordingUITests: XCTestCase {
         // 7. Assert transcription result is shown
         let transcriptionResult = app.staticTexts["recording.transcriptionResult"]
         XCTAssertTrue(transcriptionResult.waitForExistence(timeout: 10))
+
+        // 7.1 Assert summary text is shown after transcription
+        let summaryText = app.staticTexts["recording.summaryText"]
+        XCTAssertTrue(summaryText.waitForExistence(timeout: 10))
 
         // 8. Dismiss modal via "閉じる" button (more reliable than swipeDown
         //    since the modal contains a ScrollView that can intercept the gesture)

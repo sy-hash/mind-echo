@@ -93,6 +93,9 @@ TabView を廃止し、今日のセクションと過去の履歴セクション
 **書き起こし後（`viewModel.isRecording == false`）**
 
 - `recording.transcriptionResult` — 書き起こし結果テキスト（成功・失敗どちらも同じ識別子）
+- `recording.summaryLoading` — 要約生成中のプログレス表示
+- `recording.summaryText` — 要約結果テキスト
+- `recording.summaryError` — 要約エラーメッセージ
 
 ### TranscriptionView
 

@@ -103,10 +103,14 @@ struct RecordingModalView: View {
                             .padding()
                     case .success(let text):
                         ScrollView {
-                            Text(text)
-                                .padding()
-                                .textSelection(.enabled)
-                                .accessibilityIdentifier("recording.transcriptionResult")
+                            VStack(alignment: .leading, spacing: 16) {
+                                summarySection
+                                Text(text)
+                                    .padding(.horizontal)
+                                    .textSelection(.enabled)
+                                    .accessibilityIdentifier("recording.transcriptionResult")
+                            }
+                            .padding(.vertical)
                         }
                     case .failure(let message):
                         VStack(spacing: 12) {
@@ -140,7 +144,56 @@ struct RecordingModalView: View {
                     return "これはモックの書き起こし結果です。テスト用のテキストデータ。"
                 }
             }
+            if ProcessInfo.processInfo.arguments.contains("--mock-summarization") {
+                viewModel.summarize = { _ in
+                    try await Task.sleep(for: .milliseconds(300))
+                    return "これはモックの要約結果です。"
+                }
+                viewModel.isSummarizationAvailable = { true }
+            }
             viewModel.startRecording()
+        }
+    }
+
+    @ViewBuilder
+    private var summarySection: some View {
+        switch viewModel.summaryState {
+        case .idle:
+            EmptyView()
+        case .loading:
+            VStack(alignment: .leading, spacing: 8) {
+                Label("要約", systemImage: "text.document")
+                    .font(.headline)
+                ProgressView("要約を生成中...")
+                    .accessibilityIdentifier("recording.summaryLoading")
+            }
+            .padding(.horizontal)
+        case .success(let summary):
+            VStack(alignment: .leading, spacing: 8) {
+                Label("要約", systemImage: "text.document")
+                    .font(.headline)
+                Text(summary)
+                    .textSelection(.enabled)
+                    .accessibilityIdentifier("recording.summaryText")
+            }
+            .padding(.horizontal)
+            .padding(.bottom, 8)
+            Divider()
+                .padding(.horizontal)
+        case .failure(let message):
+            VStack(alignment: .leading, spacing: 8) {
+                Label("要約", systemImage: "text.document")
+                    .font(.headline)
+                Text(message)
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("recording.summaryError")
+            }
+            .padding(.horizontal)
+            .padding(.bottom, 8)
+            Divider()
+                .padding(.horizontal)
+        case .unavailable:
+            EmptyView()
         }
     }
 
