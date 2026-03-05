@@ -180,6 +180,87 @@ struct HomeViewModelTests {
         }
     }
 
+    @Test func startTranscription_triggersSummarization() async throws {
+        let (vm, _, _, _container) = try makeViewModel()
+        vm.transcribe = { _, _ in "書き起こしテスト結果" }
+        vm.summarize = { _ in "要約テスト結果" }
+        vm.isSummarizationAvailable = { true }
+        vm.startRecording()
+        vm.stopRecording()
+
+        await vm.startTranscription()
+
+        let recording = vm.todayEntry?.sortedRecordings.first
+        #expect(recording?.summary == "要約テスト結果")
+        #expect(vm.summaryState == .success("要約テスト結果"))
+    }
+
+    @Test func startTranscription_summarizationUnavailable_setsUnavailableState() async throws {
+        let (vm, _, _, _container) = try makeViewModel()
+        vm.transcribe = { _, _ in "書き起こしテスト結果" }
+        vm.isSummarizationAvailable = { false }
+        vm.startRecording()
+        vm.stopRecording()
+
+        await vm.startTranscription()
+
+        let recording = vm.todayEntry?.sortedRecordings.first
+        #expect(recording?.summary == nil)
+        #expect(vm.summaryState == .unavailable)
+    }
+
+    @Test func startTranscription_emptySummary_setsFailureState() async throws {
+        let (vm, _, _, _container) = try makeViewModel()
+        vm.transcribe = { _, _ in "書き起こしテスト結果" }
+        vm.summarize = { _ in "" }
+        vm.isSummarizationAvailable = { true }
+        vm.startRecording()
+        vm.stopRecording()
+
+        await vm.startTranscription()
+
+        let recording = vm.todayEntry?.sortedRecordings.first
+        #expect(recording?.summary == nil)
+        #expect(vm.summaryState == .failure("要約結果が空でした。"))
+    }
+
+    @Test func startTranscription_summarizationThrows_setsFailureState() async throws {
+        let (vm, _, _, _container) = try makeViewModel()
+        vm.transcribe = { _, _ in "書き起こしテスト結果" }
+        vm.summarize = { _ in throw NSError(domain: "test", code: 1, userInfo: [NSLocalizedDescriptionKey: "テストエラー"]) }
+        vm.isSummarizationAvailable = { true }
+        vm.startRecording()
+        vm.stopRecording()
+
+        await vm.startTranscription()
+
+        let recording = vm.todayEntry?.sortedRecordings.first
+        #expect(recording?.summary == nil)
+        #expect(vm.summaryState == .failure("要約に失敗しました: テストエラー"))
+    }
+
+    @Test func startTranscription_transcribeThrows_doesNotTriggerSummarization() async throws {
+        let (vm, _, _, _container) = try makeViewModel()
+        var summarizeCalled = false
+        vm.transcribe = { _, _ in
+            throw NSError(domain: "test", code: 2, userInfo: [NSLocalizedDescriptionKey: "書き起こしエラー"])
+        }
+        vm.summarize = { _ in
+            summarizeCalled = true
+            return "この要約は呼ばれないはずです"
+        }
+        vm.isSummarizationAvailable = { true }
+        vm.startRecording()
+        vm.stopRecording()
+
+        await vm.startTranscription()
+
+        let recording = vm.todayEntry?.sortedRecordings.first
+        #expect(summarizeCalled == false)
+        #expect(recording?.summary == nil)
+        #expect(vm.summaryState == .idle)
+    }
+
     @Test func deleteRecording_removesFromEntry() throws {
         let (vm, _, _, _container) = try makeViewModel()
         vm.startRecording()
