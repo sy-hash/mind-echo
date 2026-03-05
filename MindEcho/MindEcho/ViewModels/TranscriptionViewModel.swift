@@ -22,9 +22,10 @@ final class TranscriptionViewModel {
 
     private(set) var state: State = .idle
     private(set) var summaryState: SummaryState = .idle
+    var vocabularyWords: [String] = []
 
     @ObservationIgnored
-    var transcribe: (URL, Locale) async throws -> String = TranscriptionService().transcribe
+    var transcribe: (URL, Locale, [String]) async throws -> String = TranscriptionService().transcribe
     @ObservationIgnored
     var checkAuthorization: () -> SFSpeechRecognizerAuthorizationStatus = {
         SFSpeechRecognizer.authorizationStatus()
@@ -68,7 +69,7 @@ final class TranscriptionViewModel {
             .appendingPathComponent(recording.audioFileName)
 
         do {
-            let text = try await transcribe(fileURL, Locale(identifier: "ja-JP"))
+            let text = try await transcribe(fileURL, Locale(identifier: "ja-JP"), vocabularyWords)
             if text.isEmpty {
                 state = .failure("書き起こし結果が空でした。")
             } else {

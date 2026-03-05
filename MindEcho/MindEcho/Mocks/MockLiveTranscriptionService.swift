@@ -4,7 +4,7 @@ import Observation
 
 @Observable
 class MockLiveTranscriptionService: LiveTranscribing, @unchecked Sendable {
-    func start(locale: Locale) -> AsyncThrowingStream<String, Error> {
+    func start(locale: Locale, contextualStrings: [String] = []) -> AsyncThrowingStream<String, Error> {
         AsyncThrowingStream { continuation in
             Task {
                 // Initial delay must be long enough for XCTest to detect the placeholder state.

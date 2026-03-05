@@ -74,6 +74,18 @@ TabView を廃止し、今日のセクションと過去の履歴セクション
 - `past.transcription.{date}.{n}` — 過去の録音セル内の書き起こしテキストプレビュー
 - `past.summary.{date}.{n}` — 過去の録音セル内の要約テキストプレビュー
 
+**語彙設定**
+
+- `home.vocabularyButton` — ナビゲーションバー右端のカスタム語彙設定ボタン（📖アイコン）
+
+### VocabularyView
+
+- `vocabulary.textField` — 新規単語入力用テキストフィールド
+- `vocabulary.addButton` — 単語追加ボタン（＋アイコン）
+- `vocabulary.wordList` — 登録済み語彙一覧セクション
+- `vocabulary.word.{n}` — 登録済み単語行（n = インデックス）
+- `vocabulary.closeButton` — シートを閉じるボタン（×アイコン）
+
 ### RecordingModalView
 
 録音中はモーダルシートとして表示される。録音中と書き起こし後で表示要素が切り替わる。

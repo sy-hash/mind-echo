@@ -4,6 +4,7 @@ import SwiftUI
 
 struct TranscriptionView: View {
     let recording: Recording
+    var vocabularyWords: [String] = []
     @Environment(\.dismiss) private var dismiss
     @State private var viewModel = TranscriptionViewModel()
 
@@ -48,8 +49,9 @@ struct TranscriptionView: View {
             }
         }
         .task {
+            viewModel.vocabularyWords = vocabularyWords
             if ProcessInfo.processInfo.arguments.contains("--mock-transcription") {
-                viewModel.transcribe = { _, _ in
+                viewModel.transcribe = { _, _, _ in
                     try await Task.sleep(for: .milliseconds(500))
                     return "これはモックの書き起こし結果です。テスト用のテキストデータ。"
                 }

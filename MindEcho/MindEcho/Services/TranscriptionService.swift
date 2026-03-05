@@ -3,7 +3,7 @@ import AVFAudio
 import Speech
 
 struct TranscriptionService {
-    func transcribe(audioFileURL: URL, locale: Locale) async throws -> String {
+    func transcribe(audioFileURL: URL, locale: Locale, contextualStrings: [String] = []) async throws -> String {
         let transcriber = SpeechTranscriber(locale: locale, preset: .transcription)
 
         async let transcriptionFuture: String = transcriber.results.reduce("") { partialResult, result in
@@ -11,6 +11,14 @@ struct TranscriptionService {
         }
 
         let analyzer = SpeechAnalyzer(modules: [transcriber])
+
+        if !contextualStrings.isEmpty {
+            let context = AnalysisContext()
+            context.contextualStrings = [
+                AnalysisContext.ContextualStringsTag("vocabulary"): contextualStrings
+            ]
+            try await analyzer.setContext(context)
+        }
 
         if let lastSample = try await analyzer.analyzeSequence(
             from: AVAudioFile(forReading: audioFileURL)
