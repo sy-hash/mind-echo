@@ -239,6 +239,28 @@ struct HomeViewModelTests {
         #expect(vm.summaryState == .failure("要約に失敗しました: テストエラー"))
     }
 
+    @Test func startTranscription_transcribeThrows_doesNotTriggerSummarization() async throws {
+        let (vm, _, _, _container) = try makeViewModel()
+        var summarizeCalled = false
+        vm.transcribe = { _, _ in
+            throw NSError(domain: "test", code: 2, userInfo: [NSLocalizedDescriptionKey: "書き起こしエラー"])
+        }
+        vm.summarize = { _ in
+            summarizeCalled = true
+            return "この要約は呼ばれないはずです"
+        }
+        vm.isSummarizationAvailable = { true }
+        vm.startRecording()
+        vm.stopRecording()
+
+        await vm.startTranscription()
+
+        let recording = vm.todayEntry?.sortedRecordings.first
+        #expect(summarizeCalled == false)
+        #expect(recording?.summary == nil)
+        #expect(vm.summaryState == .idle)
+    }
+
     @Test func deleteRecording_removesFromEntry() throws {
         let (vm, _, _, _container) = try makeViewModel()
         vm.startRecording()

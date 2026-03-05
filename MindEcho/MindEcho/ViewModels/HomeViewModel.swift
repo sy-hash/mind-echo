@@ -174,6 +174,7 @@ class HomeViewModel {
               let recording = lastRecordedRecording else { return }
         let url = FilePathManager.recordingsDirectory.appendingPathComponent(fileName)
         transcriptionState = .loading
+        summaryState = .idle
         do {
             let text = try await transcribe(url, Locale(identifier: "ja-JP"))
             if text.isEmpty {
