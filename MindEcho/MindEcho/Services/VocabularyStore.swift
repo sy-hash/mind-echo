@@ -25,7 +25,9 @@ final class VocabularyStore {
     }
 
     func remove(at offsets: IndexSet) {
-        words.remove(atOffsets: offsets)
+        for index in offsets.sorted().reversed() {
+            words.remove(at: index)
+        }
     }
 
     private func save() {
