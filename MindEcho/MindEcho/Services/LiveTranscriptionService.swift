@@ -22,7 +22,9 @@ final class LiveTranscriptionService: LiveTranscribing, @unchecked Sendable {
                 do {
                     let transcriber = SpeechTranscriber(
                         locale: locale,
-                        preset: .progressiveLiveTranscription
+                        transcriptionOptions: [],
+                        reportingOptions: [.volatileResults],
+                        attributeOptions: []
                     )
                     let analyzer = SpeechAnalyzer(modules: [transcriber])
                     self.analyzer = analyzer
