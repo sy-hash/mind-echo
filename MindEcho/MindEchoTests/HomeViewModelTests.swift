@@ -84,7 +84,7 @@ struct HomeViewModelTests {
 
     @Test func startTranscription_savesTranscriptionToRecording() async throws {
         let (vm, _, _, _container) = try makeViewModel()
-        vm.transcribe = { _, _ in "書き起こしテスト結果" }
+        vm.transcribe = { _, _, _ in "書き起こしテスト結果" }
         vm.startRecording()
         vm.stopRecording()
 
@@ -96,7 +96,7 @@ struct HomeViewModelTests {
 
     @Test func startTranscription_emptyResult_doesNotSave() async throws {
         let (vm, _, _, _container) = try makeViewModel()
-        vm.transcribe = { _, _ in "" }
+        vm.transcribe = { _, _, _ in "" }
         vm.startRecording()
         vm.stopRecording()
 
@@ -182,7 +182,7 @@ struct HomeViewModelTests {
 
     @Test func startTranscription_triggersSummarization() async throws {
         let (vm, _, _, _container) = try makeViewModel()
-        vm.transcribe = { _, _ in "書き起こしテスト結果" }
+        vm.transcribe = { _, _, _ in "書き起こしテスト結果" }
         vm.summarize = { _ in "要約テスト結果" }
         vm.isSummarizationAvailable = { true }
         vm.startRecording()
@@ -197,7 +197,7 @@ struct HomeViewModelTests {
 
     @Test func startTranscription_summarizationUnavailable_setsUnavailableState() async throws {
         let (vm, _, _, _container) = try makeViewModel()
-        vm.transcribe = { _, _ in "書き起こしテスト結果" }
+        vm.transcribe = { _, _, _ in "書き起こしテスト結果" }
         vm.isSummarizationAvailable = { false }
         vm.startRecording()
         vm.stopRecording()
@@ -211,7 +211,7 @@ struct HomeViewModelTests {
 
     @Test func startTranscription_emptySummary_setsFailureState() async throws {
         let (vm, _, _, _container) = try makeViewModel()
-        vm.transcribe = { _, _ in "書き起こしテスト結果" }
+        vm.transcribe = { _, _, _ in "書き起こしテスト結果" }
         vm.summarize = { _ in "" }
         vm.isSummarizationAvailable = { true }
         vm.startRecording()
@@ -226,7 +226,7 @@ struct HomeViewModelTests {
 
     @Test func startTranscription_summarizationThrows_setsFailureState() async throws {
         let (vm, _, _, _container) = try makeViewModel()
-        vm.transcribe = { _, _ in "書き起こしテスト結果" }
+        vm.transcribe = { _, _, _ in "書き起こしテスト結果" }
         vm.summarize = { _ in throw NSError(domain: "test", code: 1, userInfo: [NSLocalizedDescriptionKey: "テストエラー"]) }
         vm.isSummarizationAvailable = { true }
         vm.startRecording()
@@ -242,7 +242,7 @@ struct HomeViewModelTests {
     @Test func startTranscription_transcribeThrows_doesNotTriggerSummarization() async throws {
         let (vm, _, _, _container) = try makeViewModel()
         var summarizeCalled = false
-        vm.transcribe = { _, _ in
+        vm.transcribe = { _, _, _ in
             throw NSError(domain: "test", code: 2, userInfo: [NSLocalizedDescriptionKey: "書き起こしエラー"])
         }
         vm.summarize = { _ in
@@ -259,6 +259,23 @@ struct HomeViewModelTests {
         #expect(summarizeCalled == false)
         #expect(recording?.summary == nil)
         #expect(vm.summaryState == .idle)
+    }
+
+    @Test func startTranscription_passesVocabularyToTranscribe() async throws {
+        let (vm, _, _, _container) = try makeViewModel()
+        var receivedWords: [String] = []
+        vm.transcribe = { _, _, words in
+            receivedWords = words
+            return "テスト"
+        }
+        vm.isSummarizationAvailable = { false }
+        vm.vocabularyWords = ["MindEcho", "SwiftUI"]
+        vm.startRecording()
+        vm.stopRecording()
+
+        await vm.startTranscription()
+
+        #expect(receivedWords == ["MindEcho", "SwiftUI"])
     }
 
     @Test func deleteRecording_removesFromEntry() throws {

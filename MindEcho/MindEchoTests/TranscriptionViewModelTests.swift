@@ -27,7 +27,7 @@ struct TranscriptionViewModelTests {
 
     @Test func startTranscription_showsLoadingThenSuccess() async throws {
         let vm = makeAuthorizedViewModel()
-        vm.transcribe = { _, _ in
+        vm.transcribe = { _, _, _ in
             try await Task.sleep(for: .milliseconds(100))
             return "テスト書き起こし結果"
         }
@@ -47,7 +47,7 @@ struct TranscriptionViewModelTests {
 
     @Test func startTranscription_savesTranscriptionToRecording() async {
         let vm = makeAuthorizedViewModel()
-        vm.transcribe = { _, _ in "保存されるテキスト" }
+        vm.transcribe = { _, _, _ in "保存されるテキスト" }
 
         let recording = makeRecording()
         #expect(recording.transcription == nil)
@@ -61,7 +61,7 @@ struct TranscriptionViewModelTests {
     @Test func startTranscription_existingTranscription_showsImmediately() async {
         let vm = makeAuthorizedViewModel()
         var transcribeCalled = false
-        vm.transcribe = { _, _ in
+        vm.transcribe = { _, _, _ in
             transcribeCalled = true
             return "新しいテキスト"
         }
@@ -77,7 +77,7 @@ struct TranscriptionViewModelTests {
 
     @Test func startTranscription_showsLoadingThenFailure() async throws {
         let vm = makeAuthorizedViewModel()
-        vm.transcribe = { _, _ in
+        vm.transcribe = { _, _, _ in
             try await Task.sleep(for: .milliseconds(100))
             throw NSError(domain: "test", code: 1, userInfo: [NSLocalizedDescriptionKey: "テストエラー"])
         }
@@ -101,7 +101,7 @@ struct TranscriptionViewModelTests {
 
     @Test func startTranscription_emptyResult_showsFailure() async {
         let vm = makeAuthorizedViewModel()
-        vm.transcribe = { _, _ in "" }
+        vm.transcribe = { _, _, _ in "" }
 
         let recording = makeRecording()
         await vm.startTranscription(recording: recording)
@@ -111,12 +111,27 @@ struct TranscriptionViewModelTests {
 
     @Test func startTranscription_failure_doesNotSaveTranscription() async {
         let vm = makeAuthorizedViewModel()
-        vm.transcribe = { _, _ in
+        vm.transcribe = { _, _, _ in
             throw NSError(domain: "test", code: 1, userInfo: [NSLocalizedDescriptionKey: "エラー"])
         }
 
         let recording = makeRecording()
         await vm.startTranscription(recording: recording)
         #expect(recording.transcription == nil)
+    }
+
+    @Test func startTranscription_passesVocabularyToTranscribe() async {
+        let vm = makeAuthorizedViewModel()
+        var receivedWords: [String] = []
+        vm.transcribe = { _, _, words in
+            receivedWords = words
+            return "テスト"
+        }
+        vm.vocabularyWords = ["固有名詞", "専門用語"]
+
+        let recording = makeRecording()
+        await vm.startTranscription(recording: recording)
+
+        #expect(receivedWords == ["固有名詞", "専門用語"])
     }
 }

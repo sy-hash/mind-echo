@@ -8,6 +8,8 @@ struct HomeView: View {
     @State private var transcriptionTargetRecording: Recording?
     @State private var isRecordingModalPresented = false
     @State private var shareItems: [Any]?
+    @State private var vocabularyStore = VocabularyStore()
+    @State private var showVocabulary = false
 
     init(
         modelContext: ModelContext,
@@ -48,6 +50,16 @@ struct HomeView: View {
                 .padding(.vertical)
             }
             .navigationTitle("MindEcho")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showVocabulary = true
+                    } label: {
+                        Image(systemName: "character.book.closed")
+                    }
+                    .accessibilityIdentifier("home.vocabularyButton")
+                }
+            }
             .sheet(isPresented: Binding(
                 get: { shareItems != nil },
                 set: { if !$0 { shareItems = nil } }
@@ -57,7 +69,14 @@ struct HomeView: View {
                 }
             }
             .onAppear {
+                viewModel.vocabularyWords = vocabularyStore.words
                 viewModel.fetchAllEntries()
+            }
+            .onChange(of: vocabularyStore.words) { _, newWords in
+                viewModel.vocabularyWords = newWords
+            }
+            .sheet(isPresented: $showVocabulary) {
+                VocabularyView(store: vocabularyStore)
             }
             .sheet(isPresented: $isRecordingModalPresented, onDismiss: {
                 if viewModel.isRecording {
@@ -70,7 +89,7 @@ struct HomeView: View {
                 RecordingModalView(viewModel: viewModel)
             }
             .sheet(item: $transcriptionTargetRecording) { recording in
-                TranscriptionView(recording: recording)
+                TranscriptionView(recording: recording, vocabularyWords: vocabularyStore.words)
                     .accessibilityIdentifier("home.transcriptionSheet")
             }
         }

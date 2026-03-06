@@ -3,7 +3,7 @@ import Foundation
 import Speech
 
 protocol LiveTranscribing: Sendable {
-    func start(locale: Locale) -> AsyncThrowingStream<String, Error>
+    func start(locale: Locale, contextualStrings: [String]) -> AsyncThrowingStream<String, Error>
     func feedAudioBuffer(_ buffer: AVAudioPCMBuffer, format: AVAudioFormat)
     func stop()
 }
@@ -16,7 +16,7 @@ final class LiveTranscriptionService: LiveTranscribing, @unchecked Sendable {
     private var isSetupComplete = false
     nonisolated(unsafe) private var lock = os_unfair_lock()
 
-    func start(locale: Locale) -> AsyncThrowingStream<String, Error> {
+    func start(locale: Locale, contextualStrings: [String] = []) -> AsyncThrowingStream<String, Error> {
         AsyncThrowingStream { continuation in
             Task {
                 do {
@@ -28,6 +28,14 @@ final class LiveTranscriptionService: LiveTranscribing, @unchecked Sendable {
                     )
                     let analyzer = SpeechAnalyzer(modules: [transcriber])
                     self.analyzer = analyzer
+
+                    if !contextualStrings.isEmpty {
+                        let context = AnalysisContext()
+                        context.contextualStrings = [
+                            AnalysisContext.ContextualStringsTag("vocabulary"): contextualStrings
+                        ]
+                        try await analyzer.setContext(context)
+                    }
 
                     // Build input stream
                     let (inputStream, inputContinuation) = AsyncStream<AnalyzerInput>.makeStream()
