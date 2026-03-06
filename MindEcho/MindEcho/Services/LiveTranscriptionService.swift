@@ -3,9 +3,15 @@ import Foundation
 import Speech
 
 protocol LiveTranscribing: Sendable {
-    func start(locale: Locale, contextualStrings: [String]) -> AsyncThrowingStream<String, Error>
+    func start(locale: Locale, contextualStrings: [String], transcriberType: TranscriberType) -> AsyncThrowingStream<String, Error>
     func feedAudioBuffer(_ buffer: AVAudioPCMBuffer, format: AVAudioFormat)
     func stop()
+}
+
+extension LiveTranscribing {
+    func start(locale: Locale, contextualStrings: [String]) -> AsyncThrowingStream<String, Error> {
+        start(locale: locale, contextualStrings: contextualStrings, transcriberType: .speechTranscriber)
+    }
 }
 
 final class LiveTranscriptionService: LiveTranscribing, @unchecked Sendable {
@@ -16,7 +22,16 @@ final class LiveTranscriptionService: LiveTranscribing, @unchecked Sendable {
     private var isSetupComplete = false
     nonisolated(unsafe) private var lock = os_unfair_lock()
 
-    func start(locale: Locale, contextualStrings: [String] = []) -> AsyncThrowingStream<String, Error> {
+    func start(locale: Locale, contextualStrings: [String] = [], transcriberType: TranscriberType = .speechTranscriber) -> AsyncThrowingStream<String, Error> {
+        switch transcriberType {
+        case .speechTranscriber:
+            startWithSpeechTranscriber(locale: locale, contextualStrings: contextualStrings)
+        case .dictationTranscriber:
+            startWithDictationTranscriber(locale: locale, contextualStrings: contextualStrings)
+        }
+    }
+
+    private func startWithSpeechTranscriber(locale: Locale, contextualStrings: [String]) -> AsyncThrowingStream<String, Error> {
         AsyncThrowingStream { continuation in
             Task {
                 do {
@@ -37,20 +52,15 @@ final class LiveTranscriptionService: LiveTranscribing, @unchecked Sendable {
                         try await analyzer.setContext(context)
                     }
 
-                    // Build input stream
                     let (inputStream, inputContinuation) = AsyncStream<AnalyzerInput>.makeStream()
                     self.inputContinuation = inputContinuation
 
-                    // Get best audio format for the analyzer
                     self.analyzerFormat = await SpeechAnalyzer.bestAvailableAudioFormat(
                         compatibleWith: [transcriber]
                     )
 
-                    // Mark setup complete under lock to ensure memory visibility
-                    // for feedAudioBuffer on the audio thread.
                     self.markSetupComplete()
 
-                    // Collect transcription results
                     Task {
                         do {
                             var finalText = ""
@@ -64,7 +74,6 @@ final class LiveTranscriptionService: LiveTranscribing, @unchecked Sendable {
                                     }
                                     continuation.yield(finalText)
                                 } else {
-                                    // Volatile (partial) result — show final + partial
                                     let combined: String
                                     if finalText.isEmpty {
                                         combined = newText
@@ -80,7 +89,67 @@ final class LiveTranscriptionService: LiveTranscribing, @unchecked Sendable {
                         }
                     }
 
-                    // Start analyzer
+                    try await analyzer.start(inputSequence: inputStream)
+                } catch {
+                    continuation.finish(throwing: error)
+                }
+            }
+        }
+    }
+
+    private func startWithDictationTranscriber(locale: Locale, contextualStrings: [String]) -> AsyncThrowingStream<String, Error> {
+        AsyncThrowingStream { continuation in
+            Task {
+                do {
+                    let transcriber = DictationTranscriber(locale: locale)
+                    let analyzer = SpeechAnalyzer(modules: [transcriber])
+                    self.analyzer = analyzer
+
+                    if !contextualStrings.isEmpty {
+                        let context = AnalysisContext()
+                        context.contextualStrings = [
+                            AnalysisContext.ContextualStringsTag("vocabulary"): contextualStrings
+                        ]
+                        try await analyzer.setContext(context)
+                    }
+
+                    let (inputStream, inputContinuation) = AsyncStream<AnalyzerInput>.makeStream()
+                    self.inputContinuation = inputContinuation
+
+                    self.analyzerFormat = await SpeechAnalyzer.bestAvailableAudioFormat(
+                        compatibleWith: [transcriber]
+                    )
+
+                    self.markSetupComplete()
+
+                    Task {
+                        do {
+                            var finalText = ""
+                            for try await result in transcriber.results {
+                                let newText = String(result.text.characters)
+                                if result.isFinal {
+                                    if finalText.isEmpty {
+                                        finalText = newText
+                                    } else {
+                                        finalText += " " + newText
+                                    }
+                                    continuation.yield(finalText)
+                                } else {
+                                    let combined: String
+                                    if finalText.isEmpty {
+                                        combined = newText
+                                    } else {
+                                        combined = finalText + " " + newText
+                                    }
+                                    continuation.yield(combined)
+                                }
+                            }
+                            continuation.finish()
+                        } catch {
+                            continuation.finish(throwing: error)
+                        }
+                    }
+
                     try await analyzer.start(inputSequence: inputStream)
                 } catch {
                     continuation.finish(throwing: error)

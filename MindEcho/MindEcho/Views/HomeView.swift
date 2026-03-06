@@ -9,7 +9,9 @@ struct HomeView: View {
     @State private var isRecordingModalPresented = false
     @State private var shareItems: [Any]?
     @State private var vocabularyStore = VocabularyStore()
+    @State private var transcriberPreference = TranscriberPreference()
     @State private var showVocabulary = false
+    @State private var showSettings = false
 
     init(
         modelContext: ModelContext,
@@ -52,12 +54,21 @@ struct HomeView: View {
             .navigationTitle("MindEcho")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        showVocabulary = true
-                    } label: {
-                        Image(systemName: "character.book.closed")
+                    HStack(spacing: 16) {
+                        Button {
+                            showSettings = true
+                        } label: {
+                            Image(systemName: "gearshape")
+                        }
+                        .accessibilityIdentifier("home.settingsButton")
+
+                        Button {
+                            showVocabulary = true
+                        } label: {
+                            Image(systemName: "character.book.closed")
+                        }
+                        .accessibilityIdentifier("home.vocabularyButton")
                     }
-                    .accessibilityIdentifier("home.vocabularyButton")
                 }
             }
             .sheet(isPresented: Binding(
@@ -70,13 +81,20 @@ struct HomeView: View {
             }
             .onAppear {
                 viewModel.vocabularyWords = vocabularyStore.words
+                viewModel.transcriberType = transcriberPreference.type
                 viewModel.fetchAllEntries()
             }
             .onChange(of: vocabularyStore.words) { _, newWords in
                 viewModel.vocabularyWords = newWords
             }
+            .onChange(of: transcriberPreference.type) { _, newType in
+                viewModel.transcriberType = newType
+            }
             .sheet(isPresented: $showVocabulary) {
                 VocabularyView(store: vocabularyStore)
+            }
+            .sheet(isPresented: $showSettings) {
+                SettingsView(transcriberPreference: transcriberPreference)
             }
             .sheet(isPresented: $isRecordingModalPresented, onDismiss: {
                 if viewModel.isRecording {
@@ -89,7 +107,7 @@ struct HomeView: View {
                 RecordingModalView(viewModel: viewModel)
             }
             .sheet(item: $transcriptionTargetRecording) { recording in
-                TranscriptionView(recording: recording, vocabularyWords: vocabularyStore.words)
+                TranscriptionView(recording: recording, vocabularyWords: vocabularyStore.words, transcriberType: transcriberPreference.type)
                     .accessibilityIdentifier("home.transcriptionSheet")
             }
         }
