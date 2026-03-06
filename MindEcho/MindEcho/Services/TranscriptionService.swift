@@ -47,7 +47,7 @@ struct TranscriptionService {
     }
 
     private func transcribeWithDictation(audioFileURL: URL, locale: Locale, contextualStrings: [String]) async throws -> String {
-        let transcriber = DictationTranscriber(locale: locale)
+        let transcriber = DictationTranscriber(locale: locale, preset: .longDictation)
 
         async let transcriptionFuture: String = transcriber.results.reduce("") { partialResult, result in
             partialResult + String(result.text.characters) + " "

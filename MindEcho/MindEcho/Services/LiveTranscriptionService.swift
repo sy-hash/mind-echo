@@ -101,7 +101,7 @@ final class LiveTranscriptionService: LiveTranscribing, @unchecked Sendable {
         AsyncThrowingStream { continuation in
             Task {
                 do {
-                    let transcriber = DictationTranscriber(locale: locale)
+                    let transcriber = DictationTranscriber(locale: locale, preset: .progressiveLongDictation)
                     let analyzer = SpeechAnalyzer(modules: [transcriber])
                     self.analyzer = analyzer
 
