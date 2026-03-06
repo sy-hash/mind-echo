@@ -1,6 +1,6 @@
 # UIテスト設計
 
-メインシナリオを選定し XCTest で UIテストを記述する（6カテゴリ・18テストケース）。
+メインシナリオを選定し XCTest で UIテストを記述する（6カテゴリ・19テストケース）。
 
 ## テストデータセットアップ（Launch Arguments）
 
@@ -56,6 +56,7 @@ TabView を廃止し、今日のセクションと過去の履歴セクション
 - `home.shareButton` — 共有メニューボタン（今日のセクションヘッダー内、録音が存在する場合のみ表示）
 - `home.shareAudioButton` — 共有メニュー内の「音声を共有」ボタン
 - `home.shareTranscriptButton` — 共有メニュー内の「テキストを共有」ボタン
+- `home.sharePDFButton` — 共有メニュー内の「PDFで共有」ボタン
 
 **過去のセクション**
 
@@ -66,6 +67,7 @@ TabView を廃止し、今日のセクションと過去の履歴セクション
 - `past.shareButton.{date}` — 過去のセクションヘッダー内の共有メニューボタン（録音が存在する場合のみ表示）
 - `past.shareAudioButton.{date}` — 過去の共有メニュー内の「音声を共有」ボタン
 - `past.shareTranscriptButton.{date}` — 過去の共有メニュー内の「テキストを共有」ボタン
+- `past.sharePDFButton.{date}` — 過去の共有メニュー内の「PDFで共有」ボタン
 - `past.recordingRow.{date}.{n}` — 過去の録音行。タップで TranscriptionView へ遷移
 - `past.playButton.{date}.{n}` — 過去の録音の再生ボタン（セル右端、非再生時に表示）
 - `past.pauseButton.{date}.{n}` — 過去の録音の一時停止ボタン（セル右端、再生中に表示）
@@ -115,6 +117,7 @@ TabView を廃止し、今日のセクションと過去の履歴セクション
 - `transcription.summaryLoading` — 要約生成中のプログレス表示
 - `transcription.summaryText` — 要約結果テキスト
 - `transcription.summaryError` — 要約エラーメッセージ
+- `transcription.shareButton` — 書き起こし結果の共有ボタン（PDF形式、ナビゲーションバー右端、書き起こし成功時のみ表示）
 
 ## テストケース（6カテゴリ・18テスト）
 
@@ -170,7 +173,7 @@ TabView を廃止し、今日のセクションと過去の履歴セクション
 | `testSeededHistory_displaysEntries` | シードデータが統合リストに表示され、録音なし日付にも `past.addButton.{date}` が表示される |
 | `testEntryRow_showsDatePreviewAndRecordingInfo` | セルに録音情報が表示される |
 
-### 4. EntryDetailUITests（5テスト）
+### 4. EntryDetailUITests（6テスト）
 
 統合ビュー上で今日の録音に対するテストを実施（旧 EntryDetailView のテストを HomeView に移行）。
 
@@ -179,6 +182,7 @@ TabView を廃止し、今日のセクションと過去の履歴セクション
 | `testHomeView_showsDateAndRecordingsList` | 日付と録音リストの表示 |
 | `testShareButton_presentsActivitySheet` | セクションヘッダーの共有ボタンタップで共有タイプ選択メニュー表示 → 「音声を共有」選択で Activity Sheet 表示 |
 | `testShareTranscriptButton_presentsActivitySheet` | セクションヘッダーの共有ボタンタップで共有タイプ選択メニュー表示 → 「テキストを共有」選択で Activity Sheet 表示 |
+| `testSharePDFButton_presentsActivitySheet` | セクションヘッダーの共有ボタンタップで共有タイプ選択メニュー表示 → 「PDFで共有」選択で Activity Sheet 表示 |
 | `testMenuDelete_removesRecording` | メニューボタン（…）タップ → 削除メニューアイテムタップで録音が削除される |
 | `testPlayButton_togglesPlaybackState` | 再生ボタンタップで一時停止ボタンに切り替わり、一時停止タップで再生ボタンに戻る |
 

@@ -306,6 +306,11 @@ class HomeViewModel {
         return try String(contentsOf: url, encoding: .utf8)
     }
 
+    func exportTranscriptPDFForSharing(entry: JournalEntry) throws -> URL {
+        let exportDir = FilePathManager.exportsDirectory
+        return try exportService.exportTranscriptPDF(entry: entry, to: exportDir)
+    }
+
     // MARK: - Private
 
     private func getOrCreateEntry(for logicalDate: Date) -> JournalEntry {
