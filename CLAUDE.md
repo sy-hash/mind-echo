@@ -128,6 +128,15 @@ xcodebuild test \
 
 実装: `DateHelper.logicalDate(for:)`, `DateHelper.today()`
 
+### Transcriber Engine Preference
+
+書き起こしエンジンの設定は、リアルタイム書き起こしと事後書き起こしで独立しています。
+
+- `TranscriberPreference.liveType` — 録音中のリアルタイム書き起こしに使用するエンジン
+- `TranscriberPreference.postRecordingType` — 録音完了後の書き起こしに使用するエンジン
+
+レガシーマイグレーション: 旧 `transcriberType` キーから新しい2つのキーへ自動移行されます。
+
 ### Data Model Relationships
 
 ```

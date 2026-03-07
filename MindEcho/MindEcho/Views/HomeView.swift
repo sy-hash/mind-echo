@@ -83,14 +83,18 @@ struct HomeView: View {
             }
             .onAppear {
                 viewModel.vocabularyWords = vocabularyStore.words
-                viewModel.transcriberType = transcriberPreference.type
+                viewModel.liveTranscriberType = transcriberPreference.liveType
+                viewModel.postRecordingTranscriberType = transcriberPreference.postRecordingType
                 viewModel.fetchAllEntries()
             }
             .onChange(of: vocabularyStore.words) { _, newWords in
                 viewModel.vocabularyWords = newWords
             }
-            .onChange(of: transcriberPreference.type) { _, newType in
-                viewModel.transcriberType = newType
+            .onChange(of: transcriberPreference.liveType) { _, newType in
+                viewModel.liveTranscriberType = newType
+            }
+            .onChange(of: transcriberPreference.postRecordingType) { _, newType in
+                viewModel.postRecordingTranscriberType = newType
             }
             .sheet(isPresented: $showVocabulary) {
                 VocabularyView(store: vocabularyStore)
@@ -109,7 +113,7 @@ struct HomeView: View {
                 RecordingModalView(viewModel: viewModel)
             }
             .sheet(item: $transcriptionTargetRecording) { recording in
-                TranscriptionView(recording: recording, vocabularyWords: vocabularyStore.words, transcriberType: transcriberPreference.type)
+                TranscriptionView(recording: recording, vocabularyWords: vocabularyStore.words, transcriberType: transcriberPreference.postRecordingType)
                     .accessibilityIdentifier("home.transcriptionSheet")
             }
         }
