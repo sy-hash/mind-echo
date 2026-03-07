@@ -35,10 +35,11 @@ class HomeViewModel {
     private(set) var liveTranscriptionText: String = ""
     private(set) var liveTranscriptionError: String?
     var vocabularyWords: [String] = []
+    var transcriberType: TranscriberType = .speechTranscriber
 
     @ObservationIgnored
-    var transcribe: (URL, Locale, [String]) async throws -> String = { url, locale, contextualStrings in
-        try await TranscriptionService().transcribe(audioFileURL: url, locale: locale, contextualStrings: contextualStrings)
+    var transcribe: (URL, Locale, [String], TranscriberType) async throws -> String = { url, locale, contextualStrings, transcriberType in
+        try await TranscriptionService().transcribe(audioFileURL: url, locale: locale, contextualStrings: contextualStrings, transcriberType: transcriberType)
     }
     @ObservationIgnored
     var summarize: (String) async throws -> String = SummarizationService().summarize
@@ -177,7 +178,7 @@ class HomeViewModel {
         transcriptionState = .loading
         summaryState = .idle
         do {
-            let text = try await transcribe(url, Locale(identifier: "ja-JP"), vocabularyWords)
+            let text = try await transcribe(url, Locale(identifier: "ja-JP"), vocabularyWords, transcriberType)
             if text.isEmpty {
                 transcriptionState = .failure("書き起こし結果が空でした。")
             } else {
@@ -348,7 +349,7 @@ class HomeViewModel {
             liveTranscriber.feedAudioBuffer(buffer, format: format)
         }
 
-        let stream = liveTranscriber.start(locale: Locale(identifier: "ja-JP"), contextualStrings: vocabularyWords)
+        let stream = liveTranscriber.start(locale: Locale(identifier: "ja-JP"), contextualStrings: vocabularyWords, transcriberType: transcriberType)
         liveTranscriptionTask = Task { @MainActor [weak self] in
             do {
                 for try await text in stream {
