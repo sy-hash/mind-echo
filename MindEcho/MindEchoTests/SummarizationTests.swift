@@ -23,7 +23,7 @@ struct SummarizationTests {
     ) -> TranscriptionViewModel {
         let vm = TranscriptionViewModel()
         vm.checkAuthorization = { .authorized }
-        vm.transcribe = { _, _, _ in "テスト書き起こし結果" }
+        vm.transcribe = { _, _, _, _ in "テスト書き起こし結果" }
         vm.summarize = { _ in summarizeResult }
         vm.isSummarizationAvailable = { available }
         return vm
@@ -123,7 +123,7 @@ struct SummarizationTests {
 
     @Test func transcriptionFailure_doesNotTriggerSummarization() async {
         let vm = makeViewModel()
-        vm.transcribe = { _, _, _ in
+        vm.transcribe = { _, _, _, _ in
             throw NSError(domain: "test", code: 1, userInfo: [NSLocalizedDescriptionKey: "エラー"])
         }
         let recording = makeRecording()
