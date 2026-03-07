@@ -19,7 +19,7 @@ enum TranscriberType: String, CaseIterable, Sendable {
         case .speechTranscriber:
             "高精度・生テキスト出力"
         case .dictationTranscriber:
-            "句読点付き・カスタム語彙対応"
+            "句読点付き出力"
         }
     }
 }

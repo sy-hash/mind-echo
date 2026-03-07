@@ -61,6 +61,7 @@ struct HomeView: View {
                             Image(systemName: "gearshape")
                         }
                         .accessibilityIdentifier("home.settingsButton")
+                        .accessibilityLabel("設定")
 
                         Button {
                             showVocabulary = true
@@ -68,6 +69,7 @@ struct HomeView: View {
                             Image(systemName: "character.book.closed")
                         }
                         .accessibilityIdentifier("home.vocabularyButton")
+                        .accessibilityLabel("語彙")
                     }
                 }
             }

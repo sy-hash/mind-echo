@@ -120,6 +120,32 @@ struct TranscriptionViewModelTests {
         #expect(recording.transcription == nil)
     }
 
+    @Test func retryTranscription_clearsAndRetranscribes() async {
+        let vm = makeAuthorizedViewModel()
+        var callCount = 0
+        vm.transcribe = { _, _, _, _ in
+            callCount += 1
+            return "書き起こし結果\(callCount)"
+        }
+        vm.isSummarizationAvailable = { false }
+
+        let recording = makeRecording()
+        await vm.startTranscription(recording: recording)
+
+        #expect(vm.state == .success("書き起こし結果1"))
+        #expect(recording.transcription == "書き起こし結果1")
+
+        // Set a summary to verify it gets cleared
+        recording.summary = "テスト要約"
+
+        await vm.retryTranscription(recording: recording)
+
+        #expect(vm.state == .success("書き起こし結果2"))
+        #expect(recording.transcription == "書き起こし結果2")
+        #expect(recording.summary == nil)
+        #expect(callCount == 2)
+    }
+
     @Test func startTranscription_passesVocabularyToTranscribe() async {
         let vm = makeAuthorizedViewModel()
         var receivedWords: [String] = []

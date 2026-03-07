@@ -51,8 +51,7 @@ struct TranscriptionView: View {
                     ToolbarItem(placement: .primaryAction) {
                         retryButton
                     }
-                }
-                if case .failure = viewModel.state {
+                } else if case .failure = viewModel.state {
                     ToolbarItem(placement: .primaryAction) {
                         retryButton
                     }
