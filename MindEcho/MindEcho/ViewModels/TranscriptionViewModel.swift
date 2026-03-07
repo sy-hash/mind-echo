@@ -23,9 +23,10 @@ final class TranscriptionViewModel {
     private(set) var state: State = .idle
     private(set) var summaryState: SummaryState = .idle
     var vocabularyWords: [String] = []
+    var transcriberType: TranscriberType = .speechTranscriber
 
     @ObservationIgnored
-    var transcribe: (URL, Locale, [String]) async throws -> String = TranscriptionService().transcribe
+    var transcribe: (URL, Locale, [String], TranscriberType) async throws -> String = TranscriptionService().transcribe
     @ObservationIgnored
     var checkAuthorization: () -> SFSpeechRecognizerAuthorizationStatus = {
         SFSpeechRecognizer.authorizationStatus()
@@ -38,6 +39,13 @@ final class TranscriptionViewModel {
     var summarize: (String) async throws -> String = SummarizationService().summarize
     @ObservationIgnored
     var isSummarizationAvailable: () -> Bool = { SummarizationService.isAvailable }
+
+    func retryTranscription(recording: Recording) async {
+        recording.transcription = nil
+        recording.summary = nil
+        summaryState = .idle
+        await startTranscription(recording: recording)
+    }
 
     func startTranscription(recording: Recording) async {
         // 保存済みの書き起こしがあれば即表示
@@ -69,7 +77,7 @@ final class TranscriptionViewModel {
             .appendingPathComponent(recording.audioFileName)
 
         do {
-            let text = try await transcribe(fileURL, Locale(identifier: "ja-JP"), vocabularyWords)
+            let text = try await transcribe(fileURL, Locale(identifier: "ja-JP"), vocabularyWords, transcriberType)
             if text.isEmpty {
                 state = .failure("書き起こし結果が空でした。")
             } else {
