@@ -86,6 +86,12 @@ TabView を廃止し、今日のセクションと過去の履歴セクション
 - `vocabulary.word.{n}` — 登録済み単語行（n = インデックス）
 - `vocabulary.closeButton` — シートを閉じるボタン（×アイコン）
 
+### SettingsView
+
+- `settings.liveTranscriber.{type}` — リアルタイム書き起こしエンジン選択ボタン（type = speechTranscriber | dictationTranscriber）
+- `settings.postRecordingTranscriber.{type}` — 事後書き起こしエンジン選択ボタン（type = speechTranscriber | dictationTranscriber）
+- `settings.closeButton` — シートを閉じるボタン（×アイコン）
+
 ### RecordingModalView
 
 録音中はモーダルシートとして表示される。録音中と書き起こし後で表示要素が切り替わる。

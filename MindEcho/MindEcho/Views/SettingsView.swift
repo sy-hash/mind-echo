@@ -10,7 +10,7 @@ struct SettingsView: View {
                 Section {
                     ForEach(TranscriberType.allCases, id: \.self) { type in
                         Button {
-                            transcriberPreference.type = type
+                            transcriberPreference.liveType = type
                         } label: {
                             HStack {
                                 VStack(alignment: .leading, spacing: 4) {
@@ -21,18 +21,46 @@ struct SettingsView: View {
                                         .foregroundStyle(.secondary)
                                 }
                                 Spacer()
-                                if transcriberPreference.type == type {
+                                if transcriberPreference.liveType == type {
                                     Image(systemName: "checkmark")
                                         .foregroundStyle(.blue)
                                 }
                             }
                         }
-                        .accessibilityIdentifier("settings.transcriber.\(type.rawValue)")
+                        .accessibilityIdentifier("settings.liveTranscriber.\(type.rawValue)")
                     }
                 } header: {
-                    Text("書き起こしエンジン")
+                    Text("リアルタイム書き起こしエンジン")
                 } footer: {
-                    Text("SpeechTranscriber は高精度な生テキスト出力に対応しています。DictationTranscriber は句読点付きの出力に対応しています。どちらもカスタム語彙を利用できます。")
+                    Text("録音中にリアルタイムで表示される書き起こしに使用するエンジンです。")
+                }
+
+                Section {
+                    ForEach(TranscriberType.allCases, id: \.self) { type in
+                        Button {
+                            transcriberPreference.postRecordingType = type
+                        } label: {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(type.displayName)
+                                        .foregroundStyle(.primary)
+                                    Text(type.description)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                                if transcriberPreference.postRecordingType == type {
+                                    Image(systemName: "checkmark")
+                                        .foregroundStyle(.blue)
+                                }
+                            }
+                        }
+                        .accessibilityIdentifier("settings.postRecordingTranscriber.\(type.rawValue)")
+                    }
+                } header: {
+                    Text("事後書き起こしエンジン")
+                } footer: {
+                    Text("録音完了後の書き起こしに使用するエンジンです。SpeechTranscriber は高精度な生テキスト出力に対応しています。DictationTranscriber は句読点付きの出力に対応しています。どちらもカスタム語彙を利用できます。")
                 }
             }
             .navigationTitle("設定")

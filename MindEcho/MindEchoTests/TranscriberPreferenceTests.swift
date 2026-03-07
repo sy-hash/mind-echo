@@ -10,37 +10,67 @@ struct TranscriberPreferenceTests {
         return defaults
     }
 
-    @Test func defaultType_isSpeechTranscriber() {
+    @Test func defaultLiveType_isSpeechTranscriber() {
         let defaults = makeDefaults()
         let pref = TranscriberPreference(defaults: defaults)
-        #expect(pref.type == .speechTranscriber)
+        #expect(pref.liveType == .speechTranscriber)
     }
 
-    @Test func setType_persistsToUserDefaults() {
+    @Test func defaultPostRecordingType_isSpeechTranscriber() {
         let defaults = makeDefaults()
         let pref = TranscriberPreference(defaults: defaults)
-
-        pref.type = .dictationTranscriber
-
-        #expect(defaults.string(forKey: "transcriberType") == "dictationTranscriber")
+        #expect(pref.postRecordingType == .speechTranscriber)
     }
 
-    @Test func initFromPersistedValue_restoresType() {
+    @Test func setLiveType_persistsToUserDefaults() {
         let defaults = makeDefaults()
-        defaults.set("dictationTranscriber", forKey: "transcriberType")
+        let pref = TranscriberPreference(defaults: defaults)
+
+        pref.liveType = .dictationTranscriber
+
+        #expect(defaults.string(forKey: "liveTranscriberType") == "dictationTranscriber")
+    }
+
+    @Test func setPostRecordingType_persistsToUserDefaults() {
+        let defaults = makeDefaults()
+        let pref = TranscriberPreference(defaults: defaults)
+
+        pref.postRecordingType = .dictationTranscriber
+
+        #expect(defaults.string(forKey: "postRecordingTranscriberType") == "dictationTranscriber")
+    }
+
+    @Test func initFromPersistedValues_restoresTypes() {
+        let defaults = makeDefaults()
+        defaults.set("dictationTranscriber", forKey: "liveTranscriberType")
+        defaults.set("speechTranscriber", forKey: "postRecordingTranscriberType")
 
         let pref = TranscriberPreference(defaults: defaults)
 
-        #expect(pref.type == .dictationTranscriber)
+        #expect(pref.liveType == .dictationTranscriber)
+        #expect(pref.postRecordingType == .speechTranscriber)
     }
 
     @Test func invalidPersistedValue_defaultsToSpeechTranscriber() {
         let defaults = makeDefaults()
-        defaults.set("invalidValue", forKey: "transcriberType")
+        defaults.set("invalidValue", forKey: "liveTranscriberType")
+        defaults.set("invalidValue", forKey: "postRecordingTranscriberType")
 
         let pref = TranscriberPreference(defaults: defaults)
 
-        #expect(pref.type == .speechTranscriber)
+        #expect(pref.liveType == .speechTranscriber)
+        #expect(pref.postRecordingType == .speechTranscriber)
+    }
+
+    @Test func liveAndPostRecordingTypes_canDiffer() {
+        let defaults = makeDefaults()
+        let pref = TranscriberPreference(defaults: defaults)
+
+        pref.liveType = .dictationTranscriber
+        pref.postRecordingType = .speechTranscriber
+
+        #expect(pref.liveType == .dictationTranscriber)
+        #expect(pref.postRecordingType == .speechTranscriber)
     }
 
     @Test func transcriberType_displayNames() {

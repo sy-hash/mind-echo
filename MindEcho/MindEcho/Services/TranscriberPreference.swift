@@ -26,23 +26,38 @@ enum TranscriberType: String, CaseIterable, Sendable {
 
 @Observable
 final class TranscriberPreference {
-    private static let defaultKey = "transcriberType"
+    private static let liveKey = "liveTranscriberType"
+    private static let postRecordingKey = "postRecordingTranscriberType"
 
     private let defaults: UserDefaults
-    private let key: String
+    private let liveKeyName: String
+    private let postRecordingKeyName: String
 
-    var type: TranscriberType {
+    var liveType: TranscriberType {
         didSet { save() }
     }
 
-    init(defaults: UserDefaults = .standard, key: String = defaultKey) {
+    var postRecordingType: TranscriberType {
+        didSet { save() }
+    }
+
+    init(
+        defaults: UserDefaults = .standard,
+        liveKey: String = liveKey,
+        postRecordingKey: String = postRecordingKey
+    ) {
         self.defaults = defaults
-        self.key = key
-        let raw = defaults.string(forKey: key) ?? ""
-        self.type = TranscriberType(rawValue: raw) ?? .speechTranscriber
+        self.liveKeyName = liveKey
+        self.postRecordingKeyName = postRecordingKey
+
+        self.liveType = defaults.string(forKey: liveKey)
+            .flatMap(TranscriberType.init(rawValue:)) ?? .speechTranscriber
+        self.postRecordingType = defaults.string(forKey: postRecordingKey)
+            .flatMap(TranscriberType.init(rawValue:)) ?? .speechTranscriber
     }
 
     private func save() {
-        defaults.set(type.rawValue, forKey: key)
+        defaults.set(liveType.rawValue, forKey: liveKeyName)
+        defaults.set(postRecordingType.rawValue, forKey: postRecordingKeyName)
     }
 }
