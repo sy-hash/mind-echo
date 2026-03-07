@@ -47,6 +47,16 @@ struct TranscriptionView: View {
                     }
                     .accessibilityIdentifier("transcription.closeButton")
                 }
+                if case .success = viewModel.state {
+                    ToolbarItem(placement: .primaryAction) {
+                        retryButton
+                    }
+                }
+                if case .failure = viewModel.state {
+                    ToolbarItem(placement: .primaryAction) {
+                        retryButton
+                    }
+                }
             }
         }
         .task {
@@ -68,6 +78,18 @@ struct TranscriptionView: View {
             }
             await viewModel.startTranscription(recording: recording)
         }
+    }
+
+    private var retryButton: some View {
+        Button {
+            viewModel.transcriberType = transcriberType
+            Task {
+                await viewModel.retryTranscription(recording: recording)
+            }
+        } label: {
+            Image(systemName: "arrow.clockwise")
+        }
+        .accessibilityIdentifier("transcription.retryButton")
     }
 
     @ViewBuilder

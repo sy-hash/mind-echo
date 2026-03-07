@@ -40,6 +40,13 @@ final class TranscriptionViewModel {
     @ObservationIgnored
     var isSummarizationAvailable: () -> Bool = { SummarizationService.isAvailable }
 
+    func retryTranscription(recording: Recording) async {
+        recording.transcription = nil
+        recording.summary = nil
+        summaryState = .idle
+        await startTranscription(recording: recording)
+    }
+
     func startTranscription(recording: Recording) async {
         // 保存済みの書き起こしがあれば即表示
         if let existing = recording.transcription {
