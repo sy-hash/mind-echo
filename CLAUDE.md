@@ -135,7 +135,6 @@ xcodebuild test \
 - `TranscriberPreference.liveType` — 録音中のリアルタイム書き起こしに使用するエンジン
 - `TranscriberPreference.postRecordingType` — 録音完了後の書き起こしに使用するエンジン
 
-レガシーマイグレーション: 旧 `transcriberType` キーから新しい2つのキーへ自動移行されます。
 
 ### Data Model Relationships
 

@@ -28,8 +28,6 @@ enum TranscriberType: String, CaseIterable, Sendable {
 final class TranscriberPreference {
     private static let liveKey = "liveTranscriberType"
     private static let postRecordingKey = "postRecordingTranscriberType"
-    /// Legacy key used before the live/post-recording split.
-    private static let legacyKey = "transcriberType"
 
     private let defaults: UserDefaults
     private let liveKeyName: String
@@ -52,22 +50,10 @@ final class TranscriberPreference {
         self.liveKeyName = liveKey
         self.postRecordingKeyName = postRecordingKey
 
-        // Migration: if old single key exists but new keys don't, migrate it.
-        let legacyRaw = defaults.string(forKey: TranscriberPreference.legacyKey)
-        let liveRaw = defaults.string(forKey: liveKey)
-        let postRaw = defaults.string(forKey: postRecordingKey)
-
-        if liveRaw == nil, let legacyRaw {
-            self.liveType = TranscriberType(rawValue: legacyRaw) ?? .speechTranscriber
-        } else {
-            self.liveType = TranscriberType(rawValue: liveRaw ?? "") ?? .speechTranscriber
-        }
-
-        if postRaw == nil, let legacyRaw {
-            self.postRecordingType = TranscriberType(rawValue: legacyRaw) ?? .speechTranscriber
-        } else {
-            self.postRecordingType = TranscriberType(rawValue: postRaw ?? "") ?? .speechTranscriber
-        }
+        self.liveType = defaults.string(forKey: liveKey)
+            .flatMap(TranscriberType.init(rawValue:)) ?? .speechTranscriber
+        self.postRecordingType = defaults.string(forKey: postRecordingKey)
+            .flatMap(TranscriberType.init(rawValue:)) ?? .speechTranscriber
     }
 
     private func save() {

@@ -62,28 +62,6 @@ struct TranscriberPreferenceTests {
         #expect(pref.postRecordingType == .speechTranscriber)
     }
 
-    @Test func legacyMigration_setsLiveAndPostRecordingFromOldKey() {
-        let defaults = makeDefaults()
-        defaults.set("dictationTranscriber", forKey: "transcriberType")
-
-        let pref = TranscriberPreference(defaults: defaults)
-
-        #expect(pref.liveType == .dictationTranscriber)
-        #expect(pref.postRecordingType == .dictationTranscriber)
-    }
-
-    @Test func legacyMigration_newKeysOverrideLegacy() {
-        let defaults = makeDefaults()
-        defaults.set("dictationTranscriber", forKey: "transcriberType")
-        defaults.set("speechTranscriber", forKey: "liveTranscriberType")
-        defaults.set("speechTranscriber", forKey: "postRecordingTranscriberType")
-
-        let pref = TranscriberPreference(defaults: defaults)
-
-        #expect(pref.liveType == .speechTranscriber)
-        #expect(pref.postRecordingType == .speechTranscriber)
-    }
-
     @Test func liveAndPostRecordingTypes_canDiffer() {
         let defaults = makeDefaults()
         let pref = TranscriberPreference(defaults: defaults)
