@@ -349,7 +349,7 @@ class HomeViewModel {
             liveTranscriber.feedAudioBuffer(buffer, format: format)
         }
 
-        let stream = liveTranscriber.start(locale: Locale(identifier: "ja-JP"), contextualStrings: vocabularyWords, transcriberType: transcriberType)
+        let stream = liveTranscriber.start(locale: Locale(identifier: "ja-JP"), contextualStrings: vocabularyWords)
         liveTranscriptionTask = Task { @MainActor [weak self] in
             do {
                 for try await text in stream {

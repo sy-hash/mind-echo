@@ -32,7 +32,7 @@ struct SettingsView: View {
                 } header: {
                     Text("書き起こしエンジン")
                 } footer: {
-                    Text("SpeechTranscriber は高精度な生テキスト出力に対応しています。DictationTranscriber は句読点付きの出力に対応しています。どちらもカスタム語彙を利用できます。")
+                    Text("録音完了後の書き起こしに使用するエンジンを選択します。リアルタイム書き起こしには常に SpeechTranscriber が使用されます。")
                 }
             }
             .navigationTitle("設定")
