@@ -24,7 +24,7 @@ final class LiveTranscriptionService: LiveTranscribing, @unchecked Sendable {
 
     func start(locale: Locale, contextualStrings: [String] = [], transcriberType: TranscriberType = .speechTranscriber) -> AsyncThrowingStream<String, Error> {
         switch transcriberType {
-        case .speechTranscriber:
+        case .speechTranscriber, .whisperAPI:
             startWithSpeechTranscriber(locale: locale, contextualStrings: contextualStrings)
         case .dictationTranscriber:
             startWithDictationTranscriber(locale: locale, contextualStrings: contextualStrings)
