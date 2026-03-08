@@ -22,7 +22,7 @@ MindEchoApp (App Target)
 |-----------|------|--------|
 | **MindEchoCore** | ドメインモデル, 日付ロジック, ファイル管理, エクスポート protocol | `JournalEntry`, `Recording`, `DateHelper`, `FilePathManager`, `Exporting` |
 | **MindEchoAudio** | 録音・再生・音声結合・TTS 生成 | `AudioRecorderService`, `AudioPlayerService`, `AudioMerger`, `TTSGenerator` |
-| **MindEchoApp** | Views, ViewModels, ExportService 実装, SummarizationService, VocabularyStore, TranscriberPreference, WhisperAPIService, Mocks | `HomeView`, `HomeViewModel`, `RecordingModalView`, `TranscriptionView`, `SettingsView`, `ExportServiceImpl`, `SummarizationService`, `VocabularyStore`, `TranscriberPreference`, `TranscriberType`, `OpenAIAPIKeyStore`, `WhisperAPIService`, `VocabularyView` 等 |
+| **MindEchoApp** | Views, ViewModels, ExportService 実装, SummarizationService, VocabularyStore, SummaryPromptStore, TranscriberPreference, WhisperAPIService, Mocks | `HomeView`, `HomeViewModel`, `RecordingModalView`, `TranscriptionView`, `SettingsView`, `ExportServiceImpl`, `SummarizationService`, `SummaryPromptStore`, `VocabularyStore`, `TranscriberPreference`, `TranscriberType`, `OpenAIAPIKeyStore`, `WhisperAPIService`, `VocabularyView` 等 |
 
 ### Design Principles
 

@@ -3,6 +3,7 @@ import SwiftUI
 struct SettingsView: View {
     @Bindable var transcriberPreference: TranscriberPreference
     @Bindable var openAIAPIKeyStore: OpenAIAPIKeyStore
+    @Bindable var summaryPromptStore: SummaryPromptStore
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -74,6 +75,22 @@ struct SettingsView: View {
                     Text("OpenAI API キー")
                 } footer: {
                     Text("Whisper API を使用するために必要です。API キーは端末内に保存されます。")
+                }
+
+                Section {
+                    TextEditor(text: $summaryPromptStore.prompt)
+                        .frame(minHeight: 100)
+                        .accessibilityIdentifier("settings.summaryPrompt")
+                    if summaryPromptStore.prompt != SummaryPromptStore.defaultPrompt {
+                        Button("デフォルトに戻す") {
+                            summaryPromptStore.resetToDefault()
+                        }
+                        .accessibilityIdentifier("settings.summaryPromptReset")
+                    }
+                } header: {
+                    Text("要約プロンプト")
+                } footer: {
+                    Text("書き起こしテキストの要約に使用するプロンプトです。書き起こしテキストはプロンプトの後に自動的に追加されます。")
                 }
             }
             .navigationTitle("設定")

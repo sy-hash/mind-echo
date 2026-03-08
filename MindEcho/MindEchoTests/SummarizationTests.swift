@@ -24,7 +24,7 @@ struct SummarizationTests {
         let vm = TranscriptionViewModel()
         vm.checkAuthorization = { .authorized }
         vm.transcribe = { _, _, _, _, _ in "テスト書き起こし結果" }
-        vm.summarize = { _ in summarizeResult }
+        vm.summarize = { _, _ in summarizeResult }
         vm.isSummarizationAvailable = { available }
         return vm
     }
@@ -47,7 +47,7 @@ struct SummarizationTests {
     @Test func startSummarization_existingSummary_showsImmediately() async {
         let vm = makeViewModel()
         var summarizeCalled = false
-        vm.summarize = { _ in
+        vm.summarize = { _, _ in
             summarizeCalled = true
             return "新しい要約"
         }
@@ -82,7 +82,7 @@ struct SummarizationTests {
 
     @Test func startSummarization_error_showsFailure() async {
         let vm = makeViewModel()
-        vm.summarize = { _ in
+        vm.summarize = { _, _ in
             throw NSError(domain: "test", code: 1, userInfo: [NSLocalizedDescriptionKey: "テストエラー"])
         }
         let recording = makeRecording(transcription: "テキスト")
@@ -99,7 +99,7 @@ struct SummarizationTests {
 
     @Test func startSummarization_failure_doesNotSaveSummary() async {
         let vm = makeViewModel()
-        vm.summarize = { _ in
+        vm.summarize = { _, _ in
             throw NSError(domain: "test", code: 1, userInfo: [NSLocalizedDescriptionKey: "エラー"])
         }
         let recording = makeRecording(transcription: "テキスト")

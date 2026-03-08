@@ -25,6 +25,7 @@ final class TranscriptionViewModel {
     var vocabularyWords: [String] = []
     var transcriberType: TranscriberType = .speechTranscriber
     var openAIAPIKey: String = ""
+    var summaryPrompt: String = SummaryPromptStore.defaultPrompt
 
     @ObservationIgnored
     var transcribe: (URL, Locale, [String], TranscriberType, String) async throws -> String = { url, locale, contextualStrings, transcriberType, openAIAPIKey in
@@ -39,7 +40,7 @@ final class TranscriptionViewModel {
         SFSpeechRecognizer.requestAuthorization($0)
     }
     @ObservationIgnored
-    var summarize: (String) async throws -> String = SummarizationService().summarize
+    var summarize: (String, String) async throws -> String = SummarizationService().summarize
     @ObservationIgnored
     var isSummarizationAvailable: () -> Bool = { SummarizationService.isAvailable }
 
@@ -108,7 +109,7 @@ final class TranscriptionViewModel {
         summaryState = .loading
 
         do {
-            let summary = try await summarize(text)
+            let summary = try await summarize(text, summaryPrompt)
             if summary.isEmpty {
                 summaryState = .failure("要約結果が空でした。")
             } else {
