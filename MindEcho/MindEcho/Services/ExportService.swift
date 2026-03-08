@@ -2,6 +2,7 @@ import AVFoundation
 import Foundation
 import MindEchoAudio
 import MindEchoCore
+import UIKit
 
 struct ExportServiceImpl: Exporting {
     func exportMergedAudio(entry: JournalEntry, to directory: URL) async throws -> URL {
@@ -33,6 +34,18 @@ struct ExportServiceImpl: Exporting {
         try? FileManager.default.removeItem(at: exportURL)
         try FileManager.default.copyItem(at: mergedURL, to: exportURL)
 
+        return exportURL
+    }
+
+    func exportTranscriptPDF(entry: JournalEntry, to directory: URL) throws -> URL {
+        try FilePathManager.ensureDirectoryExists(directory)
+
+        let title = DateHelper.displayString(for: entry.date)
+        let body = entry.sortedRecordings.compactMap(\.transcription).joined(separator: "\n\n")
+        let data = PDFRenderer.render(title: title, body: body)
+
+        let exportURL = FilePathManager.exportPDFURL(for: entry.date)
+        try data.write(to: exportURL)
         return exportURL
     }
 

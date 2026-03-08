@@ -9,6 +9,7 @@ struct TranscriptionView: View {
     var openAIAPIKey: String = ""
     @Environment(\.dismiss) private var dismiss
     @State private var viewModel = TranscriptionViewModel()
+    @State private var shareItems: [Any]?
 
     var body: some View {
         NavigationStack {
@@ -49,6 +50,14 @@ struct TranscriptionView: View {
                     .accessibilityIdentifier("transcription.closeButton")
                 }
                 if case .success = viewModel.state {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button {
+                            sharePDF()
+                        } label: {
+                            Image(systemName: "square.and.arrow.up")
+                        }
+                        .accessibilityIdentifier("transcription.shareButton")
+                    }
                     ToolbarItem(placement: .primaryAction) {
                         retryButton
                     }
@@ -56,6 +65,14 @@ struct TranscriptionView: View {
                     ToolbarItem(placement: .primaryAction) {
                         retryButton
                     }
+                }
+            }
+            .sheet(isPresented: Binding(
+                get: { shareItems != nil },
+                set: { if !$0 { shareItems = nil } }
+            )) {
+                if let items = shareItems {
+                    ShareSheet(activityItems: items)
                 }
             }
         }
@@ -78,6 +95,21 @@ struct TranscriptionView: View {
                 viewModel.isSummarizationAvailable = { true }
             }
             await viewModel.startTranscription(recording: recording)
+        }
+    }
+
+    private func sharePDF() {
+        guard case .success(let text) = viewModel.state else { return }
+        let title = "書き起こし #\(recording.sequenceNumber)"
+        let data = PDFRenderer.render(title: title, body: text)
+
+        let tempURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("transcription_\(recording.sequenceNumber).pdf")
+        do {
+            try data.write(to: tempURL)
+            shareItems = [tempURL]
+        } catch {
+            // PDF write failed — do not present share sheet with invalid URL
         }
     }
 
