@@ -38,13 +38,14 @@ class HomeViewModel {
     var liveTranscriberType: TranscriberType = .speechTranscriber
     var postRecordingTranscriberType: TranscriberType = .speechTranscriber
     var openAIAPIKey: String = ""
+    var summaryInstruction: String = SummaryPromptStore.defaultInstruction
 
     @ObservationIgnored
     var transcribe: (URL, Locale, [String], TranscriberType, String) async throws -> String = { url, locale, contextualStrings, transcriberType, openAIAPIKey in
         try await TranscriptionService().transcribe(audioFileURL: url, locale: locale, contextualStrings: contextualStrings, transcriberType: transcriberType, openAIAPIKey: openAIAPIKey)
     }
     @ObservationIgnored
-    var summarize: (String) async throws -> String = SummarizationService().summarize
+    var summarize: (String, String) async throws -> String = SummarizationService().summarize
     @ObservationIgnored
     var isSummarizationAvailable: () -> Bool = { SummarizationService.isAvailable }
 
@@ -213,7 +214,7 @@ class HomeViewModel {
         }
         summaryState = .loading
         do {
-            let summary = try await summarize(text)
+            let summary = try await summarize(text, summaryInstruction)
             if summary.isEmpty {
                 summaryState = .failure("要約結果が空でした。")
             } else {
