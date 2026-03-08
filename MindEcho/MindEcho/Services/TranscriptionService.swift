@@ -16,7 +16,7 @@ struct TranscriptionService {
         case .dictationTranscriber:
             try await transcribeWithDictation(audioFileURL: audioFileURL, locale: locale, contextualStrings: contextualStrings)
         case .whisperAPI:
-            try await WhisperAPIService().transcribe(audioFileURL: audioFileURL, apiKey: openAIAPIKey)
+            try await WhisperAPIService().transcribe(audioFileURL: audioFileURL, apiKey: openAIAPIKey, contextualStrings: contextualStrings)
         }
     }
 

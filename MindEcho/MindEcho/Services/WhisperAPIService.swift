@@ -24,7 +24,7 @@ struct WhisperAPIService: Sendable {
     private static let maxFileSize = 25 * 1024 * 1024 // 25MB
     private static let endpoint = URL(string: "https://api.openai.com/v1/audio/transcriptions")!
 
-    func transcribe(audioFileURL: URL, apiKey: String) async throws -> String {
+    func transcribe(audioFileURL: URL, apiKey: String, contextualStrings: [String] = []) async throws -> String {
         guard !apiKey.isEmpty else {
             throw WhisperError.apiKeyMissing
         }
@@ -59,6 +59,10 @@ struct WhisperAPIService: Sendable {
         appendField(name: "model", value: "gpt-4o-transcribe")
         appendField(name: "language", value: "ja")
         appendField(name: "response_format", value: "text")
+
+        if !contextualStrings.isEmpty {
+            appendField(name: "prompt", value: contextualStrings.joined(separator: ", "))
+        }
 
         body.append("--\(boundary)--\r\n".data(using: .utf8)!)
         request.httpBody = body
