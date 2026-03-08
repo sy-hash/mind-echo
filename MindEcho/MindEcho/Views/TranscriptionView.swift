@@ -7,6 +7,7 @@ struct TranscriptionView: View {
     var vocabularyWords: [String] = []
     var transcriberType: TranscriberType = .speechTranscriber
     var openAIAPIKey: String = ""
+    var summaryPrompt: String = SummaryPromptStore.defaultPrompt
     @Environment(\.dismiss) private var dismiss
     @State private var viewModel = TranscriptionViewModel()
 
@@ -63,6 +64,7 @@ struct TranscriptionView: View {
             viewModel.vocabularyWords = vocabularyWords
             viewModel.transcriberType = transcriberType
             viewModel.openAIAPIKey = openAIAPIKey
+            viewModel.summaryPrompt = summaryPrompt
             if ProcessInfo.processInfo.arguments.contains("--mock-transcription") {
                 viewModel.transcribe = { _, _, _, _, _ in
                     try await Task.sleep(for: .milliseconds(500))
@@ -71,7 +73,7 @@ struct TranscriptionView: View {
                 viewModel.checkAuthorization = { .authorized }
             }
             if ProcessInfo.processInfo.arguments.contains("--mock-summarization") {
-                viewModel.summarize = { text in
+                viewModel.summarize = { text, _ in
                     try await Task.sleep(for: .milliseconds(300))
                     return "これはモックの要約結果です。"
                 }
