@@ -76,9 +76,49 @@ struct TranscriberPreferenceTests {
     @Test func transcriberType_displayNames() {
         #expect(TranscriberType.speechTranscriber.displayName == "SpeechTranscriber")
         #expect(TranscriberType.dictationTranscriber.displayName == "DictationTranscriber")
+        #expect(TranscriberType.whisperAPI.displayName == "Whisper API")
     }
 
     @Test func transcriberType_allCases() {
-        #expect(TranscriberType.allCases.count == 2)
+        #expect(TranscriberType.allCases.count == 3)
+    }
+
+    @Test func transcriberType_liveCases_excludesWhisperAPI() {
+        #expect(TranscriberType.liveCases.count == 2)
+        #expect(!TranscriberType.liveCases.contains(.whisperAPI))
+    }
+
+    @Test func transcriberType_postRecordingCases_includesWhisperAPI() {
+        #expect(TranscriberType.postRecordingCases.count == 3)
+        #expect(TranscriberType.postRecordingCases.contains(.whisperAPI))
+    }
+
+    @Test func setPostRecordingType_whisperAPI_persistsToUserDefaults() {
+        let defaults = makeDefaults()
+        let pref = TranscriberPreference(defaults: defaults)
+
+        pref.postRecordingType = .whisperAPI
+
+        #expect(defaults.string(forKey: "postRecordingTranscriberType") == "whisperAPI")
+    }
+
+    @Test func openAIAPIKeyStore_defaultIsEmpty() {
+        let defaults = makeDefaults()
+        let store = OpenAIAPIKeyStore(defaults: defaults)
+        #expect(store.apiKey == "")
+    }
+
+    @Test func openAIAPIKeyStore_persistsKey() {
+        let defaults = makeDefaults()
+        let store = OpenAIAPIKeyStore(defaults: defaults, key: "testOpenAIAPIKey")
+        store.apiKey = "sk-test123"
+        #expect(defaults.string(forKey: "testOpenAIAPIKey") == "sk-test123")
+    }
+
+    @Test func openAIAPIKeyStore_restoresPersistedKey() {
+        let defaults = makeDefaults()
+        defaults.set("sk-persisted", forKey: "testOpenAIAPIKey")
+        let store = OpenAIAPIKeyStore(defaults: defaults, key: "testOpenAIAPIKey")
+        #expect(store.apiKey == "sk-persisted")
     }
 }

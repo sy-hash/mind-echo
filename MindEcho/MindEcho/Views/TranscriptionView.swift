@@ -6,6 +6,7 @@ struct TranscriptionView: View {
     let recording: Recording
     var vocabularyWords: [String] = []
     var transcriberType: TranscriberType = .speechTranscriber
+    var openAIAPIKey: String = ""
     @Environment(\.dismiss) private var dismiss
     @State private var viewModel = TranscriptionViewModel()
 
@@ -61,8 +62,9 @@ struct TranscriptionView: View {
         .task {
             viewModel.vocabularyWords = vocabularyWords
             viewModel.transcriberType = transcriberType
+            viewModel.openAIAPIKey = openAIAPIKey
             if ProcessInfo.processInfo.arguments.contains("--mock-transcription") {
-                viewModel.transcribe = { _, _, _, _ in
+                viewModel.transcribe = { _, _, _, _, _ in
                     try await Task.sleep(for: .milliseconds(500))
                     return "これはモックの書き起こし結果です。テスト用のテキストデータ。"
                 }

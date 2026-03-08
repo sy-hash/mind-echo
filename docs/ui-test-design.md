@@ -89,7 +89,8 @@ TabView を廃止し、今日のセクションと過去の履歴セクション
 ### SettingsView
 
 - `settings.liveTranscriber.{type}` — リアルタイム書き起こしエンジン選択ボタン（type = speechTranscriber | dictationTranscriber）
-- `settings.postRecordingTranscriber.{type}` — 事後書き起こしエンジン選択ボタン（type = speechTranscriber | dictationTranscriber）
+- `settings.postRecordingTranscriber.{type}` — 事後書き起こしエンジン選択ボタン（type = speechTranscriber | dictationTranscriber | whisperAPI）
+- `settings.openAIAPIKey` — OpenAI API キー入力フィールド（SecureField）
 - `settings.closeButton` — シートを閉じるボタン（×アイコン）
 
 ### RecordingModalView

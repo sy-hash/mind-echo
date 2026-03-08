@@ -37,10 +37,11 @@ class HomeViewModel {
     var vocabularyWords: [String] = []
     var liveTranscriberType: TranscriberType = .speechTranscriber
     var postRecordingTranscriberType: TranscriberType = .speechTranscriber
+    var openAIAPIKey: String = ""
 
     @ObservationIgnored
-    var transcribe: (URL, Locale, [String], TranscriberType) async throws -> String = { url, locale, contextualStrings, transcriberType in
-        try await TranscriptionService().transcribe(audioFileURL: url, locale: locale, contextualStrings: contextualStrings, transcriberType: transcriberType)
+    var transcribe: (URL, Locale, [String], TranscriberType, String) async throws -> String = { url, locale, contextualStrings, transcriberType, openAIAPIKey in
+        try await TranscriptionService().transcribe(audioFileURL: url, locale: locale, contextualStrings: contextualStrings, transcriberType: transcriberType, openAIAPIKey: openAIAPIKey)
     }
     @ObservationIgnored
     var summarize: (String) async throws -> String = SummarizationService().summarize
@@ -179,7 +180,7 @@ class HomeViewModel {
         transcriptionState = .loading
         summaryState = .idle
         do {
-            let text = try await transcribe(url, Locale(identifier: "ja-JP"), vocabularyWords, postRecordingTranscriberType)
+            let text = try await transcribe(url, Locale(identifier: "ja-JP"), vocabularyWords, postRecordingTranscriberType, openAIAPIKey)
             if text.isEmpty {
                 transcriptionState = .failure("書き起こし結果が空でした。")
             } else {

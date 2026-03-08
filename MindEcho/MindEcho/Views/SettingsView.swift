@@ -2,13 +2,14 @@ import SwiftUI
 
 struct SettingsView: View {
     @Bindable var transcriberPreference: TranscriberPreference
+    @Bindable var openAIAPIKeyStore: OpenAIAPIKeyStore
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
             List {
                 Section {
-                    ForEach(TranscriberType.allCases, id: \.self) { type in
+                    ForEach(TranscriberType.liveCases, id: \.self) { type in
                         Button {
                             transcriberPreference.liveType = type
                         } label: {
@@ -36,7 +37,7 @@ struct SettingsView: View {
                 }
 
                 Section {
-                    ForEach(TranscriberType.allCases, id: \.self) { type in
+                    ForEach(TranscriberType.postRecordingCases, id: \.self) { type in
                         Button {
                             transcriberPreference.postRecordingType = type
                         } label: {
@@ -60,7 +61,19 @@ struct SettingsView: View {
                 } header: {
                     Text("事後書き起こしエンジン")
                 } footer: {
-                    Text("録音完了後の書き起こしに使用するエンジンです。SpeechTranscriber は高精度な生テキスト出力に対応しています。DictationTranscriber は句読点付きの出力に対応しています。どちらもカスタム語彙を利用できます。")
+                    Text("録音完了後の書き起こしに使用するエンジンです。Whisper API はネットワーク接続が必要で、音声データが OpenAI サーバーに送信されます。")
+                }
+
+                Section {
+                    SecureField("sk-...", text: $openAIAPIKeyStore.apiKey)
+                        .textContentType(.password)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                        .accessibilityIdentifier("settings.openAIAPIKey")
+                } header: {
+                    Text("OpenAI API キー")
+                } footer: {
+                    Text("Whisper API を使用するために必要です。API キーは端末内に保存されます。")
                 }
             }
             .navigationTitle("設定")

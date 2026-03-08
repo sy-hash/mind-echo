@@ -138,7 +138,7 @@ struct RecordingModalView: View {
         }
         .onAppear {
             if ProcessInfo.processInfo.arguments.contains("--mock-transcription") {
-                viewModel.transcribe = { _, _, _, _ in
+                viewModel.transcribe = { _, _, _, _, _ in
                     try await Task.sleep(for: .milliseconds(500))
                     return "これはモックの書き起こし結果です。テスト用のテキストデータ。"
                 }
