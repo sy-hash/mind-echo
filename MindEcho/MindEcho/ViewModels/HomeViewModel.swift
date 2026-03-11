@@ -39,15 +39,20 @@ class HomeViewModel {
     var postRecordingTranscriberType: TranscriberType = .speechTranscriber
     var openAIAPIKey: String = ""
     var summaryInstruction: String = SummaryPromptStore.defaultInstruction
+    var summarizerType: SummarizerType = .onDevice
 
     @ObservationIgnored
     var transcribe: (URL, Locale, [String], TranscriberType, String) async throws -> String = { url, locale, contextualStrings, transcriberType, openAIAPIKey in
         try await TranscriptionService().transcribe(audioFileURL: url, locale: locale, contextualStrings: contextualStrings, transcriberType: transcriberType, openAIAPIKey: openAIAPIKey)
     }
     @ObservationIgnored
-    var summarize: (String, String) async throws -> String = SummarizationService().summarize
+    var summarize: (String, String, SummarizerType, String) async throws -> String = { text, instruction, type, apiKey in
+        try await SummarizationService.summarize(text: text, instruction: instruction, type: type, apiKey: apiKey)
+    }
     @ObservationIgnored
-    var isSummarizationAvailable: () -> Bool = { SummarizationService.isAvailable }
+    var isSummarizationAvailable: (SummarizerType, String) -> Bool = { type, apiKey in
+        SummarizationService.isAvailable(type: type, apiKey: apiKey)
+    }
 
     private let modelContext: ModelContext
     private var audioRecorder: any AudioRecording
@@ -208,13 +213,13 @@ class HomeViewModel {
             summaryState = .success(existing)
             return
         }
-        guard isSummarizationAvailable() else {
+        guard isSummarizationAvailable(summarizerType, openAIAPIKey) else {
             summaryState = .unavailable
             return
         }
         summaryState = .loading
         do {
-            let summary = try await summarize(text, summaryInstruction)
+            let summary = try await summarize(text, summaryInstruction, summarizerType, openAIAPIKey)
             if summary.isEmpty {
                 summaryState = .failure("要約結果が空でした。")
             } else {

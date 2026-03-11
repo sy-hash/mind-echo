@@ -144,11 +144,11 @@ struct RecordingModalView: View {
                 }
             }
             if ProcessInfo.processInfo.arguments.contains("--mock-summarization") {
-                viewModel.summarize = { _, _ in
+                viewModel.summarize = { _, _, _, _ in
                     try await Task.sleep(for: .milliseconds(300))
                     return "これはモックの要約結果です。"
                 }
-                viewModel.isSummarizationAvailable = { true }
+                viewModel.isSummarizationAvailable = { _, _ in true }
             }
             viewModel.startRecording()
         }

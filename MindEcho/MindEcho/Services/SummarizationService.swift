@@ -15,4 +15,24 @@ struct SummarizationService {
         }
         return false
     }
+
+    // MARK: - Dispatch (共通エントリポイント)
+
+    static func summarize(text: String, instruction: String, type: SummarizerType, apiKey: String) async throws -> String {
+        switch type {
+        case .onDevice:
+            try await SummarizationService().summarize(text: text, instruction: instruction)
+        case .openAI:
+            try await OpenAISummarizationService().summarize(text: text, instruction: instruction, apiKey: apiKey)
+        }
+    }
+
+    static func isAvailable(type: SummarizerType, apiKey: String) -> Bool {
+        switch type {
+        case .onDevice:
+            Self.isAvailable
+        case .openAI:
+            !apiKey.isEmpty
+        }
+    }
 }

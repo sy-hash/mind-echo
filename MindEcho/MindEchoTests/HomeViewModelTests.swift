@@ -183,8 +183,8 @@ struct HomeViewModelTests {
     @Test func startTranscription_triggersSummarization() async throws {
         let (vm, _, _, _container) = try makeViewModel()
         vm.transcribe = { _, _, _, _, _ in "書き起こしテスト結果" }
-        vm.summarize = { _, _ in "要約テスト結果" }
-        vm.isSummarizationAvailable = { true }
+        vm.summarize = { _, _, _, _ in "要約テスト結果" }
+        vm.isSummarizationAvailable = { _, _ in true }
         vm.startRecording()
         vm.stopRecording()
 
@@ -198,7 +198,7 @@ struct HomeViewModelTests {
     @Test func startTranscription_summarizationUnavailable_setsUnavailableState() async throws {
         let (vm, _, _, _container) = try makeViewModel()
         vm.transcribe = { _, _, _, _, _ in "書き起こしテスト結果" }
-        vm.isSummarizationAvailable = { false }
+        vm.isSummarizationAvailable = { _, _ in false }
         vm.startRecording()
         vm.stopRecording()
 
@@ -212,8 +212,8 @@ struct HomeViewModelTests {
     @Test func startTranscription_emptySummary_setsFailureState() async throws {
         let (vm, _, _, _container) = try makeViewModel()
         vm.transcribe = { _, _, _, _, _ in "書き起こしテスト結果" }
-        vm.summarize = { _, _ in "" }
-        vm.isSummarizationAvailable = { true }
+        vm.summarize = { _, _, _, _ in "" }
+        vm.isSummarizationAvailable = { _, _ in true }
         vm.startRecording()
         vm.stopRecording()
 
@@ -227,8 +227,8 @@ struct HomeViewModelTests {
     @Test func startTranscription_summarizationThrows_setsFailureState() async throws {
         let (vm, _, _, _container) = try makeViewModel()
         vm.transcribe = { _, _, _, _, _ in "書き起こしテスト結果" }
-        vm.summarize = { _, _ in throw NSError(domain: "test", code: 1, userInfo: [NSLocalizedDescriptionKey: "テストエラー"]) }
-        vm.isSummarizationAvailable = { true }
+        vm.summarize = { _, _, _, _ in throw NSError(domain: "test", code: 1, userInfo: [NSLocalizedDescriptionKey: "テストエラー"]) }
+        vm.isSummarizationAvailable = { _, _ in true }
         vm.startRecording()
         vm.stopRecording()
 
@@ -245,11 +245,11 @@ struct HomeViewModelTests {
         vm.transcribe = { _, _, _, _, _ in
             throw NSError(domain: "test", code: 2, userInfo: [NSLocalizedDescriptionKey: "書き起こしエラー"])
         }
-        vm.summarize = { _, _ in
+        vm.summarize = { _, _, _, _ in
             summarizeCalled = true
             return "この要約は呼ばれないはずです"
         }
-        vm.isSummarizationAvailable = { true }
+        vm.isSummarizationAvailable = { _, _ in true }
         vm.startRecording()
         vm.stopRecording()
 
@@ -268,7 +268,7 @@ struct HomeViewModelTests {
             receivedWords = words
             return "テスト"
         }
-        vm.isSummarizationAvailable = { false }
+        vm.isSummarizationAvailable = { _, _ in false }
         vm.vocabularyWords = ["MindEcho", "SwiftUI"]
         vm.startRecording()
         vm.stopRecording()

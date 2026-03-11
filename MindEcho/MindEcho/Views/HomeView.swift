@@ -10,6 +10,7 @@ struct HomeView: View {
     @State private var shareItems: [Any]?
     @State private var vocabularyStore = VocabularyStore()
     @State private var transcriberPreference = TranscriberPreference()
+    @State private var summarizerPreference = SummarizerPreference()
     @State private var openAIAPIKeyStore = OpenAIAPIKeyStore()
     @State private var summaryPromptStore = SummaryPromptStore()
     @State private var showVocabulary = false
@@ -89,6 +90,7 @@ struct HomeView: View {
                 viewModel.postRecordingTranscriberType = transcriberPreference.postRecordingType
                 viewModel.openAIAPIKey = openAIAPIKeyStore.apiKey
                 viewModel.summaryInstruction = summaryPromptStore.instruction
+                viewModel.summarizerType = summarizerPreference.type
                 viewModel.fetchAllEntries()
             }
             .onChange(of: vocabularyStore.words) { _, newWords in
@@ -106,11 +108,14 @@ struct HomeView: View {
             .onChange(of: summaryPromptStore.instruction) { _, newInstruction in
                 viewModel.summaryInstruction = newInstruction
             }
+            .onChange(of: summarizerPreference.type) { _, newType in
+                viewModel.summarizerType = newType
+            }
             .sheet(isPresented: $showVocabulary) {
                 VocabularyView(store: vocabularyStore)
             }
             .sheet(isPresented: $showSettings) {
-                SettingsView(transcriberPreference: transcriberPreference, openAIAPIKeyStore: openAIAPIKeyStore, summaryPromptStore: summaryPromptStore)
+                SettingsView(transcriberPreference: transcriberPreference, summarizerPreference: summarizerPreference, openAIAPIKeyStore: openAIAPIKeyStore, summaryPromptStore: summaryPromptStore)
             }
             .sheet(isPresented: $isRecordingModalPresented, onDismiss: {
                 if viewModel.isRecording {
@@ -123,7 +128,7 @@ struct HomeView: View {
                 RecordingModalView(viewModel: viewModel)
             }
             .sheet(item: $transcriptionTargetRecording) { recording in
-                TranscriptionView(recording: recording, vocabularyWords: vocabularyStore.words, transcriberType: transcriberPreference.postRecordingType, openAIAPIKey: openAIAPIKeyStore.apiKey, summaryInstruction: summaryPromptStore.instruction)
+                TranscriptionView(recording: recording, vocabularyWords: vocabularyStore.words, transcriberType: transcriberPreference.postRecordingType, openAIAPIKey: openAIAPIKeyStore.apiKey, summaryInstruction: summaryPromptStore.instruction, summarizerType: summarizerPreference.type)
                     .accessibilityIdentifier("home.transcriptionSheet")
             }
         }
