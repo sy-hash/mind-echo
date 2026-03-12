@@ -1,6 +1,7 @@
 import AVFoundation
 import Foundation
 
+// swift-format-ignore: AvoidRetroactiveConformances
 extension AVAudioPCMBuffer: @retroactive @unchecked Sendable {}
 
 public struct TTSGenerator {

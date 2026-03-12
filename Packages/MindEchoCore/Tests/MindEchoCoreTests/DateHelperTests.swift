@@ -1,5 +1,6 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import MindEchoCore
 
 @MainActor
@@ -21,14 +22,14 @@ struct DateHelperTests {
         let cal = Calendar.current
         #expect(cal.component(.day, from: logical) == 7)
         #expect(cal.component(.month, from: logical) == 2)
-        #expect(cal.component(.hour, from: logical) == 12) // normalized to noon
+        #expect(cal.component(.hour, from: logical) == 12)  // normalized to noon
     }
 
     @Test func lateNightBeforeBoundary_returnsPreviousDay() {
         let date = makeDate(year: 2025, month: 2, day: 8, hour: 2, minute: 30)
         let logical = DateHelper.logicalDate(for: date)
         let cal = Calendar.current
-        #expect(cal.component(.day, from: logical) == 7) // Previous day
+        #expect(cal.component(.day, from: logical) == 7)  // Previous day
         #expect(cal.component(.month, from: logical) == 2)
     }
 
@@ -36,14 +37,14 @@ struct DateHelperTests {
         let date = makeDate(year: 2025, month: 2, day: 8, hour: 3, minute: 0)
         let logical = DateHelper.logicalDate(for: date)
         let cal = Calendar.current
-        #expect(cal.component(.day, from: logical) == 8) // Current day (3AM is boundary)
+        #expect(cal.component(.day, from: logical) == 8)  // Current day (3AM is boundary)
     }
 
     @Test func justBeforeBoundary_returnsPreviousDay() {
         let date = makeDate(year: 2025, month: 2, day: 8, hour: 2, minute: 59)
         let logical = DateHelper.logicalDate(for: date)
         let cal = Calendar.current
-        #expect(cal.component(.day, from: logical) == 7) // Previous day
+        #expect(cal.component(.day, from: logical) == 7)  // Previous day
     }
 
     @Test func midnight_returnsPreviousDay() {

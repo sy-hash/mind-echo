@@ -22,9 +22,11 @@ public class Recording {
         summary != nil
     }
 
-    public init(id: UUID = UUID(), sequenceNumber: Int, audioFileName: String,
-         duration: TimeInterval, recordedAt: Date = Date(), transcription: String? = nil,
-         summary: String? = nil) {
+    public init(
+        id: UUID = UUID(), sequenceNumber: Int, audioFileName: String,
+        duration: TimeInterval, recordedAt: Date = Date(), transcription: String? = nil,
+        summary: String? = nil
+    ) {
         self.id = id
         self.sequenceNumber = sequenceNumber
         self.audioFileName = audioFileName

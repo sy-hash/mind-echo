@@ -1,5 +1,5 @@
-import Foundation
 import AVFAudio
+import Foundation
 import Speech
 
 struct TranscriptionService {
@@ -12,15 +12,20 @@ struct TranscriptionService {
     ) async throws -> String {
         switch transcriberType {
         case .speechTranscriber:
-            try await transcribeWithSpeech(audioFileURL: audioFileURL, locale: locale, contextualStrings: contextualStrings)
+            try await transcribeWithSpeech(
+                audioFileURL: audioFileURL, locale: locale, contextualStrings: contextualStrings)
         case .dictationTranscriber:
-            try await transcribeWithDictation(audioFileURL: audioFileURL, locale: locale, contextualStrings: contextualStrings)
+            try await transcribeWithDictation(
+                audioFileURL: audioFileURL, locale: locale, contextualStrings: contextualStrings)
         case .whisperAPI:
-            try await WhisperAPIService().transcribe(audioFileURL: audioFileURL, apiKey: openAIAPIKey, contextualStrings: contextualStrings)
+            try await WhisperAPIService().transcribe(
+                audioFileURL: audioFileURL, apiKey: openAIAPIKey, contextualStrings: contextualStrings)
         }
     }
 
-    private func transcribeWithSpeech(audioFileURL: URL, locale: Locale, contextualStrings: [String]) async throws -> String {
+    private func transcribeWithSpeech(audioFileURL: URL, locale: Locale, contextualStrings: [String]) async throws
+        -> String
+    {
         let transcriber = SpeechTranscriber(locale: locale, preset: .transcription)
 
         async let transcriptionFuture: String = transcriber.results.reduce("") { partialResult, result in
@@ -49,7 +54,9 @@ struct TranscriptionService {
         return resultText.trimmingCharacters(in: CharacterSet.whitespaces)
     }
 
-    private func transcribeWithDictation(audioFileURL: URL, locale: Locale, contextualStrings: [String]) async throws -> String {
+    private func transcribeWithDictation(audioFileURL: URL, locale: Locale, contextualStrings: [String]) async throws
+        -> String
+    {
         let transcriber = DictationTranscriber(locale: locale, preset: .longDictation)
 
         async let transcriptionFuture: String = transcriber.results.reduce("") { partialResult, result in

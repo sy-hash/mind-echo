@@ -34,6 +34,7 @@ MindEchoApp (App Target)
 
 ```
 mind-echo/
+├── .swift-format               # swift-format 設定ファイル
 ├── docs/                       # 設計ドキュメント
 ├── Packages/
 │   ├── MindEchoCore/          # ドメインモデル、日付、ファイル管理
@@ -104,6 +105,12 @@ xcodebuild test \
 ```
 
 ## Coding Guidelines
+
+### swift-format
+
+Apple 公式の [swift-format](https://github.com/swiftlang/swift-format) を使用してコードスタイルを統一しています。設定はプロジェクトルートの `.swift-format` を参照。
+
+- コミット前にフォーマットを適用すること: `xcrun swift-format format --in-place --recursive --configuration .swift-format <対象ディレクトリ>`
 
 ### Swift Concurrency
 

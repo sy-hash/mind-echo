@@ -6,7 +6,9 @@ final class TranscriptionUITests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
         app = XCUIApplication()
-        app.launchArguments = ["--uitesting", "--seed-today-with-recordings", "--mock-transcription", "--mock-summarization"]
+        app.launchArguments = [
+            "--uitesting", "--seed-today-with-recordings", "--mock-transcription", "--mock-summarization",
+        ]
     }
 
     // Helper: find the recording row regardless of its accessibility type.

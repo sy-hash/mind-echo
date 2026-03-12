@@ -1,13 +1,16 @@
-import Testing
 import Foundation
 import MindEchoAudio
 import MindEchoCore
 import SwiftData
+import Testing
+
 @testable import MindEcho
 
 @MainActor
 struct HomeViewModelTests {
-    private func makeViewModel() throws -> (HomeViewModel, MockAudioRecorderService, MockAudioPlayerService, ModelContainer) {
+    private func makeViewModel() throws -> (
+        HomeViewModel, MockAudioRecorderService, MockAudioPlayerService, ModelContainer
+    ) {
         let schema = Schema([JournalEntry.self, Recording.self])
         let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: schema, configurations: [config])
@@ -227,7 +230,9 @@ struct HomeViewModelTests {
     @Test func startTranscription_summarizationThrows_setsFailureState() async throws {
         let (vm, _, _, _container) = try makeViewModel()
         vm.transcribe = { _, _, _, _, _ in "書き起こしテスト結果" }
-        vm.summarize = { _, _, _, _ in throw NSError(domain: "test", code: 1, userInfo: [NSLocalizedDescriptionKey: "テストエラー"]) }
+        vm.summarize = { _, _, _, _ in
+            throw NSError(domain: "test", code: 1, userInfo: [NSLocalizedDescriptionKey: "テストエラー"])
+        }
         vm.isSummarizationAvailable = { _, _ in true }
         vm.startRecording()
         vm.stopRecording()
@@ -286,6 +291,6 @@ struct HomeViewModelTests {
 
         let recording = vm.todayEntry!.recordings.first!
         vm.deleteRecording(recording, from: vm.todayEntry!)
-        #expect(vm.todayEntry == nil) // Entry deleted since it had no more recordings
+        #expect(vm.todayEntry == nil)  // Entry deleted since it had no more recordings
     }
 }

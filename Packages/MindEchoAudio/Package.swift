@@ -6,7 +6,7 @@ let package = Package(
     name: "MindEchoAudio",
     platforms: [.iOS(.v26)],
     products: [
-        .library(name: "MindEchoAudio", targets: ["MindEchoAudio"]),
+        .library(name: "MindEchoAudio", targets: ["MindEchoAudio"])
     ],
     targets: [
         .target(name: "MindEchoAudio", swiftSettings: [.swiftLanguageMode(.v5)]),

@@ -18,8 +18,10 @@ public class JournalEntry {
         recordings.reduce(0) { $0 + $1.duration }
     }
 
-    public init(id: UUID = UUID(), date: Date, createdAt: Date = Date(), updatedAt: Date = Date(),
-         recordings: [Recording] = []) {
+    public init(
+        id: UUID = UUID(), date: Date, createdAt: Date = Date(), updatedAt: Date = Date(),
+        recordings: [Recording] = []
+    ) {
         self.id = id
         self.date = date
         self.createdAt = createdAt

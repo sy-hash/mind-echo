@@ -6,7 +6,7 @@ let package = Package(
     name: "MindEchoCore",
     platforms: [.iOS(.v26)],
     products: [
-        .library(name: "MindEchoCore", targets: ["MindEchoCore"]),
+        .library(name: "MindEchoCore", targets: ["MindEchoCore"])
     ],
     targets: [
         .target(name: "MindEchoCore"),

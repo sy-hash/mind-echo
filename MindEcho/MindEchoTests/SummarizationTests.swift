@@ -1,7 +1,8 @@
-import Testing
 import Foundation
-import Speech
 import MindEchoCore
+import Speech
+import Testing
+
 @testable import MindEcho
 
 @MainActor
