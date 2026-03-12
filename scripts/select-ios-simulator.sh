@@ -17,49 +17,50 @@ fi
 destination="$(
   xcrun simctl list devices available -j \
     | jq -r '
-        def candidates:
-          [
-            .devices
-            | to_entries[]
-            | select(.key | startswith("com.apple.CoreSimulator.SimRuntime.iOS-"))
-            | .key as $runtime_key
-            | .value[]
-            | select(.isAvailable == true)
-            | select(.name | startswith("iPhone"))
-            | {
-                destination: ("platform=iOS Simulator,id=" + .udid),
-                name,
-                runtime_version: (
-                  $runtime_key
-                  | sub("^com.apple.CoreSimulator.SimRuntime.iOS-"; "")
-                  | split("-")
-                  | map(tonumber? // 0)
-                ),
-                device_number: (
-                  (
-                    .name
-                    | capture("^iPhone (?<n>[0-9]+)$").n
-                    | tonumber
-                  ) // 0
-                )
-              }
-          ];
+        def build_candidate($runtime_key; $device):
+          {
+            destination: ("platform=iOS Simulator,id=" + $device.udid),
+            name: $device.name,
+            runtime_version: (
+              $runtime_key
+              | sub("^com.apple.CoreSimulator.SimRuntime.iOS-"; "")
+              | split("-")
+              | map(tonumber? // 0)
+            ),
+            device_number: (
+              (
+                $device.name
+                | capture("^iPhone (?<n>[0-9]+)$").n
+                | tonumber
+              ) // 0
+            )
+          };
 
-        def pick_device($devices):
-          $devices
-          | sort_by([.runtime_version, .device_number, .name])
-          | last;
-
-        (
-          candidates
-          | map(select(.name | test("^iPhone [0-9]+$")))
-        ) as $plain_iphones
+        [
+          .devices
+          | to_entries[]
+          | select(.key | startswith("com.apple.CoreSimulator.SimRuntime.iOS-"))
+          | .key as $runtime_key
+          | .value[]
+          | select(.isAvailable == true)
+          | select(.name | startswith("iPhone"))
+          | build_candidate($runtime_key; .)
+        ] as $all_candidates
         |
-        if ($plain_iphones | length) > 0 then
-          pick_device($plain_iphones)
+        (
+          [
+            $all_candidates[]
+            | select(.name | test("^iPhone [0-9]+$"))
+          ]
+        ) as $standard_candidates
+        |
+        if ($standard_candidates | length) > 0 then
+          $standard_candidates
         else
-          pick_device(candidates)
+          $all_candidates
         end
+        | sort_by([.runtime_version, .device_number, .name])
+        | last
         | .destination // empty
       '
 )"
