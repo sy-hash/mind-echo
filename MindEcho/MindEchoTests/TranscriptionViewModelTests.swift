@@ -127,7 +127,7 @@ struct TranscriptionViewModelTests {
             callCount += 1
             return "書き起こし結果\(callCount)"
         }
-        vm.isSummarizationAvailable = { false }
+        vm.isSummarizationAvailable = { _, _ in false }
 
         let recording = makeRecording()
         await vm.startTranscription(recording: recording)

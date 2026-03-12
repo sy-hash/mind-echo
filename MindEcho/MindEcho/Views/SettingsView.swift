@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @Bindable var transcriberPreference: TranscriberPreference
+    @Bindable var summarizerPreference: SummarizerPreference
     @Bindable var openAIAPIKeyStore: OpenAIAPIKeyStore
     @Bindable var summaryPromptStore: SummaryPromptStore
     @Environment(\.dismiss) private var dismiss
@@ -66,6 +67,34 @@ struct SettingsView: View {
                 }
 
                 Section {
+                    ForEach(SummarizerType.allCases, id: \.self) { type in
+                        Button {
+                            summarizerPreference.type = type
+                        } label: {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(type.displayName)
+                                        .foregroundStyle(.primary)
+                                    Text(type.description)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                                if summarizerPreference.type == type {
+                                    Image(systemName: "checkmark")
+                                        .foregroundStyle(.blue)
+                                }
+                            }
+                        }
+                        .accessibilityIdentifier("settings.summarizer.\(type.rawValue)")
+                    }
+                } header: {
+                    Text("要約エンジン")
+                } footer: {
+                    Text("書き起こしテキストの要約に使用するエンジンです。OpenAI API はネットワーク接続が必要で、テキストが OpenAI サーバーに送信されます。")
+                }
+
+                Section {
                     SecureField("sk-...", text: $openAIAPIKeyStore.apiKey)
                         .textContentType(.password)
                         .autocorrectionDisabled()
@@ -74,7 +103,7 @@ struct SettingsView: View {
                 } header: {
                     Text("OpenAI API キー")
                 } footer: {
-                    Text("Whisper API を使用するために必要です。API キーは端末内に保存されます。")
+                    Text("Whisper API および OpenAI 要約を使用するために必要です。API キーは端末内に保存されます。")
                 }
 
                 Section {

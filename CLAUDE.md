@@ -22,7 +22,7 @@ MindEchoApp (App Target)
 |-----------|------|--------|
 | **MindEchoCore** | ドメインモデル, 日付ロジック, ファイル管理, エクスポート protocol | `JournalEntry`, `Recording`, `DateHelper`, `FilePathManager`, `Exporting` |
 | **MindEchoAudio** | 録音・再生・音声結合・TTS 生成 | `AudioRecorderService`, `AudioPlayerService`, `AudioMerger`, `TTSGenerator` |
-| **MindEchoApp** | Views, ViewModels, ExportService 実装, SummarizationService, VocabularyStore, TranscriberPreference, SummaryPromptStore, WhisperAPIService, Mocks | `HomeView`, `HomeViewModel`, `RecordingModalView`, `TranscriptionView`, `SettingsView`, `ExportServiceImpl`, `SummarizationService`, `VocabularyStore`, `TranscriberPreference`, `TranscriberType`, `OpenAIAPIKeyStore`, `SummaryPromptStore`, `WhisperAPIService`, `VocabularyView` 等 |
+| **MindEchoApp** | Views, ViewModels, ExportService 実装, SummarizationService, VocabularyStore, TranscriberPreference, SummaryPromptStore, WhisperAPIService, SummarizerPreference, OpenAISummarizationService, Mocks | `HomeView`, `HomeViewModel`, `RecordingModalView`, `TranscriptionView`, `SettingsView`, `ExportServiceImpl`, `SummarizationService`, `OpenAISummarizationService`, `VocabularyStore`, `TranscriberPreference`, `TranscriberType`, `SummarizerPreference`, `SummarizerType`, `OpenAIAPIKeyStore`, `SummaryPromptStore`, `WhisperAPIService`, `VocabularyView` 等 |
 
 ### Design Principles
 
@@ -138,13 +138,22 @@ xcodebuild test \
 - `.whisperAPI` はポスト書き起こし専用。リアルタイム書き起こしのリストには表示しない
 
 
+### Summarizer Engine Preference
+
+要約エンジンの設定です。
+
+- `SummarizerPreference.type` — 要約に使用するエンジン（`onDevice`, `openAI`）
+- `.onDevice` — Apple Foundation Models（オンデバイス、デフォルト）
+- `.openAI` — OpenAI Chat Completions API（`gpt-4o-mini`、ネットワーク必須）
+- `OpenAIAPIKeyStore` の API キーは Whisper API と共有
+
 ### Data Model Relationships
 
 ```
 JournalEntry (1日1エントリ)
 └── recordings: [Recording]      (音声記録、連番管理)
     ├── transcription: String?   (書き起こしテキスト、SwiftData で永続化)
-    └── summary: String?         (要約テキスト、Apple Foundation Models で生成、SwiftData で永続化)
+    └── summary: String?         (要約テキスト、Apple Foundation Models または OpenAI API で生成、SwiftData で永続化)
 ```
 
 ## Definition of Done

@@ -26,6 +26,7 @@ final class TranscriptionViewModel {
     var transcriberType: TranscriberType = .speechTranscriber
     var openAIAPIKey: String = ""
     var summaryInstruction: String = SummaryPromptStore.defaultInstruction
+    var summarizerType: SummarizerType = .onDevice
 
     @ObservationIgnored
     var transcribe: (URL, Locale, [String], TranscriberType, String) async throws -> String = { url, locale, contextualStrings, transcriberType, openAIAPIKey in
@@ -40,9 +41,13 @@ final class TranscriptionViewModel {
         SFSpeechRecognizer.requestAuthorization($0)
     }
     @ObservationIgnored
-    var summarize: (String, String) async throws -> String = SummarizationService().summarize
+    var summarize: (String, String, SummarizerType, String) async throws -> String = { text, instruction, type, apiKey in
+        try await SummarizationService.summarize(text: text, instruction: instruction, type: type, apiKey: apiKey)
+    }
     @ObservationIgnored
-    var isSummarizationAvailable: () -> Bool = { SummarizationService.isAvailable }
+    var isSummarizationAvailable: (SummarizerType, String) -> Bool = { type, apiKey in
+        SummarizationService.isAvailable(type: type, apiKey: apiKey)
+    }
 
     func retryTranscription(recording: Recording) async {
         recording.transcription = nil
@@ -101,7 +106,7 @@ final class TranscriptionViewModel {
             return
         }
 
-        guard isSummarizationAvailable() else {
+        guard isSummarizationAvailable(summarizerType, openAIAPIKey) else {
             summaryState = .unavailable
             return
         }
@@ -109,7 +114,7 @@ final class TranscriptionViewModel {
         summaryState = .loading
 
         do {
-            let summary = try await summarize(text, summaryInstruction)
+            let summary = try await summarize(text, summaryInstruction, summarizerType, openAIAPIKey)
             if summary.isEmpty {
                 summaryState = .failure("要約結果が空でした。")
             } else {
