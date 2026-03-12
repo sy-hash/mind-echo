@@ -22,12 +22,13 @@ struct HomeView: View {
         audioPlayer: any AudioPlaying = AudioPlayerService(),
         liveTranscriber: (any LiveTranscribing)? = nil
     ) {
-        _viewModel = State(initialValue: HomeViewModel(
-            modelContext: modelContext,
-            audioRecorder: audioRecorder,
-            audioPlayer: audioPlayer,
-            liveTranscriber: liveTranscriber
-        ))
+        _viewModel = State(
+            initialValue: HomeViewModel(
+                modelContext: modelContext,
+                audioRecorder: audioRecorder,
+                audioPlayer: audioPlayer,
+                liveTranscriber: liveTranscriber
+            ))
     }
 
     var body: some View {
@@ -76,10 +77,12 @@ struct HomeView: View {
                     }
                 }
             }
-            .sheet(isPresented: Binding(
-                get: { shareItems != nil },
-                set: { if !$0 { shareItems = nil } }
-            )) {
+            .sheet(
+                isPresented: Binding(
+                    get: { shareItems != nil },
+                    set: { if !$0 { shareItems = nil } }
+                )
+            ) {
                 if let items = shareItems {
                     ShareSheet(activityItems: items)
                 }
@@ -115,21 +118,36 @@ struct HomeView: View {
                 VocabularyView(store: vocabularyStore)
             }
             .sheet(isPresented: $showSettings) {
-                SettingsView(transcriberPreference: transcriberPreference, summarizerPreference: summarizerPreference, openAIAPIKeyStore: openAIAPIKeyStore, summaryPromptStore: summaryPromptStore)
+                SettingsView(
+                    transcriberPreference: transcriberPreference,
+                    summarizerPreference: summarizerPreference,
+                    openAIAPIKeyStore: openAIAPIKeyStore,
+                    summaryPromptStore: summaryPromptStore
+                )
             }
-            .sheet(isPresented: $isRecordingModalPresented, onDismiss: {
-                if viewModel.isRecording {
-                    viewModel.stopRecording()
+            .sheet(
+                isPresented: $isRecordingModalPresented,
+                onDismiss: {
+                    if viewModel.isRecording {
+                        viewModel.stopRecording()
+                    }
+                    viewModel.recordingTargetDate = nil
+                    viewModel.resetTranscriptionState()
+                    viewModel.fetchAllEntries()
                 }
-                viewModel.recordingTargetDate = nil
-                viewModel.resetTranscriptionState()
-                viewModel.fetchAllEntries()
-            }) {
+            ) {
                 RecordingModalView(viewModel: viewModel)
             }
             .sheet(item: $transcriptionTargetRecording) { recording in
-                TranscriptionView(recording: recording, vocabularyWords: vocabularyStore.words, transcriberType: transcriberPreference.postRecordingType, openAIAPIKey: openAIAPIKeyStore.apiKey, summaryInstruction: summaryPromptStore.instruction, summarizerType: summarizerPreference.type)
-                    .accessibilityIdentifier("home.transcriptionSheet")
+                TranscriptionView(
+                    recording: recording,
+                    vocabularyWords: vocabularyStore.words,
+                    transcriberType: transcriberPreference.postRecordingType,
+                    openAIAPIKey: openAIAPIKeyStore.apiKey,
+                    summaryInstruction: summaryPromptStore.instruction,
+                    summarizerType: summarizerPreference.type
+                )
+                .accessibilityIdentifier("home.transcriptionSheet")
             }
         }
     }
@@ -193,7 +211,8 @@ struct HomeView: View {
     @ViewBuilder
     private func recordingRow(_ recording: Recording, isToday: Bool, entry: JournalEntry? = nil) -> some View {
         let prefix = isToday ? "home" : "past"
-        let suffix = isToday
+        let suffix =
+            isToday
             ? "\(recording.sequenceNumber)"
             : "\(dateTag(entry!.date)).\(recording.sequenceNumber)"
         let isCurrentlyPlaying = viewModel.playingRecordingId == recording.id && viewModel.isPlaying

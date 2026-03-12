@@ -29,8 +29,11 @@ final class TranscriptionViewModel {
     var summarizerType: SummarizerType = .onDevice
 
     @ObservationIgnored
-    var transcribe: (URL, Locale, [String], TranscriberType, String) async throws -> String = { url, locale, contextualStrings, transcriberType, openAIAPIKey in
-        try await TranscriptionService().transcribe(audioFileURL: url, locale: locale, contextualStrings: contextualStrings, transcriberType: transcriberType, openAIAPIKey: openAIAPIKey)
+    var transcribe: (URL, Locale, [String], TranscriberType, String) async throws -> String = {
+        url, locale, contextualStrings, transcriberType, openAIAPIKey in
+        try await TranscriptionService().transcribe(
+            audioFileURL: url, locale: locale, contextualStrings: contextualStrings, transcriberType: transcriberType,
+            openAIAPIKey: openAIAPIKey)
     }
     @ObservationIgnored
     var checkAuthorization: () -> SFSpeechRecognizerAuthorizationStatus = {
@@ -86,7 +89,8 @@ final class TranscriptionViewModel {
             .appendingPathComponent(recording.audioFileName)
 
         do {
-            let text = try await transcribe(fileURL, Locale(identifier: "ja-JP"), vocabularyWords, transcriberType, openAIAPIKey)
+            let text = try await transcribe(
+                fileURL, Locale(identifier: "ja-JP"), vocabularyWords, transcriberType, openAIAPIKey)
             if text.isEmpty {
                 state = .failure("書き起こし結果が空でした。")
             } else {

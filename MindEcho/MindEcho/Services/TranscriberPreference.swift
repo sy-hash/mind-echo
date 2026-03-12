@@ -83,9 +83,11 @@ final class TranscriberPreference {
         self.liveKeyName = liveKey
         self.postRecordingKeyName = postRecordingKey
 
-        self.liveType = defaults.string(forKey: liveKey)
+        self.liveType =
+            defaults.string(forKey: liveKey)
             .flatMap(TranscriberType.init(rawValue:)) ?? .speechTranscriber
-        self.postRecordingType = defaults.string(forKey: postRecordingKey)
+        self.postRecordingType =
+            defaults.string(forKey: postRecordingKey)
             .flatMap(TranscriberType.init(rawValue:)) ?? .speechTranscriber
     }
 

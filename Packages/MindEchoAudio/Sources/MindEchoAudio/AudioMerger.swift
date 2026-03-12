@@ -57,10 +57,12 @@ public struct AudioMerger {
         for url in recordingURLs {
             let file = try AVAudioFile(forReading: url)
             let frameCount = AVAudioFrameCount(file.length)
-            guard let buffer = AVAudioPCMBuffer(
-                pcmFormat: file.processingFormat,
-                frameCapacity: frameCount
-            ) else {
+            guard
+                let buffer = AVAudioPCMBuffer(
+                    pcmFormat: file.processingFormat,
+                    frameCapacity: frameCount
+                )
+            else {
                 continue
             }
             try file.read(into: buffer)
@@ -97,10 +99,12 @@ public struct AudioMerger {
         }
         let ratio = format.sampleRate / buffer.format.sampleRate
         let outputFrameCount = AVAudioFrameCount(Double(buffer.frameLength) * ratio)
-        guard let outputBuffer = AVAudioPCMBuffer(
-            pcmFormat: format,
-            frameCapacity: outputFrameCount
-        ) else {
+        guard
+            let outputBuffer = AVAudioPCMBuffer(
+                pcmFormat: format,
+                frameCapacity: outputFrameCount
+            )
+        else {
             return nil
         }
 

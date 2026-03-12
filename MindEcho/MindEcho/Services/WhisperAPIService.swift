@@ -21,7 +21,7 @@ struct WhisperAPIService: Sendable {
         }
     }
 
-    private static let maxFileSize = 25 * 1024 * 1024 // 25MB
+    private static let maxFileSize = 25 * 1024 * 1024  // 25MB
     private static let endpoint = URL(string: "https://api.openai.com/v1/audio/transcriptions")!
 
     func transcribe(audioFileURL: URL, apiKey: String, contextualStrings: [String] = []) async throws -> String {

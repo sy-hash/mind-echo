@@ -132,7 +132,8 @@ struct MindEchoApp: App {
         let frameCount = AVAudioFrameCount(sampleRate * duration)
 
         guard let format = AVAudioFormat(standardFormatWithSampleRate: sampleRate, channels: 1),
-              let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frameCount) else { return }
+            let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frameCount)
+        else { return }
         buffer.frameLength = frameCount
 
         let settings: [String: Any] = [
@@ -142,7 +143,8 @@ struct MindEchoApp: App {
             AVEncoderAudioQualityKey: AVAudioQuality.low.rawValue,
         ]
         do {
-            let file = try AVAudioFile(forWriting: url, settings: settings, commonFormat: .pcmFormatFloat32, interleaved: false)
+            let file = try AVAudioFile(
+                forWriting: url, settings: settings, commonFormat: .pcmFormatFloat32, interleaved: false)
             try file.write(from: buffer)
         } catch {
             // Fallback: create as CAF/PCM

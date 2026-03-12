@@ -42,8 +42,11 @@ class HomeViewModel {
     var summarizerType: SummarizerType = .onDevice
 
     @ObservationIgnored
-    var transcribe: (URL, Locale, [String], TranscriberType, String) async throws -> String = { url, locale, contextualStrings, transcriberType, openAIAPIKey in
-        try await TranscriptionService().transcribe(audioFileURL: url, locale: locale, contextualStrings: contextualStrings, transcriberType: transcriberType, openAIAPIKey: openAIAPIKey)
+    var transcribe: (URL, Locale, [String], TranscriberType, String) async throws -> String = {
+        url, locale, contextualStrings, transcriberType, openAIAPIKey in
+        try await TranscriptionService().transcribe(
+            audioFileURL: url, locale: locale, contextualStrings: contextualStrings, transcriberType: transcriberType,
+            openAIAPIKey: openAIAPIKey)
     }
     @ObservationIgnored
     var summarize: (String, String, SummarizerType, String) async throws -> String = { text, instruction, type, apiKey in
@@ -181,12 +184,14 @@ class HomeViewModel {
 
     func startTranscription() async {
         guard let fileName = lastRecordedFileName,
-              let recording = lastRecordedRecording else { return }
+            let recording = lastRecordedRecording
+        else { return }
         let url = FilePathManager.recordingsDirectory.appendingPathComponent(fileName)
         transcriptionState = .loading
         summaryState = .idle
         do {
-            let text = try await transcribe(url, Locale(identifier: "ja-JP"), vocabularyWords, postRecordingTranscriberType, openAIAPIKey)
+            let text = try await transcribe(
+                url, Locale(identifier: "ja-JP"), vocabularyWords, postRecordingTranscriberType, openAIAPIKey)
             if text.isEmpty {
                 transcriptionState = .failure("書き起こし結果が空でした。")
             } else {
@@ -357,7 +362,9 @@ class HomeViewModel {
             liveTranscriber.feedAudioBuffer(buffer, format: format)
         }
 
-        let stream = liveTranscriber.start(locale: Locale(identifier: "ja-JP"), contextualStrings: vocabularyWords, transcriberType: liveTranscriberType)
+        let stream = liveTranscriber.start(
+            locale: Locale(identifier: "ja-JP"), contextualStrings: vocabularyWords,
+            transcriberType: liveTranscriberType)
         liveTranscriptionTask = Task { @MainActor [weak self] in
             do {
                 for try await text in stream {

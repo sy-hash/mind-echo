@@ -48,8 +48,9 @@ public class AudioRecorderService: AudioRecording {
 
         guard format.sampleRate > 0, format.channelCount > 0 else {
             try session.setActive(false)
-            throw NSError(domain: "AudioRecorderService", code: -1,
-                          userInfo: [NSLocalizedDescriptionKey: "マイクが利用できません"])
+            throw NSError(
+                domain: "AudioRecorderService", code: -1,
+                userInfo: [NSLocalizedDescriptionKey: "マイクが利用できません"])
         }
 
         let settings: [String: Any] = [
