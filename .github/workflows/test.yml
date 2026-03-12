@@ -41,7 +41,6 @@ jobs:
           xcrun swift-format lint \
             --recursive \
             --strict \
-            --configuration .swift-format \
             MindEcho/MindEcho \
             Packages/
 
