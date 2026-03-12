@@ -34,10 +34,9 @@ destination="$(
               )
             }
         ]
-        | sort_by(.name)
-        | sort_by(.runtime_version)
-        | reverse
-        | .[0].destination // empty
+        | sort_by([.runtime_version, .name])
+        | last
+        | .destination // empty
       '
 )"
 

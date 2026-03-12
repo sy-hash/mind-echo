@@ -38,7 +38,7 @@ jobs:
 
       - name: Resolve iPhone simulator destination
         run: |
-          DESTINATION="$(./scripts/select-ios-simulator.sh)"
+          DESTINATION="$(bash scripts/select-ios-simulator.sh)"
           echo "DESTINATION=$DESTINATION" >> "$GITHUB_ENV"
           echo "Using destination: $DESTINATION"
 
@@ -67,7 +67,7 @@ jobs:
 
       - name: Resolve iPhone simulator destination
         run: |
-          DESTINATION="$(./scripts/select-ios-simulator.sh)"
+          DESTINATION="$(bash scripts/select-ios-simulator.sh)"
           echo "DESTINATION=$DESTINATION" >> "$GITHUB_ENV"
           echo "Using destination: $DESTINATION"
 
@@ -96,7 +96,7 @@ jobs:
 
       - name: Resolve iPhone simulator destination
         run: |
-          DESTINATION="$(./scripts/select-ios-simulator.sh)"
+          DESTINATION="$(bash scripts/select-ios-simulator.sh)"
           echo "DESTINATION=$DESTINATION" >> "$GITHUB_ENV"
           echo "Using destination: $DESTINATION"
 
