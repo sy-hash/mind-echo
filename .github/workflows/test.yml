@@ -29,8 +29,24 @@ env:
   WORKSPACE: MindEcho.xcworkspace
 
 jobs:
+  lint:
+    name: Lint
+    runs-on: macos-26
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Run swift-format lint
+        run: |
+          xcrun swift-format lint \
+            --recursive \
+            --configuration .swift-format \
+            MindEcho/MindEcho \
+            Packages/
+
   build:
     name: Build
+    needs: lint
     runs-on: macos-26
     timeout-minutes: 20
     steps:
