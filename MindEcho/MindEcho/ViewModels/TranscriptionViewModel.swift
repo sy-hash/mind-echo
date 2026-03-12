@@ -44,7 +44,8 @@ final class TranscriptionViewModel {
         SFSpeechRecognizer.requestAuthorization($0)
     }
     @ObservationIgnored
-    var summarize: (String, String, SummarizerType, String) async throws -> String = { text, instruction, type, apiKey in
+    var summarize: (String, String, SummarizerType, String) async throws -> String = {
+        text, instruction, type, apiKey in
         try await SummarizationService.summarize(text: text, instruction: instruction, type: type, apiKey: apiKey)
     }
     @ObservationIgnored

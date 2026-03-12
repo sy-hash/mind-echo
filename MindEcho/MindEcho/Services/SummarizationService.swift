@@ -18,7 +18,9 @@ struct SummarizationService {
 
     // MARK: - Dispatch (共通エントリポイント)
 
-    static func summarize(text: String, instruction: String, type: SummarizerType, apiKey: String) async throws -> String {
+    static func summarize(text: String, instruction: String, type: SummarizerType, apiKey: String) async throws
+        -> String
+    {
         switch type {
         case .onDevice:
             try await SummarizationService().summarize(text: text, instruction: instruction)
