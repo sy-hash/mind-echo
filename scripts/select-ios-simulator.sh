@@ -34,13 +34,20 @@ destination="$(
                   | sub("^com.apple.CoreSimulator.SimRuntime.iOS-"; "")
                   | split("-")
                   | map(tonumber? // 0)
+                ),
+                device_number: (
+                  (
+                    .name
+                    | capture("^iPhone (?<n>[0-9]+)$").n
+                    | tonumber
+                  ) // 0
                 )
               }
           ];
 
         def pick_device($devices):
           $devices
-          | sort_by([.runtime_version, .name])
+          | sort_by([.runtime_version, .device_number, .name])
           | last;
 
         (
