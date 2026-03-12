@@ -14,55 +14,54 @@ if ! command -v jq >/dev/null 2>&1; then
   exit 1
 fi
 
-destination="$(
-  xcrun simctl list devices available -j \
-    | jq -r '
-        def build_candidate($runtime_key; $device):
-          {
-            destination: ("platform=iOS Simulator,id=" + $device.udid),
-            name: $device.name,
-            runtime_version: (
-              $runtime_key
-              | sub("^com.apple.CoreSimulator.SimRuntime.iOS-"; "")
-              | split("-")
-              | map(tonumber? // 0)
-            ),
-            device_number: (
-              if ($device.name | test("^iPhone [0-9]+$")) then
-                ($device.name | capture("^iPhone (?<n>[0-9]+)$").n | tonumber)
-              else
-                0
-              end
-            )
-          };
+available_devices_json="$(xcrun simctl list devices available -j)"
 
-        [
-          .devices
-          | to_entries[]
-          | select(.key | startswith("com.apple.CoreSimulator.SimRuntime.iOS-"))
-          | .key as $runtime_key
-          | .value[]
-          | select(.isAvailable == true)
-          | select(.name | startswith("iPhone"))
-          | build_candidate($runtime_key; .)
-        ] as $all_candidates
-        |
-        (
-          [
-            $all_candidates[]
-            | select(.name | test("^iPhone [0-9]+$"))
-          ]
-        ) as $standard_candidates
-        |
-        if ($standard_candidates | length) > 0 then
-          $standard_candidates
-        else
-          $all_candidates
-        end
-        | sort_by([.runtime_version, .device_number, .name])
-        | last
-        | .destination // empty
-      '
+destination="$(
+  printf '%s\n' "$available_devices_json" | jq -r '
+    def build_candidate($runtime_key; $device):
+      {
+        destination: ("platform=iOS Simulator,id=" + $device.udid),
+        name: $device.name,
+        runtime_version: (
+          $runtime_key
+          | sub("^com.apple.CoreSimulator.SimRuntime.iOS-"; "")
+          | split("-")
+          | map(tonumber? // 0)
+        ),
+        device_number: (
+          if ($device.name | test("^iPhone [0-9]+$")) then
+            ($device.name | capture("^iPhone (?<n>[0-9]+)$").n | tonumber)
+          else
+            0
+          end
+        )
+      };
+
+    [
+      .devices
+      | to_entries[]
+      | select(.key | startswith("com.apple.CoreSimulator.SimRuntime.iOS-"))
+      | .key as $runtime_key
+      | .value[]
+      | select(.isAvailable == true)
+      | select(.name | startswith("iPhone"))
+      | build_candidate($runtime_key; .)
+    ] as $all_candidates
+    |
+    [
+      $all_candidates[]
+      | select(.name | test("^iPhone [0-9]+$"))
+    ] as $standard_candidates
+    |
+    if ($standard_candidates | length) > 0 then
+      $standard_candidates
+    else
+      $all_candidates
+    end
+    | sort_by([.runtime_version, .device_number, .name])
+    | last
+    | .destination // empty
+  '
 )"
 
 if [ -z "${destination}" ]; then
