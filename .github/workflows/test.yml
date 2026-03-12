@@ -7,12 +7,14 @@ on:
       - 'MindEcho/**'
       - 'Packages/**'
       - 'MindEcho.xcworkspace/**'
+      - 'scripts/select-ios-simulator.sh'
       - '.github/workflows/test.yml'
   pull_request:
     paths:
       - 'MindEcho/**'
       - 'Packages/**'
       - 'MindEcho.xcworkspace/**'
+      - 'scripts/select-ios-simulator.sh'
       - '.github/workflows/test.yml'
   workflow_dispatch:
 
@@ -24,7 +26,6 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  DESTINATION: 'platform=iOS Simulator,name=iPhone 17'
   WORKSPACE: MindEcho.xcworkspace
 
 jobs:
@@ -34,6 +35,12 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v6
+
+      - name: Resolve iPhone simulator destination
+        run: |
+          DESTINATION="$(bash scripts/select-ios-simulator.sh)"
+          echo "DESTINATION=$DESTINATION" >> "$GITHUB_ENV"
+          echo "Using destination: $DESTINATION"
 
       - name: Build for Testing
         run: |
@@ -58,6 +65,12 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Resolve iPhone simulator destination
+        run: |
+          DESTINATION="$(bash scripts/select-ios-simulator.sh)"
+          echo "DESTINATION=$DESTINATION" >> "$GITHUB_ENV"
+          echo "Using destination: $DESTINATION"
+
       - name: Download Build Products
         uses: actions/download-artifact@v4
         with:
@@ -80,6 +93,12 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v6
+
+      - name: Resolve iPhone simulator destination
+        run: |
+          DESTINATION="$(bash scripts/select-ios-simulator.sh)"
+          echo "DESTINATION=$DESTINATION" >> "$GITHUB_ENV"
+          echo "Using destination: $DESTINATION"
 
       - name: Download Build Products
         uses: actions/download-artifact@v4
