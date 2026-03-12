@@ -110,7 +110,7 @@ xcodebuild test \
 
 Apple 公式の [swift-format](https://github.com/swiftlang/swift-format) を使用してコードスタイルを統一しています。設定はプロジェクトルートの `.swift-format` を参照。
 
-- コミット前にフォーマットを適用すること: `xcrun swift-format format --in-place --recursive --configuration .swift-format <対象ディレクトリ>`
+- コミット前にフォーマットを適用すること: `xcrun swift-format format --in-place --recursive <対象ディレクトリ>`
 
 ### Swift Concurrency
 
