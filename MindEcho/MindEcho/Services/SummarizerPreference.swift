@@ -38,7 +38,8 @@ final class SummarizerPreference {
     init(defaults: UserDefaults = .standard, key: String = defaultKey) {
         self.defaults = defaults
         self.keyName = key
-        self.type = defaults.string(forKey: key)
+        self.type =
+            defaults.string(forKey: key)
             .flatMap(SummarizerType.init(rawValue:)) ?? .onDevice
     }
 }
