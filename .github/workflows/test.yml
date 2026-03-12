@@ -31,14 +31,14 @@ env:
 jobs:
   lint:
     name: Lint
-    runs-on: macos-26
+    runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v6
 
       - name: Run swift-format lint
         run: |
-          xcrun swift-format lint \
+          swift-format lint \
             --recursive \
             --strict \
             MindEcho/MindEcho \
