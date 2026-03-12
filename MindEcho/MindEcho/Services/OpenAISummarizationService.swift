@@ -51,31 +51,33 @@ struct OpenAISummarizationService: Sendable {
         if httpResponse.statusCode != 200 {
             // OpenAI エラーレスポンスからユーザー向けメッセージを抽出
             if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-               let errorDict = json["error"] as? [String: Any],
-               let message = errorDict["message"] as? String,
-               !message.isEmpty {
+                let errorDict = json["error"] as? [String: Any],
+                let message = errorDict["message"] as? String,
+                !message.isEmpty
+            {
                 throw SummarizationError.apiError(message)
             }
 
             // ステータスコードに応じた定型文にフォールバック
-            let userMessage: String = switch httpResponse.statusCode {
-            case 401:
-                "API キーが無効か、認証に失敗しました。設定を確認してください。"
-            case 429:
-                "リクエストが多すぎます。しばらく時間をおいてから再試行してください。"
-            case 500...599:
-                "OpenAI API 側でエラーが発生しました。時間をおいて再試行してください。"
-            default:
-                "HTTP \(httpResponse.statusCode) エラーが発生しました。"
-            }
+            let userMessage: String =
+                switch httpResponse.statusCode {
+                case 401:
+                    "API キーが無効か、認証に失敗しました。設定を確認してください。"
+                case 429:
+                    "リクエストが多すぎます。しばらく時間をおいてから再試行してください。"
+                case 500...599:
+                    "OpenAI API 側でエラーが発生しました。時間をおいて再試行してください。"
+                default:
+                    "HTTP \(httpResponse.statusCode) エラーが発生しました。"
+                }
             throw SummarizationError.apiError(userMessage)
         }
 
         guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let choices = json["choices"] as? [[String: Any]],
-              let firstChoice = choices.first,
-              let message = firstChoice["message"] as? [String: Any],
-              let content = message["content"] as? String
+            let choices = json["choices"] as? [[String: Any]],
+            let firstChoice = choices.first,
+            let message = firstChoice["message"] as? [String: Any],
+            let content = message["content"] as? String
         else {
             throw SummarizationError.invalidResponse
         }
