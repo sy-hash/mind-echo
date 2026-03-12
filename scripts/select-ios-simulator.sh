@@ -28,11 +28,11 @@ destination="$(
               | map(tonumber? // 0)
             ),
             device_number: (
-              (
-                $device.name
-                | capture("^iPhone (?<n>[0-9]+)$").n
-                | tonumber
-              ) // 0
+              if ($device.name | test("^iPhone [0-9]+$")) then
+                ($device.name | capture("^iPhone (?<n>[0-9]+)$").n | tonumber)
+              else
+                0
+              end
             )
           };
 
