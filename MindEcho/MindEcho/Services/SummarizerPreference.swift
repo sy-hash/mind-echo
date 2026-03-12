@@ -26,7 +26,7 @@ enum SummarizerType: String, CaseIterable, Sendable {
 
 @Observable
 final class SummarizerPreference {
-    private static let key = "summarizerType"
+    private static let defaultKey = "summarizerType"
 
     private let defaults: UserDefaults
     private let keyName: String
@@ -35,7 +35,7 @@ final class SummarizerPreference {
         didSet { defaults.set(type.rawValue, forKey: keyName) }
     }
 
-    init(defaults: UserDefaults = .standard, key: String = key) {
+    init(defaults: UserDefaults = .standard, key: String = defaultKey) {
         self.defaults = defaults
         self.keyName = key
         self.type = defaults.string(forKey: key)
