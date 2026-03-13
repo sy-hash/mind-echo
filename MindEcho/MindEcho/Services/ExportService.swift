@@ -1,8 +1,8 @@
 import AVFoundation
+import CoreText
 import Foundation
 import MindEchoAudio
 import MindEchoCore
-import CoreText
 import UIKit
 
 struct ExportServiceImpl: Exporting {
