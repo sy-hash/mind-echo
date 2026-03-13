@@ -44,9 +44,33 @@ jobs:
             MindEcho/MindEcho \
             Packages/
 
+  periphery:
+    name: Periphery
+    needs: lint
+    runs-on: macos-26
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install Mint
+        run: brew install mint
+
+      - name: Install Mint dependencies
+        run: mint bootstrap
+
+      - name: Run periphery scan
+        run: |
+          mint run periphery scan \
+            --project $WORKSPACE \
+            --schemes MindEcho \
+            --format github-actions \
+            --relative-results
+
   build:
     name: Build
-    needs: lint
+    needs:
+      - lint
+      - periphery
     runs-on: macos-26
     timeout-minutes: 20
     steps:
