@@ -1,7 +1,9 @@
 import AVFoundation
+import CoreText
 import Foundation
 import MindEchoAudio
 import MindEchoCore
+import UIKit
 
 struct ExportServiceImpl: Exporting {
     func exportMergedAudio(entry: JournalEntry, to directory: URL) async throws -> URL {
@@ -39,11 +41,7 @@ struct ExportServiceImpl: Exporting {
     func exportCombinedTranscript(entry: JournalEntry, to directory: URL) throws -> URL {
         try FilePathManager.ensureDirectoryExists(directory)
 
-        // Build transcript text with date header
-        let dateHeader = DateHelper.displayString(for: entry.date)
-        let transcriptions = entry.sortedRecordings.compactMap(\.transcription)
-        let body = transcriptions.joined(separator: "\n\n")
-        let content = dateHeader + "\n\n" + body
+        let content = transcriptContent(for: entry)
 
         // Write to export directory
         let formatter = DateFormatter()
@@ -55,5 +53,68 @@ struct ExportServiceImpl: Exporting {
         try content.write(to: exportURL, atomically: true, encoding: .utf8)
 
         return exportURL
+    }
+
+    func exportTranscriptPDF(entry: JournalEntry, to directory: URL) throws -> URL {
+        try FilePathManager.ensureDirectoryExists(directory)
+
+        let content = transcriptContent(for: entry)
+        let exportURL = directory.appendingPathComponent(
+            FilePathManager.exportTranscriptPDFURL(for: entry.date).lastPathComponent
+        )
+
+        let pageRect = CGRect(x: 0, y: 0, width: 595, height: 842)
+        let margin: CGFloat = 40
+        let textRect = pageRect.insetBy(dx: margin, dy: margin)
+        let renderer = UIGraphicsPDFRenderer(bounds: pageRect)
+
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.lineBreakMode = .byWordWrapping
+        paragraphStyle.lineSpacing = 4
+
+        let bodyFont = UIFont.systemFont(ofSize: 14)
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: bodyFont,
+            .foregroundColor: UIColor.black,
+            .paragraphStyle: paragraphStyle,
+        ]
+        let attributedText = NSAttributedString(string: content, attributes: attributes)
+        let framesetter = CTFramesetterCreateWithAttributedString(attributedText)
+
+        try renderer.writePDF(to: exportURL) { context in
+            var currentRange = CFRange(location: 0, length: 0)
+
+            while currentRange.location < attributedText.length {
+                context.beginPage()
+
+                let path = CGPath(rect: textRect, transform: nil)
+                let frame = CTFramesetterCreateFrame(
+                    framesetter,
+                    currentRange,
+                    path,
+                    nil
+                )
+
+                let visibleRange = CTFrameGetVisibleStringRange(frame)
+                let cgContext = context.cgContext
+                cgContext.saveGState()
+                cgContext.textMatrix = .identity
+                cgContext.translateBy(x: 0, y: pageRect.height)
+                cgContext.scaleBy(x: 1, y: -1)
+                CTFrameDraw(frame, cgContext)
+                cgContext.restoreGState()
+
+                currentRange.location += visibleRange.length
+            }
+        }
+
+        return exportURL
+    }
+
+    private func transcriptContent(for entry: JournalEntry) -> String {
+        let dateHeader = DateHelper.displayString(for: entry.date)
+        let transcriptions = entry.sortedRecordings.compactMap(\.transcription)
+        let body = transcriptions.joined(separator: "\n\n")
+        return dateHeader + "\n\n" + body
     }
 }

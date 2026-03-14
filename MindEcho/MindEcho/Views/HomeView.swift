@@ -343,6 +343,13 @@ struct HomeView: View {
                 Label("テキストを共有", systemImage: "doc.text")
             }
             .accessibilityIdentifier("\(prefix).shareTranscriptButton\(suffix)")
+
+            Button {
+                exportAndShareTranscriptPDF(entry: entry)
+            } label: {
+                Label("PDFを共有", systemImage: "doc.richtext")
+            }
+            .accessibilityIdentifier("\(prefix).shareTranscriptPDFButton\(suffix)")
         } label: {
             Image(systemName: "square.and.arrow.up")
         }
@@ -367,6 +374,17 @@ struct HomeView: View {
             do {
                 let text = try viewModel.exportTranscriptForSharing(entry: entry)
                 shareItems = [text]
+            } catch {
+                // Handle error silently for now
+            }
+        }
+    }
+
+    private func exportAndShareTranscriptPDF(entry: JournalEntry) {
+        Task { @MainActor in
+            do {
+                let url = try viewModel.exportTranscriptPDFForSharing(entry: entry)
+                shareItems = [url]
             } catch {
                 // Handle error silently for now
             }

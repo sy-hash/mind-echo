@@ -52,6 +52,15 @@ public enum FilePathManager {
         return exportsDirectory.appendingPathComponent(fileName)
     }
 
+    /// Returns the export transcript PDF URL for a given logical date
+    public static func exportTranscriptPDFURL(for logicalDate: Date) -> URL {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyyMMdd"
+        let fileName = formatter.string(from: logicalDate) + "_transcript.pdf"
+        return exportsDirectory.appendingPathComponent(fileName)
+    }
+
     /// Ensures a directory exists, creating it if necessary
     public static func ensureDirectoryExists(_ url: URL) throws {
         try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)

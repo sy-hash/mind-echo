@@ -70,6 +70,24 @@ final class EntryDetailUITests: XCTestCase {
     }
 
     @MainActor
+    func testSharePDFButton_presentsActivitySheet() throws {
+        app.launch()
+
+        let shareBtn = app.descendants(matching: .any).matching(
+            NSPredicate(format: "identifier == 'home.shareButton'")
+        ).firstMatch
+        XCTAssertTrue(shareBtn.waitForExistence(timeout: 5))
+        shareBtn.tap()
+
+        let pdfBtn = app.buttons["PDFを共有"]
+        XCTAssertTrue(pdfBtn.waitForExistence(timeout: 5))
+        pdfBtn.tap()
+
+        let activityList = app.otherElements["ActivityListView"]
+        XCTAssertTrue(activityList.waitForExistence(timeout: 15))
+    }
+
+    @MainActor
     func testMenuDelete_removesRecording() throws {
         app.launch()
 
