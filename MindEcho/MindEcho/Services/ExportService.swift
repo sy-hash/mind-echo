@@ -36,6 +36,19 @@ struct ExportServiceImpl: Exporting {
         return exportURL
     }
 
+    func exportDailyPDF(entry: JournalEntry, to directory: URL) throws -> URL {
+        try FilePathManager.ensureDirectoryExists(directory)
+
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyyMMdd"
+        let dateStr = formatter.string(from: entry.date)
+
+        let exportURL = directory.appendingPathComponent("\(dateStr)_journal.pdf")
+        try PDFExportService.generateDailyPDF(entry: entry, outputURL: exportURL)
+        return exportURL
+    }
+
     func exportCombinedTranscript(entry: JournalEntry, to directory: URL) throws -> URL {
         try FilePathManager.ensureDirectoryExists(directory)
 

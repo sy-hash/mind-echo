@@ -40,6 +40,39 @@ public enum DateHelper {
         logicalDate(for: Date(), calendar: calendar)
     }
 
+    /// Returns a formatted month display string, e.g. "2026年3月"
+    public static func monthDisplayString(for date: Date, calendar: Calendar = .current) -> String {
+        var cal = calendar
+        cal.timeZone = TimeZone.current
+        let formatter = DateFormatter()
+        formatter.calendar = cal
+        formatter.timeZone = TimeZone.current
+        formatter.locale = Locale(identifier: "ja_JP")
+        formatter.dateFormat = "yyyy年M月"
+        return formatter.string(from: date)
+    }
+
+    /// Returns the first and last logical dates (normalized to noon) of the month containing the given date.
+    /// e.g. a date in March 2026 → (2026-03-01 12:00, 2026-03-31 12:00)
+    public static func monthRange(
+        for date: Date, calendar: Calendar = .current
+    ) -> (start: Date, end: Date) {
+        var cal = calendar
+        cal.timeZone = TimeZone.current
+        let components = cal.dateComponents([.year, .month], from: date)
+        let firstDay = cal.date(from: components) ?? date
+        let lastDay = cal.date(byAdding: DateComponents(month: 1, day: -1), to: firstDay) ?? date
+        return (logicalDate(for: firstDay, calendar: cal), logicalDate(for: lastDay, calendar: cal))
+    }
+
+    /// Returns a yyyyMM string for the given date, e.g. "202603"
+    public static func yearMonthString(for date: Date, calendar: Calendar = .current) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyyMM"
+        return formatter.string(from: date)
+    }
+
     /// Returns an array of logical dates from `from` to `to` (both inclusive, descending order).
     /// Each date is normalized to noon local time using `logicalDate(for:calendar:)`.
     /// Returns an empty array if `to` is before `from`.

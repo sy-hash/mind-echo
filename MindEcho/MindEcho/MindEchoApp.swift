@@ -60,6 +60,9 @@ struct MindEchoApp: App {
             if args.contains("--seed-today-with-recordings") {
                 Self.seedTodayWithRecordings(context: context)
             }
+            if args.contains("--seed-multi-month-history") {
+                Self.seedMultiMonthHistory(context: context)
+            }
         }
     }
 
@@ -120,6 +123,41 @@ struct MindEchoApp: App {
             entry.recordings.append(recording)
         }
         context.insert(entry)
+    }
+
+    /// 複数月にまたがるサンプルデータを生成する（月間共有UIテスト用）
+    @MainActor
+    private static func seedMultiMonthHistory(context: ModelContext) {
+        let calendar = Calendar.current
+        // 当月・先月・2ヶ月前それぞれに2〜3件のエントリを作成
+        let monthOffsets: [(monthOffset: Int, dayOffsets: [Int])] = [
+            (monthOffset: 0, dayOffsets: [1, 5]),
+            (monthOffset: -1, dayOffsets: [3, 10, 20]),
+            (monthOffset: -2, dayOffsets: [2, 15]),
+        ]
+        for (monthOffset, dayOffsets) in monthOffsets {
+            for dayOffset in dayOffsets {
+                guard
+                    let baseDate = calendar.date(
+                        byAdding: .month, value: monthOffset, to: Date()),
+                    let targetDate = calendar.date(
+                        byAdding: .day, value: -dayOffset, to: baseDate)
+                else { continue }
+
+                let logicalDate = DateHelper.logicalDate(for: targetDate)
+                let entry = JournalEntry(date: logicalDate)
+                let fileName = "multi_\(abs(monthOffset))m_\(dayOffset)d.m4a"
+                createSilentAudioFile(named: fileName, duration: 5)
+                let recording = Recording(
+                    sequenceNumber: 1,
+                    audioFileName: fileName,
+                    duration: TimeInterval(30 * dayOffset)
+                )
+                recording.transcription = "サンプル書き起こし（\(abs(monthOffset))ヶ月前・\(dayOffset)日前）"
+                entry.recordings.append(recording)
+                context.insert(entry)
+            }
+        }
     }
 
     /// Creates a silent audio file in the recordings directory using AVAudioFile.

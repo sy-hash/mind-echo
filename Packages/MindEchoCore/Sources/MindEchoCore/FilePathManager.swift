@@ -52,6 +52,20 @@ public enum FilePathManager {
         return exportsDirectory.appendingPathComponent(fileName)
     }
 
+    /// Returns the monthly batch export subdirectory: Documents/Exports/{yyyyMM}/
+    public static func exportBatchDirectory(for yearMonth: String) -> URL {
+        exportsDirectory.appendingPathComponent(yearMonth, isDirectory: true)
+    }
+
+    /// Returns the daily PDF export URL within a monthly batch directory
+    public static func exportPDFURL(for logicalDate: Date, yearMonth: String) -> URL {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyyMMdd"
+        let fileName = formatter.string(from: logicalDate) + "_journal.pdf"
+        return exportBatchDirectory(for: yearMonth).appendingPathComponent(fileName)
+    }
+
     /// Ensures a directory exists, creating it if necessary
     public static func ensureDirectoryExists(_ url: URL) throws {
         try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)

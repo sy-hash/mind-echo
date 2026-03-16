@@ -4,6 +4,7 @@ import SwiftData
 import SwiftUI
 
 struct HomeView: View {
+    private let modelContext: ModelContext
     @State private var viewModel: HomeViewModel
     @State private var transcriptionTargetRecording: Recording?
     @State private var isRecordingModalPresented = false
@@ -15,6 +16,7 @@ struct HomeView: View {
     @State private var summaryPromptStore = SummaryPromptStore()
     @State private var showVocabulary = false
     @State private var showSettings = false
+    @State private var showMonthlyShare = false
 
     init(
         modelContext: ModelContext,
@@ -22,6 +24,7 @@ struct HomeView: View {
         audioPlayer: any AudioPlaying = AudioPlayerService(),
         liveTranscriber: (any LiveTranscribing)? = nil
     ) {
+        self.modelContext = modelContext
         _viewModel = State(
             initialValue: HomeViewModel(
                 modelContext: modelContext,
@@ -59,6 +62,14 @@ struct HomeView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     HStack(spacing: 16) {
+                        Button {
+                            showMonthlyShare = true
+                        } label: {
+                            Image(systemName: "calendar")
+                        }
+                        .accessibilityIdentifier("home.monthlyShareButton")
+                        .accessibilityLabel("月間共有")
+
                         Button {
                             showSettings = true
                         } label: {
@@ -113,6 +124,9 @@ struct HomeView: View {
             }
             .onChange(of: summarizerPreference.type) { _, newType in
                 viewModel.summarizerType = newType
+            }
+            .sheet(isPresented: $showMonthlyShare) {
+                MonthlyShareView(modelContext: modelContext)
             }
             .sheet(isPresented: $showVocabulary) {
                 VocabularyView(store: vocabularyStore)

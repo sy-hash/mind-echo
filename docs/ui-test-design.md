@@ -74,6 +74,10 @@ TabView を廃止し、今日のセクションと過去の履歴セクション
 - `past.transcription.{date}.{n}` — 過去の録音セル内の書き起こしテキストプレビュー
 - `past.summary.{date}.{n}` — 過去の録音セル内の要約テキストプレビュー
 
+**月間共有**
+
+- `home.monthlyShareButton` — ナビゲーションバーのカレンダーアイコンボタン（月間共有シートを開く）
+
 **語彙設定**
 
 - `home.vocabularyButton` — ナビゲーションバー右端のカスタム語彙設定ボタン（📖アイコン）
@@ -95,6 +99,16 @@ TabView を廃止し、今日のセクションと過去の履歴セクション
 - `settings.summaryPrompt` — 要約プロンプト編集エリア（TextEditor）
 - `settings.summaryPromptResetButton` — 要約プロンプトをデフォルトに戻すボタン
 - `settings.closeButton` — シートを閉じるボタン（×アイコン）
+
+### MonthlyShareView
+
+月間共有シート。月の選択・形式の選択・一括エクスポートを行う。
+
+- `monthlyShare.closeButton` — シートを閉じるボタン（×アイコン）
+- `monthlyShare.monthRow.{yyyyMM}` — 月選択行（例: `monthlyShare.monthRow.202603`）
+- `monthlyShare.formatRow.{format}` — 形式選択行（format = pdf | audio | text）
+- `monthlyShare.exportButton` — 共有ボタン（月が選択されていない場合は無効）
+- `monthlyShare.progress` — エクスポート進捗インジケーター（処理中のみ表示）
 
 ### RecordingModalView
 
@@ -126,7 +140,13 @@ TabView を廃止し、今日のセクションと過去の履歴セクション
 - `transcription.summaryText` — 要約結果テキスト
 - `transcription.summaryError` — 要約エラーメッセージ
 
-## テストケース（6カテゴリ・18テスト）
+## テストデータ（Launch Arguments 追加）
+
+| Launch Argument | 用途 |
+|---|---|
+| `--seed-multi-month-history` | 3ヶ月分（当月・先月・2ヶ月前）のエントリを投入（月間共有UIテスト用） |
+
+## テストケース（7カテゴリ・23テスト）
 
 ### 1. NavigationUITests（3テスト）
 
@@ -220,6 +240,19 @@ TabView を廃止し、今日のセクションと過去の履歴セクション
 7. `recording.transcriptionResult`（既存の録音後書き起こし）が表示されることを確認
 
 **既存テストへの影響:** `HomeRecordingUITests.testRecordingModalFlow` は変更不要。`--mock-live-transcription` を含まないため、リアルタイム書き起こし UI は表示されない。
+
+### 7. MonthlyShareUITests（5テスト）
+
+`--uitesting`, `--seed-multi-month-history` を使用。
+
+| テスト | 検証内容 |
+|-------|---------|
+| `testMonthlyShareButton_opensSheet` | ツールバーの月間共有ボタンタップでシートが表示される |
+| `testMonthlyShareSheet_showsAvailableMonths` | シートに月選択行が表示される |
+| `testMonthlyShareSheet_showsFormatOptions` | PDF・音声・テキストの3種類の形式選択行が表示される |
+| `testMonthlyShare_selectMonth_enablesExportButton` | 月を選択すると共有ボタンが有効になる |
+| `testMonthlyShareSheet_closeButton_dismissesSheet` | 閉じるボタンでシートが閉じる |
+| `testMonthlyShare_noMonthSelected_exportButtonDisabled` | 月未選択時は共有ボタンが無効 |
 
 ## テスト対象外（明示的に除外）
 

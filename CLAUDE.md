@@ -20,9 +20,9 @@ MindEchoApp (App Target)
 
 | モジュール | 責務 | 主な型 |
 |-----------|------|--------|
-| **MindEchoCore** | ドメインモデル, 日付ロジック, ファイル管理, エクスポート protocol | `JournalEntry`, `Recording`, `DateHelper`, `FilePathManager`, `Exporting` |
+| **MindEchoCore** | ドメインモデル, 日付ロジック, ファイル管理, エクスポート protocol, 月間共有形式 | `JournalEntry`, `Recording`, `DateHelper`, `FilePathManager`, `Exporting`, `MonthlyShareFormat` |
 | **MindEchoAudio** | 録音・再生・音声結合・TTS 生成 | `AudioRecorderService`, `AudioPlayerService`, `AudioMerger`, `TTSGenerator` |
-| **MindEchoApp** | Views, ViewModels, ExportService 実装, SummarizationService, VocabularyStore, TranscriberPreference, SummaryPromptStore, WhisperAPIService, SummarizerPreference, OpenAISummarizationService, Mocks | `HomeView`, `HomeViewModel`, `RecordingModalView`, `TranscriptionView`, `SettingsView`, `ExportServiceImpl`, `SummarizationService`, `OpenAISummarizationService`, `VocabularyStore`, `TranscriberPreference`, `TranscriberType`, `SummarizerPreference`, `SummarizerType`, `OpenAIAPIKeyStore`, `SummaryPromptStore`, `WhisperAPIService`, `VocabularyView` 等 |
+| **MindEchoApp** | Views, ViewModels, ExportService 実装, SummarizationService, VocabularyStore, TranscriberPreference, SummaryPromptStore, WhisperAPIService, SummarizerPreference, OpenAISummarizationService, Mocks, 月間共有 | `HomeView`, `HomeViewModel`, `RecordingModalView`, `TranscriptionView`, `SettingsView`, `ExportServiceImpl`, `PDFExportService`, `SummarizationService`, `OpenAISummarizationService`, `VocabularyStore`, `TranscriberPreference`, `TranscriberType`, `SummarizerPreference`, `SummarizerType`, `OpenAIAPIKeyStore`, `SummaryPromptStore`, `WhisperAPIService`, `VocabularyView`, `MonthlyShareView`, `MonthlyShareViewModel` 等 |
 
 ### Design Principles
 
