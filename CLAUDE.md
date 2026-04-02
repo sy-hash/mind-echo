@@ -197,3 +197,4 @@ UI に変更を加えた場合は、以下も必須:
 - **Observation**: protocol は `@Observable` にできない。具体型で実装する
 - **日付処理**: 必ず `DateHelper` を使用。午前3時境界を考慮
 - **gh コマンド**: `gh` コマンド利用時はリポジトリを明示的に指定すること。例: `gh pr list --repo sy-hash/mind-echo`
+- **PR 作成ルール**: PR 本文は必ず `.github/pull_request_template.md` の構成に従い、全セクションを埋めること。該当しない項目は `N/A` と明記すること
