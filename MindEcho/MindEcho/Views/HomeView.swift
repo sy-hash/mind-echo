@@ -95,6 +95,10 @@ struct HomeView: View {
                 viewModel.summaryInstruction = summaryPromptStore.instruction
                 viewModel.summarizerType = summarizerPreference.type
                 viewModel.fetchAllEntries()
+                handleStartRecordingRequestIfNeeded()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: RecordingLaunchRequestStore.startRecordingNotification)) { _ in
+                handleStartRecordingRequestIfNeeded()
             }
             .onChange(of: vocabularyStore.words) { _, newWords in
                 viewModel.vocabularyWords = newWords
@@ -150,6 +154,18 @@ struct HomeView: View {
                 .accessibilityIdentifier("home.transcriptionSheet")
             }
         }
+    }
+
+    private func handleStartRecordingRequestIfNeeded() {
+        guard RecordingLaunchRequestStore.consumeStartRecordingRequest() else { return }
+
+        transcriptionTargetRecording = nil
+        shareItems = nil
+        showVocabulary = false
+        showSettings = false
+        viewModel.recordingTargetDate = nil
+        viewModel.resetTranscriptionState()
+        isRecordingModalPresented = true
     }
 
     // MARK: - Today Section
