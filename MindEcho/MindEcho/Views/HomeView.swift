@@ -97,7 +97,10 @@ struct HomeView: View {
                 viewModel.fetchAllEntries()
                 handleStartRecordingRequestIfNeeded()
             }
-            .onReceive(NotificationCenter.default.publisher(for: RecordingLaunchRequestStore.startRecordingNotification)) { _ in
+            .onReceive(
+                NotificationCenter.default.publisher(
+                    for: RecordingLaunchRequestStore.startRecordingNotification)
+            ) { _ in
                 handleStartRecordingRequestIfNeeded()
             }
             .onChange(of: vocabularyStore.words) { _, newWords in
