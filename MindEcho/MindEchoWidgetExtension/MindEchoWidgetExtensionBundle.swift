@@ -11,7 +11,6 @@ import SwiftUI
 @main
 struct MindEchoWidgetExtensionBundle: WidgetBundle {
     var body: some Widget {
-        MindEchoWidgetExtension()
         MindEchoWidgetExtensionControl()
     }
 }

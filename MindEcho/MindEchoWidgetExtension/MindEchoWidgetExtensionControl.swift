@@ -12,43 +12,15 @@ import WidgetKit
 struct MindEchoWidgetExtensionControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(
-            kind: "com.syhash.MindEcho.MindEchoWidgetExtension",
-            provider: Provider()
-        ) { value in
-            ControlWidgetToggle(
-                "Start Timer",
-                isOn: value,
-                action: StartTimerIntent()
-            ) { isRunning in
-                Label(isRunning ? "On" : "Off", systemImage: "timer")
+            kind: "com.syhash.MindEcho.quickRecord"
+        ) {
+            ControlWidgetButton(
+                action: OpenURLIntent(URL(string: "mindecho://quick-record")!)
+            ) {
+                Label("クイック録音", systemImage: "mic.fill")
             }
         }
-        .displayName("Timer")
-        .description("A an example control that runs a timer.")
-    }
-}
-
-extension MindEchoWidgetExtensionControl {
-    struct Provider: ControlValueProvider {
-        var previewValue: Bool {
-            false
-        }
-
-        func currentValue() async throws -> Bool {
-            let isRunning = true // Check if the timer is running
-            return isRunning
-        }
-    }
-}
-
-struct StartTimerIntent: SetValueIntent {
-    static let title: LocalizedStringResource = "Start a timer"
-
-    @Parameter(title: "Timer is running")
-    var value: Bool
-
-    func perform() async throws -> some IntentResult {
-        // Start / stop the timer based on `value`.
-        return .result()
+        .displayName("クイック録音")
+        .description("MindEchoを開いて録音を開始します。")
     }
 }
