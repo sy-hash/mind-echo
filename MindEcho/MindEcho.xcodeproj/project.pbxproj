@@ -7,10 +7,16 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		065B2DC6DD25B88FEAAFFF10 /* MindEchoControlsBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5D1092D1DEAA02BC101AE2B /* MindEchoControlsBundle.swift */; };
 		0BA1C00100000001000000A1 /* MindEchoCore in Frameworks */ = {isa = PBXBuildFile; productRef = 0BA1C00100000003000000A3 /* MindEchoCore */; };
 		0BA1C00100000002000000A2 /* MindEchoAudio in Frameworks */ = {isa = PBXBuildFile; productRef = 0BA1C00100000004000000A4 /* MindEchoAudio */; };
 		0BA1C00100000010000000B1 /* DSWaveformImage in Frameworks */ = {isa = PBXBuildFile; productRef = 0BA1C00100000008000000A8 /* DSWaveformImage */; };
 		0BA1C00100000011000000B2 /* DSWaveformImageViews in Frameworks */ = {isa = PBXBuildFile; productRef = 0BA1C00100000009000000A9 /* DSWaveformImageViews */; };
+		707DA05AEBA5E27BC848D7FE /* MindEchoControlsExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = E3BB2A15AFC7408861DC0227 /* MindEchoControlsExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		8D70912C505CB346F41CFB79 /* StartRecordingControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01564C5AEF3E757C6AD3AA1 /* StartRecordingControl.swift */; };
+		94F5629A8AEB6A5198E37800 /* RecordingLaunchRequestStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92A0E00A84516A2187D8D962 /* RecordingLaunchRequestStore.swift */; };
+		9BFE15F15EC3610159CF69D8 /* StartRecordingIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99BA8B10DA0AB28F1F9FC52D /* StartRecordingIntent.swift */; };
+		D01DE6B6DD117FDB2C5D6C93 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = ECD7D60BBDAFFD1F6FD9CB81 /* Foundation.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -28,12 +34,39 @@
 			remoteGlobalIDString = 0BD6D7F92F3856DE00D7656F;
 			remoteInfo = MindEcho;
 		};
+		9715B492263C82D9578E7FA7 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0BD6D7F22F3856DE00D7656F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 9E8A464ABFDDC84A21ABA48E;
+			remoteInfo = MindEchoControlsExtension;
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		DC04103310CF0A9FC2F88CF2 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				707DA05AEBA5E27BC848D7FE /* MindEchoControlsExtension.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		0BD6D7FA2F3856DE00D7656F /* MindEcho.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MindEcho.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0BD6D8092F3856E000D7656F /* MindEchoTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MindEchoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		0BD6D8132F3856E000D7656F /* MindEchoUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MindEchoUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		92A0E00A84516A2187D8D962 /* RecordingLaunchRequestStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = RecordingLaunchRequestStore.swift; path = MindEcho/Intents/RecordingLaunchRequestStore.swift; sourceTree = "<group>"; };
+		99BA8B10DA0AB28F1F9FC52D /* StartRecordingIntent.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = StartRecordingIntent.swift; path = MindEcho/Intents/StartRecordingIntent.swift; sourceTree = "<group>"; };
+		A01564C5AEF3E757C6AD3AA1 /* StartRecordingControl.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StartRecordingControl.swift; sourceTree = "<group>"; };
+		E3BB2A15AFC7408861DC0227 /* MindEchoControlsExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MindEchoControlsExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		E5D1092D1DEAA02BC101AE2B /* MindEchoControlsBundle.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MindEchoControlsBundle.swift; sourceTree = "<group>"; };
+		ECD7D60BBDAFFD1F6FD9CB81 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -57,11 +90,15 @@
 		};
 		0BD6D80C2F3856E000D7656F /* MindEchoTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
 			path = MindEchoTests;
 			sourceTree = "<group>";
 		};
 		0BD6D8162F3856E000D7656F /* MindEchoUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
 			path = MindEchoUITests;
 			sourceTree = "<group>";
 		};
@@ -93,6 +130,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		3472D7A51B80FD8A8E3FF173 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D01DE6B6DD117FDB2C5D6C93 /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -103,6 +148,10 @@
 				0BD6D80C2F3856E000D7656F /* MindEchoTests */,
 				0BD6D8162F3856E000D7656F /* MindEchoUITests */,
 				0BD6D7FB2F3856DE00D7656F /* Products */,
+				5BC45E4DAE4545521263F3C7 /* Frameworks */,
+				3F7CB13D0DC207B722A78A07 /* MindEchoControls */,
+				99BA8B10DA0AB28F1F9FC52D /* StartRecordingIntent.swift */,
+				92A0E00A84516A2187D8D962 /* RecordingLaunchRequestStore.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -112,8 +161,35 @@
 				0BD6D7FA2F3856DE00D7656F /* MindEcho.app */,
 				0BD6D8092F3856E000D7656F /* MindEchoTests.xctest */,
 				0BD6D8132F3856E000D7656F /* MindEchoUITests.xctest */,
+				E3BB2A15AFC7408861DC0227 /* MindEchoControlsExtension.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		3F7CB13D0DC207B722A78A07 /* MindEchoControls */ = {
+			isa = PBXGroup;
+			children = (
+				E5D1092D1DEAA02BC101AE2B /* MindEchoControlsBundle.swift */,
+				A01564C5AEF3E757C6AD3AA1 /* StartRecordingControl.swift */,
+			);
+			name = MindEchoControls;
+			path = MindEchoControls;
+			sourceTree = "<group>";
+		};
+		5BC45E4DAE4545521263F3C7 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				84A94B0F48131EEFAF14A843 /* iOS */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		84A94B0F48131EEFAF14A843 /* iOS */ = {
+			isa = PBXGroup;
+			children = (
+				ECD7D60BBDAFFD1F6FD9CB81 /* Foundation.framework */,
+			);
+			name = iOS;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -126,10 +202,12 @@
 				0BD6D7F62F3856DE00D7656F /* Sources */,
 				0BD6D7F72F3856DE00D7656F /* Frameworks */,
 				0BD6D7F82F3856DE00D7656F /* Resources */,
+				DC04103310CF0A9FC2F88CF2 /* Embed App Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				30EE9F68A9A13FFE2AC1AFBE /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				0BD6D7FC2F3856DE00D7656F /* MindEcho */,
@@ -162,8 +240,6 @@
 				0BD6D80C2F3856E000D7656F /* MindEchoTests */,
 			);
 			name = MindEchoTests;
-			packageProductDependencies = (
-			);
 			productName = MindEchoTests;
 			productReference = 0BD6D8092F3856E000D7656F /* MindEchoTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
@@ -185,11 +261,26 @@
 				0BD6D8162F3856E000D7656F /* MindEchoUITests */,
 			);
 			name = MindEchoUITests;
-			packageProductDependencies = (
-			);
 			productName = MindEchoUITests;
 			productReference = 0BD6D8132F3856E000D7656F /* MindEchoUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+		9E8A464ABFDDC84A21ABA48E /* MindEchoControlsExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 093A6C406975A08E4B19CF8F /* Build configuration list for PBXNativeTarget "MindEchoControlsExtension" */;
+			buildPhases = (
+				46E82A6E85FBDECACB69D85C /* Sources */,
+				3472D7A51B80FD8A8E3FF173 /* Frameworks */,
+				28291097114905837711A136 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MindEchoControlsExtension;
+			productName = MindEchoControlsExtension;
+			productReference = E3BB2A15AFC7408861DC0227 /* MindEchoControlsExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -224,8 +315,8 @@
 			mainGroup = 0BD6D7F12F3856DE00D7656F;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				0BA1C00100000005000000A5 /* XCLocalSwiftPackageReference "../Packages/MindEchoCore" */,
-				0BA1C00100000006000000A6 /* XCLocalSwiftPackageReference "../Packages/MindEchoAudio" */,
+				0BA1C00100000005000000A5 /* XCLocalSwiftPackageReference "MindEchoCore" */,
+				0BA1C00100000006000000A6 /* XCLocalSwiftPackageReference "MindEchoAudio" */,
 				0BA1C00100000007000000A7 /* XCRemoteSwiftPackageReference "DSWaveformImage" */,
 			);
 			preferredProjectObjectVersion = 77;
@@ -236,6 +327,7 @@
 				0BD6D7F92F3856DE00D7656F /* MindEcho */,
 				0BD6D8082F3856E000D7656F /* MindEchoTests */,
 				0BD6D8122F3856E000D7656F /* MindEchoUITests */,
+				9E8A464ABFDDC84A21ABA48E /* MindEchoControlsExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -256,6 +348,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		0BD6D8112F3856E000D7656F /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		28291097114905837711A136 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -286,6 +385,17 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		46E82A6E85FBDECACB69D85C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				065B2DC6DD25B88FEAAFFF10 /* MindEchoControlsBundle.swift in Sources */,
+				8D70912C505CB346F41CFB79 /* StartRecordingControl.swift in Sources */,
+				9BFE15F15EC3610159CF69D8 /* StartRecordingIntent.swift in Sources */,
+				94F5629A8AEB6A5198E37800 /* RecordingLaunchRequestStore.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -298,6 +408,12 @@
 			isa = PBXTargetDependency;
 			target = 0BD6D7F92F3856DE00D7656F /* MindEcho */;
 			targetProxy = 0BD6D8142F3856E000D7656F /* PBXContainerItemProxy */;
+		};
+		30EE9F68A9A13FFE2AC1AFBE /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = MindEchoControlsExtension;
+			target = 9E8A464ABFDDC84A21ABA48E /* MindEchoControlsExtension */;
+			targetProxy = 9715B492263C82D9578E7FA7 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -589,9 +705,95 @@
 			};
 			name = Release;
 		};
+		184CAE9C3E2A43B2E2F569D2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 7;
+				DEVELOPMENT_TEAM = LYMDWEXP2V;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = MindEchoControls/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = MindEchoControls;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.syhash.MindEcho.Controls;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		5A094D2A6843395A67C1F80F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 7;
+				DEVELOPMENT_TEAM = LYMDWEXP2V;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = MindEchoControls/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = MindEchoControls;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.syhash.MindEcho.dev.Controls;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		093A6C406975A08E4B19CF8F /* Build configuration list for PBXNativeTarget "MindEchoControlsExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				184CAE9C3E2A43B2E2F569D2 /* Release */,
+				5A094D2A6843395A67C1F80F /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		0BD6D7F52F3856DE00D7656F /* Build configuration list for PBXProject "MindEcho" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -631,11 +833,11 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		0BA1C00100000005000000A5 /* XCLocalSwiftPackageReference "../Packages/MindEchoCore" */ = {
+		0BA1C00100000005000000A5 /* XCLocalSwiftPackageReference "MindEchoCore" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = ../Packages/MindEchoCore;
 		};
-		0BA1C00100000006000000A6 /* XCLocalSwiftPackageReference "../Packages/MindEchoAudio" */ = {
+		0BA1C00100000006000000A6 /* XCLocalSwiftPackageReference "MindEchoAudio" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = ../Packages/MindEchoAudio;
 		};
