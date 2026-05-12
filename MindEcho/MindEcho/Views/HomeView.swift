@@ -95,6 +95,9 @@ struct HomeView: View {
                 viewModel.summaryInstruction = summaryPromptStore.instruction
                 viewModel.summarizerType = summarizerPreference.type
                 viewModel.fetchAllEntries()
+                if QuickRecordLaunchRouter.shared.consumePendingRequest() {
+                    presentQuickRecording()
+                }
             }
             .onChange(of: vocabularyStore.words) { _, newWords in
                 viewModel.vocabularyWords = newWords
@@ -116,6 +119,9 @@ struct HomeView: View {
             }
             .onOpenURL { url in
                 handleIncomingURL(url)
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .quickRecordRequested)) { _ in
+                presentQuickRecording()
             }
             .sheet(isPresented: $showVocabulary) {
                 VocabularyView(store: vocabularyStore)
@@ -159,6 +165,10 @@ struct HomeView: View {
 
     private func handleIncomingURL(_ url: URL) {
         guard url.scheme == "mindecho", url.host == "quick-record" else { return }
+        presentQuickRecording()
+    }
+
+    private func presentQuickRecording() {
         shareItems = nil
         transcriptionTargetRecording = nil
         showVocabulary = false

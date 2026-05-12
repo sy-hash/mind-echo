@@ -15,7 +15,7 @@ struct MindEchoWidgetExtensionControl: ControlWidget {
             kind: "com.syhash.MindEcho.quickRecord"
         ) {
             ControlWidgetButton(
-                action: OpenURLIntent(URL(string: "mindecho://quick-record")!)
+                action: QuickRecordIntent(target: .quickRecord)
             ) {
                 Label("クイック録音", systemImage: "mic.fill")
             }
