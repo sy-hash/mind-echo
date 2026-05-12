@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0B5F20012FB33A0000A00001 /* MindEchoWidgetExtensionExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 0B12710A2FB21D2E00A71E95 /* MindEchoWidgetExtensionExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		0B12710D2FB21D2E00A71E95 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0B12710C2FB21D2E00A71E95 /* WidgetKit.framework */; };
 		0B12710F2FB21D2E00A71E95 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0B12710E2FB21D2E00A71E95 /* SwiftUI.framework */; };
 		0BA1C00100000001000000A1 /* MindEchoCore in Frameworks */ = {isa = PBXBuildFile; productRef = 0BA1C00100000003000000A3 /* MindEchoCore */; };
@@ -16,6 +17,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		0B5F20022FB33A0000A00002 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0BD6D7F22F3856DE00D7656F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 0B1271092FB21D2E00A71E95;
+			remoteInfo = MindEchoWidgetExtensionExtension;
+		};
 		0BD6D80A2F3856E000D7656F /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 0BD6D7F22F3856DE00D7656F /* Project object */;
@@ -31,6 +39,20 @@
 			remoteInfo = MindEcho;
 		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		0B5F20042FB33A0000A00004 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				0B5F20012FB33A0000A00001 /* MindEchoWidgetExtensionExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		0B12710A2FB21D2E00A71E95 /* MindEchoWidgetExtensionExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MindEchoWidgetExtensionExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -189,10 +211,12 @@
 				0BD6D7F62F3856DE00D7656F /* Sources */,
 				0BD6D7F72F3856DE00D7656F /* Frameworks */,
 				0BD6D7F82F3856DE00D7656F /* Resources */,
+				0B5F20042FB33A0000A00004 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				0B5F20032FB33A0000A00003 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				0BD6D7FC2F3856DE00D7656F /* MindEcho */,
@@ -370,6 +394,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		0B5F20032FB33A0000A00003 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 0B1271092FB21D2E00A71E95 /* MindEchoWidgetExtensionExtension */;
+			targetProxy = 0B5F20022FB33A0000A00002 /* PBXContainerItemProxy */;
+		};
 		0BD6D80B2F3856E000D7656F /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 0BD6D7F92F3856DE00D7656F /* MindEcho */;
@@ -389,7 +418,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = LYMDWEXP2V;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MindEchoWidgetExtension/Info.plist;
@@ -402,7 +431,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.syhash.MindEcho.MindEchoWidgetExtension;
+				PRODUCT_BUNDLE_IDENTIFIER = com.syhash.MindEcho.dev.MindEchoWidgetExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -420,7 +449,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = LYMDWEXP2V;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MindEchoWidgetExtension/Info.plist;
