@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0B5F20012FB33A0000A00001 /* MindEchoWidgetExtensionExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 0B12710A2FB21D2E00A71E95 /* MindEchoWidgetExtensionExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		0B12710D2FB21D2E00A71E95 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0B12710C2FB21D2E00A71E95 /* WidgetKit.framework */; };
+		0B12710F2FB21D2E00A71E95 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0B12710E2FB21D2E00A71E95 /* SwiftUI.framework */; };
 		0BA1C00100000001000000A1 /* MindEchoCore in Frameworks */ = {isa = PBXBuildFile; productRef = 0BA1C00100000003000000A3 /* MindEchoCore */; };
 		0BA1C00100000002000000A2 /* MindEchoAudio in Frameworks */ = {isa = PBXBuildFile; productRef = 0BA1C00100000004000000A4 /* MindEchoAudio */; };
 		0BA1C00100000010000000B1 /* DSWaveformImage in Frameworks */ = {isa = PBXBuildFile; productRef = 0BA1C00100000008000000A8 /* DSWaveformImage */; };
@@ -14,6 +17,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		0B5F20022FB33A0000A00002 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0BD6D7F22F3856DE00D7656F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 0B1271092FB21D2E00A71E95;
+			remoteInfo = MindEchoWidgetExtensionExtension;
+		};
 		0BD6D80A2F3856E000D7656F /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 0BD6D7F22F3856DE00D7656F /* Project object */;
@@ -30,13 +40,37 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		0B5F20042FB33A0000A00004 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				0B5F20012FB33A0000A00001 /* MindEchoWidgetExtensionExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		0B12710A2FB21D2E00A71E95 /* MindEchoWidgetExtensionExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MindEchoWidgetExtensionExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		0B12710C2FB21D2E00A71E95 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		0B12710E2FB21D2E00A71E95 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		0BD6D7FA2F3856DE00D7656F /* MindEcho.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MindEcho.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0BD6D8092F3856E000D7656F /* MindEchoTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MindEchoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		0BD6D8132F3856E000D7656F /* MindEchoUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MindEchoUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		0B12711C2FB21D2F00A71E95 /* Exceptions for "MindEchoWidgetExtension" folder in "MindEchoWidgetExtensionExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 0B1271092FB21D2E00A71E95 /* MindEchoWidgetExtensionExtension */;
+		};
 		0B20B0D82F420F2E00AF8690 /* Exceptions for "MindEcho" folder in "MindEcho" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -47,6 +81,14 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		0B1271102FB21D2E00A71E95 /* MindEchoWidgetExtension */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				0B12711C2FB21D2F00A71E95 /* Exceptions for "MindEchoWidgetExtension" folder in "MindEchoWidgetExtensionExtension" target */,
+			);
+			path = MindEchoWidgetExtension;
+			sourceTree = "<group>";
+		};
 		0BD6D7FC2F3856DE00D7656F /* MindEcho */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -68,6 +110,15 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		0B1271072FB21D2E00A71E95 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0B12710F2FB21D2E00A71E95 /* SwiftUI.framework in Frameworks */,
+				0B12710D2FB21D2E00A71E95 /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		0BD6D7F72F3856DE00D7656F /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -96,12 +147,23 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		0B12710B2FB21D2E00A71E95 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				0B12710C2FB21D2E00A71E95 /* WidgetKit.framework */,
+				0B12710E2FB21D2E00A71E95 /* SwiftUI.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		0BD6D7F12F3856DE00D7656F = {
 			isa = PBXGroup;
 			children = (
 				0BD6D7FC2F3856DE00D7656F /* MindEcho */,
 				0BD6D80C2F3856E000D7656F /* MindEchoTests */,
 				0BD6D8162F3856E000D7656F /* MindEchoUITests */,
+				0B1271102FB21D2E00A71E95 /* MindEchoWidgetExtension */,
+				0B12710B2FB21D2E00A71E95 /* Frameworks */,
 				0BD6D7FB2F3856DE00D7656F /* Products */,
 			);
 			sourceTree = "<group>";
@@ -112,6 +174,7 @@
 				0BD6D7FA2F3856DE00D7656F /* MindEcho.app */,
 				0BD6D8092F3856E000D7656F /* MindEchoTests.xctest */,
 				0BD6D8132F3856E000D7656F /* MindEchoUITests.xctest */,
+				0B12710A2FB21D2E00A71E95 /* MindEchoWidgetExtensionExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -119,6 +182,28 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		0B1271092FB21D2E00A71E95 /* MindEchoWidgetExtensionExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0B12711D2FB21D2F00A71E95 /* Build configuration list for PBXNativeTarget "MindEchoWidgetExtensionExtension" */;
+			buildPhases = (
+				0B1271062FB21D2E00A71E95 /* Sources */,
+				0B1271072FB21D2E00A71E95 /* Frameworks */,
+				0B1271082FB21D2E00A71E95 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				0B1271102FB21D2E00A71E95 /* MindEchoWidgetExtension */,
+			);
+			name = MindEchoWidgetExtensionExtension;
+			packageProductDependencies = (
+			);
+			productName = MindEchoWidgetExtensionExtension;
+			productReference = 0B12710A2FB21D2E00A71E95 /* MindEchoWidgetExtensionExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		0BD6D7F92F3856DE00D7656F /* MindEcho */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 0BD6D81D2F3856E000D7656F /* Build configuration list for PBXNativeTarget "MindEcho" */;
@@ -126,10 +211,12 @@
 				0BD6D7F62F3856DE00D7656F /* Sources */,
 				0BD6D7F72F3856DE00D7656F /* Frameworks */,
 				0BD6D7F82F3856DE00D7656F /* Resources */,
+				0B5F20042FB33A0000A00004 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				0B5F20032FB33A0000A00003 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				0BD6D7FC2F3856DE00D7656F /* MindEcho */,
@@ -198,9 +285,12 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 2620;
+				LastSwiftUpdateCheck = 2640;
 				LastUpgradeCheck = 2620;
 				TargetAttributes = {
+					0B1271092FB21D2E00A71E95 = {
+						CreatedOnToolsVersion = 26.4.1;
+					};
 					0BD6D7F92F3856DE00D7656F = {
 						CreatedOnToolsVersion = 26.2;
 					};
@@ -236,11 +326,19 @@
 				0BD6D7F92F3856DE00D7656F /* MindEcho */,
 				0BD6D8082F3856E000D7656F /* MindEchoTests */,
 				0BD6D8122F3856E000D7656F /* MindEchoUITests */,
+				0B1271092FB21D2E00A71E95 /* MindEchoWidgetExtensionExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		0B1271082FB21D2E00A71E95 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		0BD6D7F82F3856DE00D7656F /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -265,6 +363,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		0B1271062FB21D2E00A71E95 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		0BD6D7F62F3856DE00D7656F /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -289,6 +394,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		0B5F20032FB33A0000A00003 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 0B1271092FB21D2E00A71E95 /* MindEchoWidgetExtensionExtension */;
+			targetProxy = 0B5F20022FB33A0000A00002 /* PBXContainerItemProxy */;
+		};
 		0BD6D80B2F3856E000D7656F /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 0BD6D7F92F3856DE00D7656F /* MindEcho */;
@@ -302,6 +412,68 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		0B12711A2FB21D2F00A71E95 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 7;
+				DEVELOPMENT_TEAM = LYMDWEXP2V;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = MindEchoWidgetExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = MindEchoWidgetExtension;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.syhash.MindEcho.dev.MindEchoWidgetExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		0B12711B2FB21D2F00A71E95 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 7;
+				DEVELOPMENT_TEAM = LYMDWEXP2V;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = MindEchoWidgetExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = MindEchoWidgetExtension;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.syhash.MindEcho.MindEchoWidgetExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 		0BD6D81B2F3856E000D7656F /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -592,6 +764,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		0B12711D2FB21D2F00A71E95 /* Build configuration list for PBXNativeTarget "MindEchoWidgetExtensionExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0B12711A2FB21D2F00A71E95 /* Debug */,
+				0B12711B2FB21D2F00A71E95 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		0BD6D7F52F3856DE00D7656F /* Build configuration list for PBXProject "MindEcho" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

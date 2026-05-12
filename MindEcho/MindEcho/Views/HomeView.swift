@@ -95,6 +95,9 @@ struct HomeView: View {
                 viewModel.summaryInstruction = summaryPromptStore.instruction
                 viewModel.summarizerType = summarizerPreference.type
                 viewModel.fetchAllEntries()
+                if QuickRecordLaunchRouter.shared.consumePendingRequest() {
+                    presentQuickRecording()
+                }
             }
             .onChange(of: vocabularyStore.words) { _, newWords in
                 viewModel.vocabularyWords = newWords
@@ -113,6 +116,12 @@ struct HomeView: View {
             }
             .onChange(of: summarizerPreference.type) { _, newType in
                 viewModel.summarizerType = newType
+            }
+            .onOpenURL { url in
+                handleIncomingURL(url)
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .quickRecordRequested)) { _ in
+                presentQuickRecording()
             }
             .sheet(isPresented: $showVocabulary) {
                 VocabularyView(store: vocabularyStore)
@@ -149,6 +158,26 @@ struct HomeView: View {
                 )
                 .accessibilityIdentifier("home.transcriptionSheet")
             }
+        }
+    }
+
+    // MARK: - Deep Links
+
+    private func handleIncomingURL(_ url: URL) {
+        guard url.scheme == "mindecho", url.host == "quick-record" else { return }
+        presentQuickRecording()
+    }
+
+    private func presentQuickRecording() {
+        shareItems = nil
+        transcriptionTargetRecording = nil
+        showVocabulary = false
+        showSettings = false
+        viewModel.recordingTargetDate = nil
+
+        Task { @MainActor in
+            await Task.yield()
+            isRecordingModalPresented = true
         }
     }
 
