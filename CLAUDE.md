@@ -50,8 +50,9 @@ mind-echo/
 
 ### Requirements
 
-- Xcode 16.2+
-- Swift 6.2
+- Xcode 26.5+
+- Swift 6.3
+- Ruby 3.4.9
 
 ### Build
 

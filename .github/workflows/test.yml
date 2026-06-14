@@ -7,6 +7,10 @@ on:
       - 'MindEcho/**'
       - 'Packages/**'
       - 'MindEcho.xcworkspace/**'
+      - '.xcode-version'
+      - '.ruby-version'
+      - 'Gemfile'
+      - 'Gemfile.lock'
       - 'scripts/select-ios-simulator.sh'
       - '.github/workflows/test.yml'
   pull_request:
@@ -14,6 +18,10 @@ on:
       - 'MindEcho/**'
       - 'Packages/**'
       - 'MindEcho.xcworkspace/**'
+      - '.xcode-version'
+      - '.ruby-version'
+      - 'Gemfile'
+      - 'Gemfile.lock'
       - 'scripts/select-ios-simulator.sh'
       - '.github/workflows/test.yml'
   workflow_dispatch:
