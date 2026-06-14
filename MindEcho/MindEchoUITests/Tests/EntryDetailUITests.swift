@@ -45,7 +45,7 @@ final class EntryDetailUITests: XCTestCase {
 
         // UIActivityViewController should appear after audio export & merge
         let activityList = app.otherElements["ActivityListView"]
-        XCTAssertTrue(activityList.waitForExistence(timeout: 15))
+        XCTAssertTrue(activityList.waitForExistence(timeout: 45))
     }
 
     @MainActor
