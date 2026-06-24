@@ -86,6 +86,8 @@ struct ExportServiceImpl: Exporting {
 
             while currentRange.location < attributedText.length {
                 context.beginPage()
+                UIColor.white.setFill()
+                context.cgContext.fill(pageRect)
 
                 let path = CGPath(rect: textRect, transform: nil)
                 let frame = CTFramesetterCreateFrame(
