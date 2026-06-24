@@ -150,7 +150,9 @@ struct RecordingModalView: View {
                 }
                 viewModel.isSummarizationAvailable = { _, _ in true }
             }
-            viewModel.startRecording()
+            if !viewModel.isRecording {
+                viewModel.startRecording()
+            }
         }
     }
 
