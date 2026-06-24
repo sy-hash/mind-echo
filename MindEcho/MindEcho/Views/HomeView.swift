@@ -15,13 +15,16 @@ struct HomeView: View {
     @State private var summaryPromptStore = SummaryPromptStore()
     @State private var showVocabulary = false
     @State private var showSettings = false
+    private let launchRouter: LaunchRouter
 
     init(
         modelContext: ModelContext,
         audioRecorder: any AudioRecording,
         audioPlayer: any AudioPlaying = AudioPlayerService(),
-        liveTranscriber: (any LiveTranscribing)? = nil
+        liveTranscriber: (any LiveTranscribing)? = nil,
+        launchRouter: LaunchRouter
     ) {
+        self.launchRouter = launchRouter
         _viewModel = State(
             initialValue: HomeViewModel(
                 modelContext: modelContext,
@@ -95,6 +98,7 @@ struct HomeView: View {
                 viewModel.summaryInstruction = summaryPromptStore.instruction
                 viewModel.summarizerType = summarizerPreference.type
                 viewModel.fetchAllEntries()
+                handlePendingLaunchAction()
             }
             .onChange(of: vocabularyStore.words) { _, newWords in
                 viewModel.vocabularyWords = newWords
@@ -113,6 +117,9 @@ struct HomeView: View {
             }
             .onChange(of: summarizerPreference.type) { _, newType in
                 viewModel.summarizerType = newType
+            }
+            .onChange(of: launchRouter.pendingAction) { _, _ in
+                handlePendingLaunchAction()
             }
             .sheet(isPresented: $showVocabulary) {
                 VocabularyView(store: vocabularyStore)
@@ -150,6 +157,17 @@ struct HomeView: View {
                 .accessibilityIdentifier("home.transcriptionSheet")
             }
         }
+    }
+
+    private func handlePendingLaunchAction() {
+        guard launchRouter.pendingAction == .startRecording else { return }
+        guard !isRecordingModalPresented, !viewModel.isRecording else {
+            launchRouter.consumePendingAction()
+            return
+        }
+
+        launchRouter.consumePendingAction()
+        isRecordingModalPresented = true
     }
 
     // MARK: - Today Section

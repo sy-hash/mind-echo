@@ -10,6 +10,7 @@ struct MindEchoApp: App {
     private let audioRecorder: any AudioRecording
     private let audioPlayer: any AudioPlaying
     private let liveTranscriber: (any LiveTranscribing)?
+    private let launchRouter: LaunchRouter
 
     init() {
         let args = ProcessInfo.processInfo.arguments
@@ -17,6 +18,7 @@ struct MindEchoApp: App {
         let useMockRecorder = args.contains("--mock-recorder")
         let useMockPlayer = args.contains("--mock-player")
         let useMockLiveTranscription = args.contains("--mock-live-transcription")
+        launchRouter = LaunchRouter()
         let schema = Schema([
             JournalEntry.self,
             Recording.self,
@@ -61,6 +63,10 @@ struct MindEchoApp: App {
                 Self.seedTodayWithRecordings(context: context)
             }
         }
+
+        if args.contains("--start-recording") {
+            launchRouter.request(.startRecording)
+        }
     }
 
     var body: some Scene {
@@ -69,8 +75,12 @@ struct MindEchoApp: App {
                 modelContext: modelContainer.mainContext,
                 audioRecorder: audioRecorder,
                 audioPlayer: audioPlayer,
-                liveTranscriber: liveTranscriber
+                liveTranscriber: liveTranscriber,
+                launchRouter: launchRouter
             )
+            .onOpenURL { url in
+                launchRouter.handle(url: url)
+            }
         }
         .modelContainer(modelContainer)
     }

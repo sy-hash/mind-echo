@@ -98,6 +98,17 @@ final class HomeRecordingUITests: XCTestCase {
     }
 
     @MainActor
+    func testLaunchArgumentStartRecording_opensRecordingModal() throws {
+        app.launchArguments.append("--start-recording")
+        app.launch()
+
+        app.tap()
+
+        XCTAssertTrue(app.staticTexts["recording.duration"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["recording.stopButton"].waitForExistence(timeout: 5))
+    }
+
+    @MainActor
     func testAddRecordingToPastDate() throws {
         // TODO: モーダルを閉じた後に過去エントリへ追加した録音行が UI に反映されない問題が未解決のためスキップ。
         // SwiftData の inverse 関係（recording.entry 経由）での保存方法または
